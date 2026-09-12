@@ -142,6 +142,7 @@ npx dsh-codebase-chat --project C:\my-app --ask "how is auth handled?"
 npx dsh-codebase-chat --project C:\my-app --health   # offline, no LLM
 npx dsh-codebase-chat --project C:\my-app --health --diff main   # only what changed
 npx dsh-codebase-chat --project C:\my-app --watch    # index stays hot while you code
+npx dsh-codebase-chat --project C:\my-app --prompt intelligence   # same banner brief the IDE gets — pipe to any LLM
 ```
 
 **From source**

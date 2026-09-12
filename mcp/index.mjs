@@ -6,7 +6,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd } from "dsh-codebase-chat";
+import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt } from "dsh-codebase-chat";
 import { callLocalLlm, isLocalLlmEnabled } from "./local-llm.mjs";
 
 // `dsh-codebase-chat-mcp setup` runs the interactive client-config wizard
@@ -56,38 +56,7 @@ function getProjectPath(projectPath) {
   return projectPath ? String(projectPath).trim() : process.cwd();
 }
 
-function langHint(lang) {
-  return lang === "en" ? "Respond strictly in English." : "Reponds obligatoirement en francais.";
-}
 
-const INSTRUCTIONS = {
-  fr: {
-    codebase_intelligence: "Tu es un CTO. Fais un audit technique complet : architecture, radar technologique, dette, securite, opportunites, concurrents, roadmap. SORS DES ACTIONS CONCRETES AVEC [source: chemin: ligne], [Confiance: X%] et [Severite: Critique/Elevee/Moyenne/Faible].",
-    codebase_report: "Tu es un directeur strategique. Rends un comite-rendu de direction (SWOT, scorecards, 90 jours). SORS DES ACTIONS CONCRETES AVEC [source: chemin: ligne], [Confiance: X%] et [Severite: Critique/Elevee/Moyenne/Faible].",
-    codebase_audit: "Tu es un auditeur tech. Liste les non-conformites, dette technique et correctifs. SORS DES ACTIONS CONCRETES AVEC [source: chemin: ligne], [Confiance: X%] et [Severite: Critique/Elevee/Moyenne/Faible].",
-    codebase_ceo: "Tu es un CEO. Donne un one-pager executif : contexte, metriques, risques, opportunites, killer moves. SORS DES ACTIONS CONCRETES AVEC [source: chemin: ligne] et [Confiance: X%].",
-    codebase_tasks: "Tu es un tech lead. Genere un TASKS.MD priorise avec sprints, Before/After et patch. SORS DES ACTIONS CONCRETES AVEC [source: chemin: ligne].",
-    codebase_player: "Tu es un UX researcher. Fais une analyse playthrough du parcours utilisateur depuis le code. SORS DES ACTIONS CONCRETES AVEC [source: chemin: ligne].",
-    codebase_search: "Liste les fichiers et symboles pertinents avec leurs sources. SORS DES SOURCES AVEC [source: chemin: ligne].",
-    codebase_explain: "Explique clairement le fonctionnement du fichier ou symbole cible. Cite le code avec [source: chemin: ligne].",
-    codebase_refactor: "Propose un refactor concret et executable. Donne un diff / Before-After avec [source: chemin: ligne].",
-    codebase_chat: "Reponds a la question en t'appuyant sur le contexte. Cite chaque affirmation avec [source: chemin: ligne].",
-    codebase_crea: "Genere des idees creatives, slogans, taglines ou concepts marketing inspires du code. Cite le contexte avec [source: chemin: ligne].",
-  },
-  en: {
-    codebase_intelligence: "You are a CTO. Deliver a full technical audit: architecture, tech radar, debt, security, opportunities, competitors, roadmap. OUTPUT CONCRETE ACTIONS with [source: path:line], [Confidence: X%] and [Severity: Critical/High/Medium/Low].",
-    codebase_report: "You are a strategy director. Deliver a board report (SWOT, scorecards, 90-day roadmap). OUTPUT CONCRETE ACTIONS with [source: path:line], [Confidence: X%] and [Severity: Critical/High/Medium/Low].",
-    codebase_audit: "You are a tech auditor. List non-conformities, technical debt and fixes. OUTPUT CONCRETE ACTIONS with [source: path:line], [Confidence: X%] and [Severity: Critical/High/Medium/Low].",
-    codebase_ceo: "You are a CEO. Give a one-page executive brief: context, metrics, risks, opportunities, killer moves. OUTPUT CONCRETE ACTIONS with [source: path:line] and [Confidence: X%].",
-    codebase_tasks: "You are a tech lead. Generate a prioritized TASKS.md with sprints, Before/After and patches. OUTPUT CONCRETE ACTIONS with [source: path:line].",
-    codebase_player: "You are a UX researcher. Provide a playthrough analysis of the user journey from the code. OUTPUT CONCRETE ACTIONS with [source: path:line].",
-    codebase_search: "List relevant files and symbols with sources. OUTPUT SOURCES with [source: path:line].",
-    codebase_explain: "Explain clearly how the target file or symbol works. Cite code with [source: path:line].",
-    codebase_refactor: "Propose a concrete, executable refactor. Give a diff / Before-After with [source: path:line].",
-    codebase_chat: "Answer the question using the provided context. Cite every claim with [source: path:line].",
-    codebase_crea: "Generate creative ideas, slogans, taglines or marketing concepts inspired by the code. Cite context with [source: path:line].",
-  },
-};
 
 function getOptions(name, args) {
   const project = getProjectPath(args.projectPath);
@@ -118,10 +87,6 @@ function getOptions(name, args) {
   return { project, embed: !!args.embed, diff: (args.diff || "").trim() || undefined, ...opts };
 }
 
-function getInstruction(name, lang) {
-  return INSTRUCTIONS[lang === "en" ? "en" : "fr"][name] || "";
-}
-
 // Tools whose prompts benefit from the deterministic static analysis
 // (cycles, dead code, duplication, hotspots) on top of the retrieved chunks.
 const ANALYSIS_TOOLS = new Set([
@@ -135,7 +100,6 @@ const ANALYSIS_TOOLS = new Set([
 async function buildPrompt(name, args) {
   const lang = (args.lang || "fr").toLowerCase();
   const base = getOptions(name, args);
-  const instruction = getInstruction(name, lang);
   // The local model context is small — cap the assembled prompt accordingly.
   const useLocal = args.localLlm === true || isLocalLlmEnabled();
   const maxTokens = useLocal
@@ -146,7 +110,6 @@ async function buildPrompt(name, args) {
     ...base,
     lang,
     maxTokens,
-    instruction,
   });
 
   let staticSection = "";
@@ -160,7 +123,18 @@ async function buildPrompt(name, args) {
   }
 
   const projectName = basename(await findProjectRoot(resolveProjectPath(base.project)));
-  const final = `${langHint(lang)}\n\n${context}${staticSection}`;
+  // Same rich prompt the DeepSeek Harness plugin sends — ASCII banner,
+  // persona, mandatory sections, citation rules — for identical reports.
+  const final = buildToolPrompt(name, {
+    context: `${context}${staticSection}`,
+    projectName,
+    lang,
+    style: args.style,
+    query: base.query || base.searchQuery || "",
+    focus: base.query || "",
+    filePath: base.filePath || "",
+    description: base.query || "",
+  });
 
   return { prompt: final, projectName };
 }

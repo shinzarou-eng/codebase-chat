@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
 import { watch } from 'node:fs';
-import { sep } from 'node:path';
+import { sep, basename } from 'node:path';
 import { buildContext } from './context.js';
 import { getIndex } from './indexer.js';
 import { findProjectRoot, getWalkOptions, resolveProjectPath } from './project.js';
 import { analyzeProject, formatHealthReport } from './analysis.js';
 import { analyzeImpact, formatImpactReport } from './impact.js';
+import { buildToolPrompt } from './prompts.js';
 import { getChangedFiles } from './diff.js';
 import { loadProjectConfig } from './config.js';
 import { disposeTreeSitter } from './treesitter.js';
@@ -37,6 +38,7 @@ Usage:
   npx dsh-codebase-chat --project <path> --impact src/store.ts
   npx dsh-codebase-chat --project <path> --health --diff main
   npx dsh-codebase-chat --project <path> --watch
+  npx dsh-codebase-chat --project <path> --prompt intelligence
 
 Options:
   -p, --project <path>   Project directory (default: current directory)
@@ -48,6 +50,12 @@ Options:
   -H, --health           Deterministic static analysis (cycles, dead code, dupes, complexity)
   --impact <file>        Blast radius — which files transitively depend on <file>
   -d, --diff <ref>       Scope --ask/--search/--health to files changed vs a git ref
+  --prompt <mode>        Print the full LLM prompt (banner + instructions) for a
+                         report mode: intelligence, report, audit, tasks, ceo,
+                         player, chat, search, explain, refactor, crea.
+                         Pipe it to any LLM (e.g. ... --prompt intelligence | dsh).
+                         Query modes read --ask/--search/--file; --focus and
+                         --style (ouf|punchy|dense|pedagogique|minimal) apply.
   -w, --watch            Keep the index hot — rebuild incrementally on file changes
   -e, --embed            Enable local semantic embeddings (slower, more relevant)
   --lang <en|fr>         Language for headings (default: .codebase-chat.json lang, else fr)
@@ -74,6 +82,9 @@ async function main() {
       health: { type: 'boolean', short: 'H', default: false },
       impact: { type: 'string' },
       diff: { type: 'string', short: 'd' },
+      prompt: { type: 'string' },
+      focus: { type: 'string' },
+      style: { type: 'string' },
       watch: { type: 'boolean', short: 'w', default: false },
       embed: { type: 'boolean', short: 'e', default: false },
       lang: { type: 'string' },
@@ -175,6 +186,58 @@ async function main() {
       exit(1);
     }
     console.log(formatImpactReport(r.report, lang));
+    exit(0);
+  }
+
+  if (values.prompt) {
+    const mode = values.prompt.toLowerCase();
+    const tool = `codebase_${mode}`;
+    const needsQuery = new Set(['chat', 'search', 'explain', 'refactor', 'crea']);
+    const query = values.ask ?? values.search ?? values.focus ?? '';
+    if (needsQuery.has(mode) && !query && !values.file) {
+      console.error(lang === 'en'
+        ? `--prompt ${mode} needs a query: add --ask/--search/--file (or --focus)`
+        : `--prompt ${mode} nécessite une requête : ajoute --ask/--search/--file (ou --focus)`);
+      exit(1);
+    }
+    const result = await buildContext({
+      project: values.project,
+      query,
+      searchQuery: values.search,
+      filePath: values.file,
+      lang,
+      embed: values.embed,
+      diff: values.diff,
+    });
+    // Same parity as the MCP server: report modes get the deterministic
+    // static analysis appended to the retrieved context.
+    let staticSection = '';
+    if (new Set(['intelligence', 'report', 'audit', 'tasks', 'ceo']).has(mode)) {
+      try {
+        const report = await analyzeProject(result.absProject);
+        staticSection = `\n\n== ${lang === 'en' ? 'STATIC ANALYSIS (deterministic)' : 'ANALYSE STATIQUE (déterministe)'} ==\n${formatHealthReport(report, lang)}`;
+      } catch {
+        // best-effort
+      }
+    }
+    const projectName = basename(result.absProject);
+    try {
+      console.log(buildToolPrompt(tool, {
+        context: `${result.context}${staticSection}`,
+        projectName,
+        lang,
+        style: values.style,
+        query,
+        focus: values.focus ?? query,
+        filePath: values.file ?? '',
+        description: query,
+      }));
+    } catch {
+      console.error(lang === 'en'
+        ? `unknown prompt mode "${mode}" — expected: intelligence, report, audit, tasks, ceo, player, chat, search, explain, refactor, crea`
+        : `mode de prompt inconnu "${mode}" — attendu : intelligence, report, audit, tasks, ceo, player, chat, search, explain, refactor, crea`);
+      exit(1);
+    }
     exit(0);
   }
 

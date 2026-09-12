@@ -14,4 +14,27 @@ export { loadProjectConfig, clearConfigCache, globToRegExp, matchesAnyGlob, CONF
 export type { ProjectConfig, ConfigLang } from './config.js';
 export { getChangedFiles } from './diff.js';
 export type { DiffScope } from './diff.js';
+export {
+  buildToolPrompt,
+  buildAsciiBanner,
+  buildChatPrompt,
+  buildSearchPrompt,
+  buildExplainPrompt,
+  buildRefactorPrompt,
+  buildCreaPrompt,
+  buildIntelligencePrompt,
+  buildAuditPrompt,
+  buildReportPrompt,
+  buildTasksPrompt,
+  buildCeoPrompt,
+  buildPlayerPrompt,
+  buildBuildPrompt,
+  buildGitPrompt,
+  buildApplyPrompt,
+  styleInstruction,
+  langInstruction,
+  normalizeLabels,
+  brandSignature,
+} from './prompts.js';
+export type { ToolPromptOptions } from './prompts.js';
 export type * from './types.js';
