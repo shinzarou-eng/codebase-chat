@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.25.1 / mcp 0.8.3 — CLI answers, not just prompts
+
+**New**
+
+- `--call` — `--prompt <mode> --call` sends the assembled prompt straight to DeepSeek/OpenAI (`DEEPSEEK_API_KEY` / `OPENAI_API_KEY`, `DEEPSEEK_BASE_URL`, `CODEBASE_MODEL`) and prints the report. No IDE needed.
+- `--local` — `--prompt <mode> --local` answers with the embedded local model, fully offline.
+
+**Improved**
+
+- The embedded local LLM moved into the core package — shared by the MCP server and the CLI (was MCP-only).
+
 ## 0.25.0 / mcp 0.8.2 — One report style everywhere
 
 **New**
