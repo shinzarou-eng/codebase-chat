@@ -1,6 +1,6 @@
 {
   "name": "dsh-codebase-chat-mcp",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "Standalone MCP server for dsh-codebase-chat — codebase intelligence tools for Cursor, Claude, Windsurf and any MCP client. Works without DeepSeek Harness.",
   "author": "shinzarou-eng",
   "mcpName": "io.github.shinzarou-eng/dsh-codebase-chat",

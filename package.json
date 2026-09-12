@@ -1,6 +1,6 @@
 {
   "name": "dsh-codebase-chat",
-  "version": "0.25.5",
+  "version": "0.25.6",
   "description": "Multi-language codebase intelligence for DeepSeek Harness and MCP-compatible IDEs: chat, search, audit, refactor, and board-ready reports from local code.",
   "homepage": "https://shinzarou-eng.github.io/dsh-codebase-chat",
   "repository": {

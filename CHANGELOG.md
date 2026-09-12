@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.6 / mcp 0.8.7 — CPU fallback for the local LLM
+
+**Fixed**
+
+- `CUDA error: out of memory` — the embedded model crashed on GPUs without enough VRAM. Loading now falls back to CPU automatically (with a stderr notice), and `CODEBASE_LOCAL_GPU=off` skips GPU entirely.
+
 ## 0.25.5 — Readable terminal reports
 
 **Improved**

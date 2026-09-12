@@ -48,8 +48,17 @@ function loadLocalModel(): Promise<any> {
         throw new Error(`Local model not found: ${spec}`);
       }
       const { getLlama } = await importLlama();
-      const llama = await getLlama();
-      return llama.loadModel({ modelPath });
+      const cpuOnly = /^(0|off|false|cpu)$/i.test(process.env.CODEBASE_LOCAL_GPU || '');
+      const llama = await getLlama(cpuOnly ? { gpu: false } : {});
+      try {
+        return await llama.loadModel({ modelPath });
+      } catch (err) {
+        // GPU backends (CUDA/VRAM) can fail on smaller cards — retry on CPU.
+        if (cpuOnly) throw err;
+        console.error(`[local-llm] GPU load failed (${err instanceof Error ? err.message : err}) — falling back to CPU. Slower, but works. Set CODEBASE_LOCAL_GPU=off to skip GPU entirely.`);
+        const cpuLlama = await getLlama({ gpu: false });
+        return cpuLlama.loadModel({ modelPath });
+      }
     })();
     modelPromise.catch(() => { modelPromise = null; });
   }
