@@ -77,9 +77,13 @@ export function globToRegExp(glob: string): RegExp {
   return new RegExp(`^${src}$`);
 }
 
-/** Match a project-relative path (posix separators) against a list of globs. */
+/** Match a project-relative path (posix separators) against a list of globs. Globs without `/` match the basename at any depth (gitignore-style). */
 export function matchesAnyGlob(relPath: string, globs: string[] | undefined): boolean {
   if (!globs || globs.length === 0) return false;
   const rel = relPath.replace(/\\/g, '/');
-  return globs.some(g => globToRegExp(g).test(rel));
+  const base = rel.split('/').pop() ?? rel;
+  return globs.some(g => {
+    const re = globToRegExp(g);
+    return re.test(rel) || (!g.includes('/') && re.test(base));
+  });
 }

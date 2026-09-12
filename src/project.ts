@@ -19,8 +19,10 @@ const SOURCE_EXTS = new Set([
 const DEFAULT_SKIP_DIRS = new Set([
   'node_modules', '.git', 'dist', 'build', 'out', '.output',
   'coverage', 'tmp', 'temp', '.cache', '.turbo', '.next',
+  'target', 'bin', 'obj', 'vendor', '.venv', 'venv', '__pycache__',
+  '.npm-cache', '.parcel-cache', '.gradle', '.mypy_cache', '.pytest_cache',
   'android', 'ios', 'e2e-shots', 'playstore_screenshots',
-  '.cursor', '.idea', '.memsearch', '.vscode', '__pycache__',
+  '.cursor', '.idea', '.memsearch', '.vscode',
   '.dsh-tmp', '.dsh-vision-router',
   '.agents', '.claude', '.devin', '.playwright-mcp', '.windsurf'
 ]);
@@ -98,7 +100,7 @@ export async function* walkFiles(startDir: string, skipDirs = DEFAULT_SKIP_DIRS,
       const fullPath = join(dir, entry.name);
       const rel = relative(startDir, fullPath).split(sep).join('/');
       if (entry.isDirectory()) {
-        if (!skipDirs.has(entry.name) && !matchesAnyGlob(rel, ignoreGlobs)) queue.push(fullPath);
+        if (!skipDirs.has(entry.name) && !skipDirs.has(rel) && !matchesAnyGlob(rel, ignoreGlobs)) queue.push(fullPath);
         continue;
       }
       if (!entry.isFile()) continue;
@@ -120,7 +122,7 @@ export async function safeReadText(filePath: string): Promise<string | undefined
   }
 }
 
-export async function buildTree(startDir: string, maxLines = 500, skipDirs = DEFAULT_SKIP_DIRS): Promise<string> {
+export async function buildTree(startDir: string, maxLines = 500, skipDirs = DEFAULT_SKIP_DIRS, skipFiles = DEFAULT_SKIP_FILES, ignoreGlobs: string[] = []): Promise<string> {
   const lines: string[] = [];
 
   async function walk(dir: string, prefix = '') {
@@ -134,12 +136,14 @@ export async function buildTree(startDir: string, maxLines = 500, skipDirs = DEF
     entries.sort((a, b) => (a.isDirectory() === b.isDirectory() ? a.name.localeCompare(b.name) : a.isDirectory() ? -1 : 1));
     for (const entry of entries) {
       if (lines.length >= maxLines) return;
-      if (skipDirs.has(entry.name)) continue;
       const fullPath = join(dir, entry.name);
+      const rel = relative(startDir, fullPath).split(sep).join('/');
       if (entry.isDirectory()) {
+        if (skipDirs.has(entry.name) || skipDirs.has(rel) || matchesAnyGlob(rel, ignoreGlobs)) continue;
         lines.push(`${prefix}${entry.name}/`);
         await walk(fullPath, `${prefix}  `);
       } else {
+        if (skipFiles.has(entry.name) || matchesAnyGlob(rel, ignoreGlobs)) continue;
         lines.push(`${prefix}${entry.name}`);
       }
     }

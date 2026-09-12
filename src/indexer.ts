@@ -104,7 +104,7 @@ export async function buildIndex(projectPath: string, progress?: (message: strin
   progress?.(`Indexing ${projectName}...`);
 
   const walk = await getWalkOptions(absProject);
-  const tree = await buildTree(absProject, undefined, walk.skipDirs);
+  const tree = await buildTree(absProject, undefined, walk.skipDirs, walk.skipFiles, walk.ignoreGlobs);
   const startDir = absProject;
   const previous = await loadIndex(absProject);
   const previousFiles = previous?.projectPath === absProject ? previous.files : {};
