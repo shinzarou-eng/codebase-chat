@@ -6,6 +6,7 @@ import { buildContext } from './context.js';
 import { getIndex } from './indexer.js';
 import { findProjectRoot, getWalkOptions, resolveProjectPath } from './project.js';
 import { analyzeProject, formatHealthReport } from './analysis.js';
+import { analyzeImpact, formatImpactReport } from './impact.js';
 import { getChangedFiles } from './diff.js';
 import { loadProjectConfig } from './config.js';
 import { disposeTreeSitter } from './treesitter.js';
@@ -33,6 +34,7 @@ Usage:
   npx dsh-codebase-chat --project <path> --index
   npx dsh-codebase-chat --project <path> --stats
   npx dsh-codebase-chat --project <path> --health
+  npx dsh-codebase-chat --project <path> --impact src/store.ts
   npx dsh-codebase-chat --project <path> --health --diff main
   npx dsh-codebase-chat --project <path> --watch
 
@@ -44,6 +46,7 @@ Options:
   -i, --index            Force re-index the project
   -t, --stats            Print indexing stats
   -H, --health           Deterministic static analysis (cycles, dead code, dupes, complexity)
+  --impact <file>        Blast radius — which files transitively depend on <file>
   -d, --diff <ref>       Scope --ask/--search/--health to files changed vs a git ref
   -w, --watch            Keep the index hot — rebuild incrementally on file changes
   -e, --embed            Enable local semantic embeddings (slower, more relevant)
@@ -69,6 +72,7 @@ async function main() {
       index: { type: 'boolean', short: 'i', default: false },
       stats: { type: 'boolean', short: 't', default: false },
       health: { type: 'boolean', short: 'H', default: false },
+      impact: { type: 'string' },
       diff: { type: 'string', short: 'd' },
       watch: { type: 'boolean', short: 'w', default: false },
       embed: { type: 'boolean', short: 'e', default: false },
@@ -155,6 +159,22 @@ async function main() {
     }
     const report = await analyzeProject(project, scope);
     console.log(formatHealthReport(report, lang));
+    exit(0);
+  }
+
+  if (values.impact) {
+    const r = await analyzeImpact(project, values.impact);
+    if (!r.ok) {
+      console.log(lang === 'en'
+        ? r.candidates.length
+          ? `Ambiguous target "${values.impact}" — candidates:\n  ${r.candidates.join('\n  ')}`
+          : `No code file matches "${values.impact}".`
+        : r.candidates.length
+          ? `Cible ambiguë "${values.impact}" — candidats :\n  ${r.candidates.join('\n  ')}`
+          : `Aucun fichier de code ne correspond à "${values.impact}".`);
+      exit(1);
+    }
+    console.log(formatImpactReport(r.report, lang));
     exit(0);
   }
 

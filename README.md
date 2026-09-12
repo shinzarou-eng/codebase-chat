@@ -109,7 +109,7 @@ Every answer from `codebase_chat` arrives with `[source: file:line]` receipts yo
 
 `/codebase-apply` writes safely — **dry-run** · **`.dsh-backups/`** before overwrite · **protected paths** · never outside the project.
 
-## The 12 tools
+## The 13 tools
 
 | Understand | Decide | Act | Explore |
 | --- | --- | --- | --- |
@@ -117,6 +117,7 @@ Every answer from `codebase_chat` arrives with `[source: file:line]` receipts yo
 | `codebase_search` | `codebase_audit` | `codebase_tasks` | `codebase_crea` |
 | `codebase_explain` | `codebase_report` | | |
 | `codebase_health` | `codebase_ceo` | | |
+| `codebase_impact` | | | |
 
 Same engine, three surfaces: **MCP tools** in your IDE, **slash commands** in DeepSeek Harness, **CLI flags** anywhere. Every tool takes `lang` (`fr`/`en`), `embed`, `promptOnly`, `localLlm`, `maxTokens`.
 

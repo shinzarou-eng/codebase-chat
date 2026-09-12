@@ -144,6 +144,7 @@ On Windows with a local clone you can also use the absolute path:
 | `codebase_player` | UX / playthrough brief |
 | `codebase_crea` | Creative / marketing ideas from the code |
 | `codebase_health` | **Deterministic** static analysis — cycles, dead code, duplication, complexity, health score. No LLM needed |
+| `codebase_impact` | **Deterministic** blast-radius analysis — which files transitively depend on a target (`file`, required). No LLM needed |
 
 All tools accept:
 

@@ -739,7 +739,7 @@
                 </div>
               </div>
               <ul class="space-y-2.5 text-[13.5px] text-[#93a1b5]">
-                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="pkg.p2l1">12 tools over stdio — works in Cursor, Claude, Windsurf</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="pkg.p2l1">13 tools over stdio — works in Cursor, Claude, Windsurf</span></li>
                 <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n-html="pkg.p2l2"><strong class="text-white font-medium">Prompt-only mode</strong> — no API key needed, the host model answers</span></li>
                 <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="pkg.p2l3">Optional direct LLM calls via DeepSeek / OpenAI-compatible API</span></li>
                 <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="pkg.p2l4">Local multilingual embeddings for semantic retrieval</span></li>
@@ -782,6 +782,7 @@
                   <tr><td class="font-mono text-[#6ec2ff]">codebase_player</td><td data-i18n="tools.r10">UX / playthrough brief from a user's point of view</td></tr>
                   <tr><td class="font-mono text-[#6ec2ff]">codebase_crea</td><td data-i18n="tools.r11">Creative and marketing angles extracted from the code</td></tr>
                   <tr><td class="font-mono text-[#6ec2ff]">codebase_health</td><td data-i18n-html="tools.r12"><span class="text-[#4ade80] font-medium">Deterministic</span> static analysis — cycles, dead code, duplication, complexity, health score. No LLM needed</td></tr>
+                  <tr><td class="font-mono text-[#6ec2ff]">codebase_impact</td><td data-i18n-html="tools.r13"><span class="text-[#4ade80] font-medium">Deterministic</span> blast radius — which files transitively depend on a target. No LLM needed</td></tr>
                 </tbody>
               </table>
             </div>
@@ -814,7 +815,7 @@
             <span data-i18n-html="demo.l1"><strong class="text-[#93a1b5]">CLI</strong> — index → stats → search → health → ask</span>
             <span data-i18n-html="demo.l5"><strong class="text-[#93a1b5]">Real chat</strong> — real MCP session on a 422-file codebase: 324 circular deps found, cited answers</span>
             <span data-i18n-html="demo.l4"><strong class="text-[#93a1b5]">PR review</strong> — real git repo, planted circular dep caught by <code class="font-mono text-[#6ec2ff]">--diff HEAD</code> + live <code class="font-mono text-[#6ec2ff]">--watch</code></span>
-            <span data-i18n-html="demo.l2"><strong class="text-[#93a1b5]">MCP</strong> — real stdio session, 12 tools, no API key</span>
+            <span data-i18n-html="demo.l2"><strong class="text-[#93a1b5]">MCP</strong> — real stdio session, 13 tools, no API key</span>
             <span data-i18n-html="demo.l3"><strong class="text-[#93a1b5]">FR</strong> — symbol fallback + French prompts</span>
           </div>
         </div>
@@ -1214,7 +1215,7 @@
           p1l4: "Application sûre : sauvegarde, dry-run, rollback",
           p1l5: 'Config par projet — <code class="font-mono text-xs text-[#6ec2ff]">.codebase-chat.json</code>',
           p2sub: "Serveur MCP autonome",
-          p2l1: "12 outils via stdio — fonctionne dans Cursor, Claude, Windsurf",
+          p2l1: "13 outils via stdio — fonctionne dans Cursor, Claude, Windsurf",
           p2l2: '<strong class="text-white font-medium">Mode prompt-only</strong> — aucune clé API requise, le modèle hôte répond',
           p2l3: "Appels LLM directs optionnels via API DeepSeek / compatible OpenAI",
           p2l4: "Embeddings multilingues locaux pour la recherche sémantique",
@@ -1238,6 +1239,7 @@
           r10: "Brief UX / playthrough du point de vue utilisateur",
           r11: "Angles créatifs et marketing extraits du code",
           r12: 'Analyse statique <span class="text-[#4ade80] font-medium">déterministe</span> — cycles, code mort, duplication, complexité, score de santé. Aucun LLM requis',
+          r13: 'Rayon d\u2019impact <span class="text-[#4ade80] font-medium">déterministe</span> — quels fichiers dépendent de la cible, transitivement. Aucun LLM requis',
           foot: 'Tous les outils acceptent <code class="font-mono text-[#6ec2ff]">projectPath</code>, <code class="font-mono text-[#6ec2ff]">lang</code> (fr/en), <code class="font-mono text-[#6ec2ff]">embed</code>, <code class="font-mono text-[#6ec2ff]">promptOnly</code> et <code class="font-mono text-[#6ec2ff]">localLlm</code>.'
         },
         demo: {
@@ -1251,7 +1253,7 @@
           l1: '<strong class="text-[#93a1b5]">CLI</strong> — index → stats → recherche → santé → question',
           l4: '<strong class="text-[#93a1b5]">Revue de PR</strong> — vrai repo git, cycle planté détecté par <code class="font-mono text-[#6ec2ff]">--diff HEAD</code> + <code class="font-mono text-[#6ec2ff]">--watch</code> en direct',
           l5: '<strong class="text-[#93a1b5]">Chat réel</strong> — vraie session MCP sur un codebase de 422 fichiers : 324 cycles détectés, réponses citées',
-          l2: '<strong class="text-[#93a1b5]">MCP</strong> — vraie session stdio, 12 outils, sans clé API',
+          l2: '<strong class="text-[#93a1b5]">MCP</strong> — vraie session stdio, 13 outils, sans clé API',
           l3: '<strong class="text-[#93a1b5]">FR</strong> — fallback de symboles + prompts en français',
           imgAlt: "démo de dsh-codebase-chat"
         },

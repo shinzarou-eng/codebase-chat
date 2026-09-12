@@ -45,7 +45,7 @@ function parseImports(text: string, relPath: string, known: Set<string>): string
   return out;
 }
 
-function parseExports(text: string): { name: string; line: number }[] {
+export function parseExports(text: string): { name: string; line: number }[] {
   const out: { name: string; line: number }[] = [];
   let m: RegExpExecArray | null;
   EXPORT_RE.lastIndex = 0;
@@ -67,7 +67,7 @@ function parseExports(text: string): { name: string; line: number }[] {
  * linear time, no combinatorial blow-up on dense graphs. Each reported
  * `Cycle.path` holds the members of one strongly connected component.
  */
-function findCycles(edges: ImportEdge[]): Cycle[] {
+export function findCycles(edges: ImportEdge[]): Cycle[] {
   const adj = new Map<string, string[]>();
   const nodes = new Set<string>();
   for (const e of edges) {
@@ -126,7 +126,7 @@ function findCycles(edges: ImportEdge[]): Cycle[] {
     .sort((a, b) => b.path.length - a.path.length);
 }
 
-function looksLikeEntry(rel: string, pkg: Record<string, any>): boolean {
+export function looksLikeEntry(rel: string, pkg: Record<string, any>): boolean {
   const base = basename(rel).toLowerCase().replace(extname(rel), '');
   if (ENTRY_BASENAMES.has(base)) return true;
   // Test/spec files and tool configs are entry points by convention —
@@ -179,9 +179,21 @@ export interface AnalyzeOptions {
   files?: Set<string>;
 }
 
-export async function analyzeProject(projectPath: string, opts: AnalyzeOptions = {}): Promise<HealthReport> {
+export interface ImportGraph {
+  abs: string;
+  codeFiles: string[];
+  fileTexts: Map<string, string>;
+  edges: ImportEdge[];
+  inDegree: Map<string, number>;
+}
+
+/**
+ * Walk the project once and build the local import graph (file → files it
+ * imports). Shared by `analyzeProject` and `analyzeImpact` so both run the
+ * same resolution rules.
+ */
+export async function collectImportGraph(projectPath: string): Promise<ImportGraph> {
   const abs = await findProjectRoot(resolveProjectPath(projectPath));
-  const scope = opts.files;
   const fileTexts = new Map<string, string>();
   const codeFiles: string[] = [];
   const walk = await getWalkOptions(abs);
@@ -195,10 +207,6 @@ export async function analyzeProject(projectPath: string, opts: AnalyzeOptions =
     codeFiles.push(rel);
     fileTexts.set(rel, text);
   }
-  const scopedFiles = scope ? codeFiles.filter(f => scope.has(f)) : codeFiles;
-
-  let pkg: Record<string, any> = {};
-  try { pkg = JSON.parse(await readFile(join(abs, 'package.json'), 'utf8')); } catch {}
 
   const known = new Set(codeFiles);
   const edges: ImportEdge[] = [];
@@ -209,6 +217,16 @@ export async function analyzeProject(projectPath: string, opts: AnalyzeOptions =
       inDegree.set(to, (inDegree.get(to) ?? 0) + 1);
     }
   }
+  return { abs, codeFiles, fileTexts, edges, inDegree };
+}
+
+export async function analyzeProject(projectPath: string, opts: AnalyzeOptions = {}): Promise<HealthReport> {
+  const { abs, codeFiles, fileTexts, edges, inDegree } = await collectImportGraph(projectPath);
+  const scope = opts.files;
+  const scopedFiles = scope ? codeFiles.filter(f => scope.has(f)) : codeFiles;
+
+  let pkg: Record<string, any> = {};
+  try { pkg = JSON.parse(await readFile(join(abs, 'package.json'), 'utf8')); } catch {}
 
   // Full-graph cycles — when scoped, keep only cycles touching a changed file.
   const cycles = findCycles(edges)

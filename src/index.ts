@@ -8,6 +8,8 @@ export { scoreChunks, selectChunks } from './retriever.js';
 export { getEmbedding, getEmbeddings, getExtractor, cosineSimilarity } from './embeddings.js';
 export { analyzeProject, formatHealthReport, formatHealthReportMd } from './analysis.js';
 export type { HealthReport, Cycle, UnusedExport, CloneGroup, Hotspot } from './analysis.js';
+export { analyzeImpact, formatImpactReport, formatImpactReportMd } from './impact.js';
+export type { ImpactReport, ImpactResult, ImpactDependent } from './impact.js';
 export { loadProjectConfig, clearConfigCache, globToRegExp, matchesAnyGlob, CONFIG_FILE } from './config.js';
 export type { ProjectConfig, ConfigLang } from './config.js';
 export { getChangedFiles } from './diff.js';

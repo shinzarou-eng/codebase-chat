@@ -6,7 +6,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles } from "dsh-codebase-chat";
+import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd } from "dsh-codebase-chat";
 import { callLocalLlm, isLocalLlmEnabled } from "./local-llm.mjs";
 
 // `dsh-codebase-chat-mcp setup` runs the interactive client-config wizard
@@ -199,6 +199,7 @@ const TOOLS = [
   { name: "codebase_chat", description: "Open Q/A on the codebase.", extra: { query: { type: "string" } }, required: ["query"] },
   { name: "codebase_crea", description: "Generate creative ideas, slogans or marketing concepts from the code.", extra: { focus: { type: "string" } } },
   { name: "codebase_health", description: "Deterministic static analysis: circular deps, dead code, duplication, complexity hotspots, health score. Returns findings directly — no LLM call.", deterministic: true },
+  { name: "codebase_impact", description: "Blast-radius analysis: which files transitively depend on a target file — what breaks if it changes. Deterministic, no LLM call.", extra: { file: { type: "string", description: "File to analyze (relative path or name, e.g. src/store.ts)" } }, required: ["file"], deterministic: true },
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -242,6 +243,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       const report = await analyzeProject(project, scope);
       const text = `${scopeNote}${formatHealthReportMd(report, lang)}\n\n<details><summary>JSON</summary>\n\n\`\`\`json\n${JSON.stringify(report, null, 2)}\n\`\`\`\n</details>`;
+      return { content: [{ type: "text", text }] };
+    }
+    if (name === "codebase_impact") {
+      const project = getProjectPath(args?.projectPath);
+      const lang = args?.lang === "en" ? "en" : "fr";
+      const file = String(args?.file ?? args?.query ?? "").trim();
+      if (!file) {
+        return { content: [{ type: "text", text: `Error: \`file\` is required (e.g. "src/store.ts").` }], isError: true };
+      }
+      const r = await analyzeImpact(project, file);
+      if (!r.ok) {
+        const msg = r.candidates.length
+          ? (lang === "en" ? `Ambiguous target \`${file}\` — candidates:` : `Cible ambiguë \`${file}\` — candidats :`)
+            + "\n" + r.candidates.map((c) => `- \`${c}\``).join("\n")
+          : (lang === "en" ? `No code file matches \`${file}\`.` : `Aucun fichier de code ne correspond à \`${file}\`.`);
+        return { content: [{ type: "text", text: msg }] };
+      }
+      const text = `${formatImpactReportMd(r.report, lang)}\n\n<details><summary>JSON</summary>\n\n\`\`\`json\n${JSON.stringify(r.report, null, 2)}\n\`\`\`\n</details>`;
       return { content: [{ type: "text", text }] };
     }
     const { prompt, projectName } = await buildPrompt(name, args);
