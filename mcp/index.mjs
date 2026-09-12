@@ -129,8 +129,8 @@ async function buildPrompt(name, args) {
   const mode = name.replace(/^codebase_/, "");
   const final = useLocal
     ? `${context}${staticSection}\n\n${lang === "en"
-        ? `Answer based only on the codebase context above (${mode} mode). Be concise and cite file paths and lines.${query ? ` Question: ${query}` : ""}`
-        : `Réponds en t'appuyant uniquement sur le contexte du codebase ci-dessus (mode ${mode}). Sois concis et cite les chemins de fichiers et lignes.${query ? ` Question : ${query}` : ""}`}\n\n${lang === "en" ? "Answer" : "Réponse"} :`
+        ? `Answer based only on the codebase context above (${mode} mode). Structure your answer in short sections with bullet points, and cite each fact as [source: path:line].${query ? ` Question: ${query}` : ""}`
+        : `Réponds en t'appuyant uniquement sur le contexte du codebase ci-dessus (mode ${mode}). Structure ta réponse en sections courtes avec des puces, et cite chaque fait avec [source: fichier:ligne].${query ? ` Question : ${query}` : ""}`}\n\n${lang === "en" ? "Answer" : "Réponse"} :`
     : buildToolPrompt(name, {
         context: `${context}${staticSection}`,
         projectName,

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.3 / mcp 0.8.5 — Fuller local answers
+
+**Fixed**
+
+- Local-mode answers could collapse to a single line: "be concise" plus a 1.5B model produced near-empty output. The compact instruction now asks for short bulleted sections with `[source: file:line]` citations, and the generation cap rises to 1536 tokens.
+
 ## 0.25.2 / mcp 0.8.4 — Local answers actually grounded
 
 **Fixed**

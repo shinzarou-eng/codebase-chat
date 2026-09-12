@@ -10,7 +10,7 @@ import { getCacheDir } from './project.js';
 // set to an `hf:owner/repo:QUANT` URI or an absolute path to a .gguf file.
 const DEFAULT_MODEL_URI = 'hf:Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M';
 const LOCAL_CONTEXT_SIZE = 8192;
-const LOCAL_MAX_TOKENS = 1024;
+const LOCAL_MAX_TOKENS = 1536;
 
 export function isLocalLlmEnabled(): boolean {
   return !!(process.env.CODEBASE_LOCAL_LLM || '').trim();
