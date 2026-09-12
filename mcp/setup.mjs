@@ -124,13 +124,12 @@ export function detectClients(home = homedir()) {
 
 // On Windows, MCP clients launched as GUI apps can't resolve `npx` (it's a
 // .cmd shim); wrapping in `cmd /c` is the documented workaround.
-export function serverEntry(apiKey = "", localLlm = false) {
+export function serverEntry(apiKey = "") {
   const entry = isWin
     ? { command: "cmd.exe", args: ["/c", "npx", "-y", PKG] }
     : { command: "npx", args: ["-y", PKG] };
   const env = {};
   if (apiKey) env.DEEPSEEK_API_KEY = apiKey;
-  if (localLlm) env.CODEBASE_LOCAL_LLM = "1";
   if (Object.keys(env).length) entry.env = env;
   return entry;
 }
@@ -184,17 +183,13 @@ const T = {
     modeTitle: "  Mode de réponse :",
     mode1: "    1. prompt-only — le modèle hôte répond (recommandé, meilleure qualité)",
     mode2: "    2. clé API — le serveur appelle DeepSeek/OpenAI directement",
-    mode3: "    3. local — modèle embarqué, 100 % hors-ligne (~1 Go au 1er lancement, qualité moindre)",
     choice: "  Choix [1] : ",
-    invalidMode: "  Choix invalide — entre 1, 2 ou 3.",
+    invalidMode: "  Choix invalide — entre 1 ou 2.",
     apiKey: "  Clé API DeepSeek/OpenAI : ",
     apiKeyEmpty: "  Clé vide — réessaie (ou Ctrl+C pour annuler).",
     apiKeyNote: "  Note : la clé est stockée en clair dans le JSON de config du client.",
-    localNote1: "  Note : petit modèle (Qwen2.5-1.5B) — bon pour les recherches rapides,",
-    localNote2: "  préfère le modèle hôte pour les rapports. localLlm: true reste dispo par appel.",
     ok: (name, path) => `  [ok] ${name} -> ${path}`,
     restart: (n) => `\n  Redémarre ${n > 1 ? "les clients" : "le client"} : les outils codebase_* apparaissent.`,
-    localActive: "  Mode local actif : réponses hors-ligne, premier appel télécharge le modèle (~1 Go).",
     promptActive: "  Mode prompt-only actif : les outils renvoient le prompt au modèle hôte.",
     manual: "\n  Autre client MCP ? Entrée à copier manuellement :",
     checking: "  Vérification de l'installation...",
@@ -212,17 +207,13 @@ const T = {
     modeTitle: "  Answer mode:",
     mode1: "    1. prompt-only — the host model answers (recommended, best quality)",
     mode2: "    2. API key — the server calls DeepSeek/OpenAI directly",
-    mode3: "    3. local — embedded model, 100% offline (~1 GB on first run, lower quality)",
     choice: "  Choice [1]: ",
-    invalidMode: "  Invalid choice — enter 1, 2 or 3.",
+    invalidMode: "  Invalid choice — enter 1 or 2.",
     apiKey: "  DeepSeek/OpenAI API key: ",
     apiKeyEmpty: "  Empty key — try again (or Ctrl+C to cancel).",
     apiKeyNote: "  Note: the key is stored in plaintext in the client's JSON config.",
-    localNote1: "  Note: small model (Qwen2.5-1.5B) — fine for quick lookups,",
-    localNote2: "  prefer the host model for reports. localLlm: true stays available per call.",
     ok: (name, path) => `  [ok] ${name} -> ${path}`,
     restart: (n) => `\n  Restart ${n > 1 ? "the clients" : "the client"}: codebase_* tools will appear.`,
-    localActive: "  Local mode active: offline answers, first call downloads the model (~1 GB).",
     promptActive: "  Prompt-only mode active: tools return the prompt to the host model.",
     manual: "\n  Another MCP client? Copy this entry manually:",
     checking: "  Verifying installation...",
@@ -332,16 +323,14 @@ export async function runSetup() {
   console.log(t.modeTitle);
   console.log(t.mode1);
   console.log(t.mode2);
-  console.log(t.mode3);
   let mode = "";
-  while (!["1", "2", "3"].includes(mode)) {
+  while (!["1", "2"].includes(mode)) {
     mode = (await ask(t.choice, "1")) || "1";
-    if (!["1", "2", "3"].includes(mode)) console.log(t.invalidMode);
+    if (!["1", "2"].includes(mode)) console.log(t.invalidMode);
     if (closed) { mode = "1"; break; }
   }
 
   let apiKey = "";
-  let localLlm = false;
   if (mode === "2") {
     while (!apiKey) {
       apiKey = await askSecret(t.apiKey);
@@ -350,12 +339,8 @@ export async function runSetup() {
       if (closed) break;
     }
     if (apiKey) console.log(t.apiKeyNote);
-  } else if (mode === "3") {
-    localLlm = true;
-    console.log(t.localNote1);
-    console.log(t.localNote2);
   }
-  const entry = serverEntry(apiKey, localLlm);
+  const entry = serverEntry(apiKey);
 
   for (const client of chosen) {
     const path = client.configPath(home, process.cwd());
@@ -365,8 +350,7 @@ export async function runSetup() {
   }
 
   console.log(t.restart(chosen.length));
-  if (localLlm) console.log(t.localActive);
-  else if (!apiKey) console.log(t.promptActive);
+  if (!apiKey) console.log(t.promptActive);
 
   console.log(t.checking);
   try {

@@ -28,9 +28,9 @@
 npx dsh-codebase-chat-mcp setup
 ```
 
-The wizard detects **Claude, Cursor, Windsurf, VS Code, Zed, Gemini CLI, Kiro, Cline and Roo Code**, asks how you want answers (host model, API key, or offline local model), writes the MCP config, done.
+The wizard detects **Claude, Cursor, Windsurf, VS Code, Zed, Gemini CLI, Kiro, Cline and Roo Code**, asks how you want answers (host model or API key), writes the MCP config, done.
 No JSON to edit — and **no API key**: in `promptOnly` mode your host model does the thinking,
-or go **fully offline** with the embedded local model (`localLlm`) — no key, no host, no cloud.
+or get a **fully offline** answer with the deterministic report (`--no-llm`) — no model, no key, no cloud.
 
 Other paths — DeepSeek Harness plugin · CLI · from source · manual config: **[Reference](#reference)**.
 
@@ -98,7 +98,7 @@ Every answer from `codebase_chat` arrives with `[source: file:line]` receipts yo
 | Code stays on your machine | ❌ | ❌ | ✅ |
 | Inside Claude / Cursor / Windsurf | ❌ | ~ | ✅ |
 | Deterministic health score, no LLM | ❌ | ❌ | ✅ |
-| Answers fully offline (embedded LLM) | ❌ | ❌ | ✅ |
+| Deterministic report, zero model (`--no-llm`) | ❌ | ❌ | ✅ |
 | Free — no API key, no account | ~ | ❌ | ✅ |
 
 ## How it works
@@ -119,7 +119,7 @@ Every answer from `codebase_chat` arrives with `[source: file:line]` receipts yo
 | `codebase_health` | `codebase_ceo` | | |
 | `codebase_impact` | | | |
 
-Same engine, three surfaces: **MCP tools** in your IDE, **slash commands** in DeepSeek Harness, **CLI flags** anywhere. Every tool takes `lang` (`fr`/`en`), `embed`, `promptOnly`, `localLlm`, `maxTokens`.
+Same engine, three surfaces: **MCP tools** in your IDE, **slash commands** in DeepSeek Harness, **CLI flags** anywhere. Every tool takes `lang` (`fr`/`en`), `embed`, `promptOnly`, `maxTokens`.
 
 ## Reference
 
@@ -144,7 +144,7 @@ npx dsh-codebase-chat --project C:\my-app --health --diff main   # only what cha
 npx dsh-codebase-chat --project C:\my-app --watch    # index stays hot while you code
 npx dsh-codebase-chat --project C:\my-app --prompt intelligence   # same banner brief the IDE gets — pipe to any LLM
 npx dsh-codebase-chat --project C:\my-app --prompt intelligence --call    # DeepSeek/OpenAI answers directly (API key)
-npx dsh-codebase-chat --project C:\my-app --prompt intelligence --local   # embedded model answers, fully offline
+npx dsh-codebase-chat --project C:\my-app --prompt intelligence --no-llm  # deterministic report — zero model, zero key
 npx dsh-codebase-chat --project C:\my-app --prompt intelligence --no-llm  # deterministic report — zero LLM, zero key
 ```
 
@@ -229,7 +229,6 @@ dsh --profile headless '/codebase-git --project C:\my-app'
 | `DEEPSEEK_API_KEY` / `OPENAI_API_KEY` | — | Direct-LLM mode only |
 | `DEEPSEEK_BASE_URL` / `OPENAI_BASE_URL` | `https://api.deepseek.com/v1` | Custom endpoint |
 | `CODEBASE_MODEL` | `deepseek-chat` | Model for direct-LLM mode |
-| `CODEBASE_LOCAL_LLM` | — | `1` enables the embedded local model (offline answers); `hf:owner/repo:QUANT` or a `.gguf` path picks another model |
 
 </details>
 
@@ -273,10 +272,10 @@ pnpm install && pnpm build && pnpm test && pnpm typecheck
 <br>
 
 **Does it send my code to the cloud?**
-Indexing, retrieval, and prompt building all run on your machine. In prompt-only mode the server makes no network calls itself — the assembled context is read by your host model (cloud or local, your choice). For zero-network answers end to end, enable the embedded local model (`localLlm`).
+Indexing, retrieval, and prompt building all run on your machine. In prompt-only mode the server makes no network calls itself — the assembled context is read by your host model (cloud or local, your choice). For zero-network output end to end, use `--no-llm`: a deterministic report computed from your code only.
 
 **Do I need an API key?**
-No — three ways to get answers: the host model (`promptOnly`, best quality), a DeepSeek/OpenAI key, or the embedded local model (`localLlm`, fully offline). The local model is small — great for quick lookups, prefer a hosted model for full reports. Inside DeepSeek Harness, the plugin uses your configured model.
+No — three ways to get output: the host model (`promptOnly`, best quality — pipe it to a local model like Ollama for offline answers), a DeepSeek/OpenAI key (`--call`), or the deterministic report (`--no-llm`, no model at all). Inside DeepSeek Harness, the plugin uses your configured model.
 
 **Which languages are supported?**
 French and English via `lang` on every tool. Source-side, AST covers JS/TS, Python, Go, Rust, Java, C#, PHP — the rest is indexed line by line.
@@ -298,7 +297,7 @@ Then restart `dsh --profile web`.
 
 | | |
 | --- | --- |
-| **Shipped** | tree-sitter AST (7 languages), deterministic health score, MCP setup wizard, `.codebase-chat.json`, `--diff` scoping, `--watch` mode, embedded local LLM |
+| **Shipped** | tree-sitter AST (7 languages), deterministic health score + `--no-llm` report, MCP setup wizard, `.codebase-chat.json`, `--diff` scoping, `--watch` mode |
 | **Next** | GitHub Issues export from TASKS.md, prompt language packs (ES/DE/PT) |
 | **Planned** | VS Code extension, HTTP/SSE transport, PR review mode, report export |
 | **Exploring** | multi-repo workspaces, shared team index cache, CI bot |

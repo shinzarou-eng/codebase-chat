@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.27.0 / mcp 0.9.0 — Embedded local LLM removed
+
+**Removed**
+
+- The embedded 1.5B local model (`--local`, `localLlm`, `CODEBASE_LOCAL_LLM`, `node-llama-cpp`) is gone — too fragile for the value (VRAM/CUDA failures, ~1 GB download, quality far below hosted models). Offline answers now go through `--no-llm` (deterministic, zero model) or by piping `--prompt` output to a local model you control (Ollama & co).
+- The setup wizard no longer offers a "local model" mode — it asks prompt-only vs API key.
+
 ## 0.26.0 — Deterministic `--no-llm` report
 
 **New**

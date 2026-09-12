@@ -6,7 +6,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, callLocalLlm, isLocalLlmEnabled } from "dsh-codebase-chat";
+import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt } from "dsh-codebase-chat";
 
 // `dsh-codebase-chat-mcp setup` runs the interactive client-config wizard
 // instead of starting the MCP server.
@@ -99,11 +99,7 @@ const ANALYSIS_TOOLS = new Set([
 async function buildPrompt(name, args) {
   const lang = (args.lang || "fr").toLowerCase();
   const base = getOptions(name, args);
-  // The local model context is small — cap the assembled prompt accordingly.
-  const useLocal = args.localLlm === true || isLocalLlmEnabled();
-  const maxTokens = useLocal
-    ? Math.min(Math.max(Number(args.maxTokens) || 3500, 1000), 6000)
-    : Math.min(Math.max(Number(args.maxTokens) || 60000, 1000), 200000);
+  const maxTokens = Math.min(Math.max(Number(args.maxTokens) || 60000, 1000), 200000);
 
   const { context, absProject } = await buildContext({
     ...base,
@@ -123,24 +119,18 @@ async function buildPrompt(name, args) {
 
   const projectName = basename(await findProjectRoot(resolveProjectPath(base.project)));
   const query = base.query || base.searchQuery || "";
-  // The embedded model can't follow the full structured brief — a compact
-  // instruction keeps its answer grounded in the code. Hosted/host models
-  // still get the same rich prompt the DeepSeek Harness plugin sends.
-  const mode = name.replace(/^codebase_/, "");
-  const final = useLocal
-    ? `${context}${staticSection}\n\n${lang === "en"
-        ? `Answer based only on the codebase context above (${mode} mode). Structure your answer in short sections with bullet points, and cite each fact as [source: path:line].${query ? ` Question: ${query}` : ""}`
-        : `Réponds en t'appuyant uniquement sur le contexte du codebase ci-dessus (mode ${mode}). Structure ta réponse en sections courtes avec des puces, et cite chaque fait avec [source: fichier:ligne].${query ? ` Question : ${query}` : ""}`}\n\n${lang === "en" ? "Answer" : "Réponse"} :`
-    : buildToolPrompt(name, {
-        context: `${context}${staticSection}`,
-        projectName,
-        lang,
-        style: args.style,
-        query,
-        focus: base.query || "",
-        filePath: base.filePath || "",
-        description: base.query || "",
-      });
+  // Same rich prompt the DeepSeek Harness plugin sends — ASCII banner,
+  // persona, mandatory sections, citation rules — for identical reports.
+  const final = buildToolPrompt(name, {
+    context: `${context}${staticSection}`,
+    projectName,
+    lang,
+    style: args.style,
+    query,
+    focus: base.query || "",
+    filePath: base.filePath || "",
+    description: base.query || "",
+  });
 
   return { prompt: final, projectName };
 }
@@ -159,10 +149,6 @@ const COMMON_PROPS = {
   promptOnly: {
     type: "boolean",
     description: "Return the built context+prompt as text instead of calling an LLM — the host model (Cursor, Claude, Windsurf...) answers it directly. Default: true when no API key is configured."
-  },
-  localLlm: {
-    type: "boolean",
-    description: "Answer with a small embedded local model (node-llama-cpp) — fully offline, no API key, no host model. Downloads ~1GB GGUF on first use. Quality is lower than hosted models."
   }
 };
 
@@ -244,13 +230,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return { content: [{ type: "text", text }] };
     }
     const { prompt, projectName } = await buildPrompt(name, args);
-    // Embedded local model: fully offline answers, no API key, no host model.
-    const useLocal = args?.localLlm === true || isLocalLlmEnabled();
-    if (useLocal) {
-      const header = `> **dsh-codebase-chat** · \`${projectName}\` · local model (offline, small model — verify citations)\n\n---\n\n`;
-      const content = await callLocalLlm(prompt, args.lang);
-      return { content: [{ type: "text", text: `${header}${content}` }] };
-    }
     // Prompt mode: hand the assembled context+prompt back to the host model.
     // Default when no API key is configured, or when promptOnly is requested.
     const wantsPrompt = args?.promptOnly === true || !apiKey;

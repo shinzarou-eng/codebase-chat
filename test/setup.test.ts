@@ -32,22 +32,17 @@ describe("setup wizard", () => {
   it("mergeConfig zed format uses context_servers with command.path/args/env", () => {
     const out = mergeConfig(
       { context_servers: { other: { command: { path: "x" } } } },
-      { command: "npx", args: ["-y", "pkg"], env: { CODEBASE_LOCAL_LLM: "1" } },
+      { command: "npx", args: ["-y", "pkg"], env: { DEEPSEEK_API_KEY: "sk-x" } },
       "zedContextServers"
     );
     expect(out.context_servers["dsh-codebase-chat"].command.path).toBe("npx");
-    expect(out.context_servers["dsh-codebase-chat"].command.env).toEqual({ CODEBASE_LOCAL_LLM: "1" });
+    expect(out.context_servers["dsh-codebase-chat"].command.env).toEqual({ DEEPSEEK_API_KEY: "sk-x" });
     expect(out.context_servers.other.command.path).toBe("x");
   });
 
   it("serverEntry omits env when no api key, sets DEEPSEEK_API_KEY when given", () => {
     expect(serverEntry().env).toBeUndefined();
     expect(serverEntry("sk-x").env).toEqual({ DEEPSEEK_API_KEY: "sk-x" });
-  });
-
-  it("serverEntry sets CODEBASE_LOCAL_LLM for local mode", () => {
-    expect(serverEntry("", true).env).toEqual({ CODEBASE_LOCAL_LLM: "1" });
-    expect(serverEntry("sk-x", true).env).toEqual({ DEEPSEEK_API_KEY: "sk-x", CODEBASE_LOCAL_LLM: "1" });
   });
 
   it("detectClients finds cursor when ~/.cursor exists", () => {

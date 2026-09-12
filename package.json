@@ -1,6 +1,6 @@
 {
   "name": "dsh-codebase-chat",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "description": "Multi-language codebase intelligence for DeepSeek Harness and MCP-compatible IDEs: chat, search, audit, refactor, and board-ready reports from local code.",
   "homepage": "https://shinzarou-eng.github.io/dsh-codebase-chat",
   "repository": {
@@ -68,9 +68,6 @@
     "gpt-tokenizer": "^4.0.0",
     "tree-sitter-wasms": "^0.1.13",
     "web-tree-sitter": "^0.22.6"
-  },
-  "optionalDependencies": {
-    "node-llama-cpp": "^3.20.0"
   },
   "keywords": [
     "deepseek-harness",

@@ -22,8 +22,9 @@
 This package exposes the same codebase intelligence tools as the DeepSeek Harness plugin, but as a standalone **Model Context Protocol (MCP)** server. It scans a local project, builds a sourced prompt, and either:
 
 - returns the prompt to the **host model** (Cursor, Claude, Windsurf…) — the default when no API key is configured, or with `promptOnly: true`; or
-- calls a DeepSeek / OpenAI-compatible API itself when `DEEPSEEK_API_KEY` or `OPENAI_API_KEY` is set; or
-- answers with a **small embedded local model** (`localLlm: true` or `CODEBASE_LOCAL_LLM=1`) — fully offline, no key, no host. Downloads a ~1GB GGUF on first use; quality is lower than hosted models, so verify citations.
+- calls a DeepSeek / OpenAI-compatible API itself when `DEEPSEEK_API_KEY` or `OPENAI_API_KEY` is set.
+
+Deterministic tools (`codebase_health`, `codebase_impact`) need no model at all — same input, same output, fully offline.
 
 In prompt mode your code never leaves your machine at all.
 
@@ -51,7 +52,7 @@ npx dsh-codebase-chat-mcp
 npx dsh-codebase-chat-mcp setup
 ```
 
-The wizard detects installed MCP clients (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Zed, Gemini CLI, Kiro, Cline, Roo Code), lets you pick which ones to configure, asks how you want answers (prompt-only host model, direct API key, or the embedded local model for fully offline replies), and writes the `dsh-codebase-chat` server entry for you — preserving your existing `mcpServers` and backing up each config file (`.bak`). It always prints a manual entry at the end for any other MCP client. No API key needed for prompt-only or local mode.
+The wizard detects installed MCP clients (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Zed, Gemini CLI, Kiro, Cline, Roo Code), lets you pick which ones to configure, asks how you want answers (prompt-only host model or direct API key), and writes the `dsh-codebase-chat` server entry for you — preserving your existing `mcpServers` and backing up each config file (`.bak`). It always prints a manual entry at the end for any other MCP client. No API key needed for prompt-only mode.
 
 ### From source
 
@@ -77,7 +78,6 @@ Optional:
 
 - `DEEPSEEK_BASE_URL` or `OPENAI_BASE_URL` (default: `https://api.deepseek.com/v1`)
 - `CODEBASE_MODEL` (default: `deepseek-chat`)
-- `CODEBASE_LOCAL_LLM` — `1`/`true` enables the embedded local model (Qwen2.5-1.5B-Instruct Q4_K_M); set an `hf:owner/repo:QUANT` URI or an absolute `.gguf` path to use a different model. Requires the optional `node-llama-cpp` dependency.
 
 ### Per-project `.codebase-chat.json`
 
@@ -153,7 +153,6 @@ All tools accept:
 - `focus` / `query` (string, optional)
 - `embed` (boolean, local semantic embeddings for better retrieval)
 - `promptOnly` (boolean — return the built prompt for the host model instead of calling the LLM)
-- `localLlm` (boolean — answer with the embedded local model; fully offline, no API key)
 - `diff` (string, git ref e.g. `main`, `HEAD~5` — scopes retrieval and `codebase_health` to files changed vs that ref, including uncommitted and untracked files)
 
 ---

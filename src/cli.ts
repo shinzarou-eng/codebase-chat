@@ -8,13 +8,12 @@ import { findProjectRoot, getWalkOptions, resolveProjectPath } from './project.j
 import { analyzeProject, formatHealthReport } from './analysis.js';
 import { analyzeImpact, formatImpactReport } from './impact.js';
 import { buildToolPrompt } from './prompts.js';
-import { callLocalLlm, isLocalLlmEnabled } from './local-llm.js';
 import { buildDeterministicReport } from './report.js';
 import { getChangedFiles } from './diff.js';
 import { loadProjectConfig } from './config.js';
 import { disposeTreeSitter } from './treesitter.js';
 
-// Minimal Markdown→ANSI renderer so --call/--local answers read like a real
+// Minimal Markdown→ANSI renderer so --call/--no-llm answers read like a real
 // report in the terminal instead of raw `##`/`**`/backticks. Only used when
 // stdout is a TTY — piped output stays plain Markdown.
 const ANSI = { reset: '\x1b[0m', bold: '\x1b[1m', dim: '\x1b[2m', cyan: '\x1b[36m', yellow: '\x1b[33m', magenta: '\x1b[35m', green: '\x1b[32m' };
@@ -72,7 +71,7 @@ Usage:
   npx dsh-codebase-chat --project <path> --watch
   npx dsh-codebase-chat --project <path> --prompt intelligence
   npx dsh-codebase-chat --project <path> --prompt intelligence --call   # answered via DEEPSEEK_API_KEY
-  npx dsh-codebase-chat --project <path> --prompt intelligence --local  # answered 100% offline
+  npx dsh-codebase-chat --project <path> --prompt intelligence --no-llm # deterministic report, zero model
 
 Options:
   -p, --project <path>   Project directory (default: current directory)
@@ -93,8 +92,6 @@ Options:
   --call                 With --prompt: send it to the API (needs DEEPSEEK_API_KEY
                          or OPENAI_API_KEY; DEEPSEEK_BASE_URL / CODEBASE_MODEL
                          customize endpoint/model) instead of printing it.
-  --local                With --prompt: answer with the embedded local model
-                         (node-llama-cpp, ~1 GB download on first use, offline).
   --no-llm               With --prompt: deterministic full report — pure static
                          analysis, no model, no key, no network.
   -w, --watch            Keep the index hot — rebuild incrementally on file changes
@@ -127,7 +124,6 @@ async function main() {
       focus: { type: 'string' },
       style: { type: 'string' },
       call: { type: 'boolean', default: false },
-      local: { type: 'boolean', default: false },
       'no-llm': { type: 'boolean', default: false },
       watch: { type: 'boolean', short: 'w', default: false },
       embed: { type: 'boolean', short: 'e', default: false },
@@ -250,8 +246,6 @@ async function main() {
       console.log(process.stdout.isTTY ? renderAnswerTerminal(report) : report);
       exit(0);
     }
-    // The embedded model has a small context window — cap the prompt budget.
-    const useLocal = values.local || isLocalLlmEnabled();
     const result = await buildContext({
       project: values.project,
       query,
@@ -260,7 +254,6 @@ async function main() {
       lang,
       embed: values.embed,
       diff: values.diff,
-      maxTokens: useLocal ? 3500 : undefined,
     });
     // Same parity as the MCP server: report modes get the deterministic
     // static analysis appended to the retrieved context.
@@ -276,36 +269,21 @@ async function main() {
     const projectName = basename(result.absProject);
     let prompt: string;
     try {
-      // Small embedded models can't follow the full structured brief — give
-      // them a compact instruction so the answer stays grounded in the code.
-      prompt = useLocal
-        ? `${result.context}${staticSection}\n\n${lang === 'en'
-            ? `Answer based only on the codebase context above (${mode} mode). Structure your answer in short sections with bullet points, and cite each fact as [source: path:line].${query ? ` Question: ${query}` : ''}`
-            : `Réponds en t'appuyant uniquement sur le contexte du codebase ci-dessus (mode ${mode}). Structure ta réponse en sections courtes avec des puces, et cite chaque fait avec [source: fichier:ligne].${query ? ` Question : ${query}` : ''}`}\n\n${lang === 'en' ? 'Answer' : 'Réponse'} :`
-        : buildToolPrompt(tool, {
-            context: `${result.context}${staticSection}`,
-            projectName,
-            lang,
-            style: values.style,
-            query,
-            focus: values.focus ?? query,
-            filePath: values.file ?? '',
-            description: query,
-          });
+      prompt = buildToolPrompt(tool, {
+        context: `${result.context}${staticSection}`,
+        projectName,
+        lang,
+        style: values.style,
+        query,
+        focus: values.focus ?? query,
+        filePath: values.file ?? '',
+        description: query,
+      });
     } catch {
       console.error(lang === 'en'
         ? `unknown prompt mode "${mode}" — expected: intelligence, report, audit, tasks, ceo, player, chat, search, explain, refactor, crea`
         : `mode de prompt inconnu "${mode}" — attendu : intelligence, report, audit, tasks, ceo, player, chat, search, explain, refactor, crea`);
       exit(1);
-    }
-
-    if (values.local || isLocalLlmEnabled()) {
-      console.error(lang === 'en'
-        ? 'Answering with the embedded local model (first run downloads ~1 GB)...'
-        : 'Réponse via le modèle local embarqué (premier lancement : ~1 Go de téléchargement)...');
-      const answer = await callLocalLlm(prompt, lang);
-      console.log(process.stdout.isTTY ? renderAnswerTerminal(answer) : answer);
-      exit(0);
     }
 
     if (values.call) {

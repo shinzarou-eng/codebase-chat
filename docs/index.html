@@ -399,7 +399,7 @@
         <div class="relative max-w-6xl mx-auto px-6 pt-24 pb-20 text-center">
           <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/CHANGELOG.md" class="inline-flex items-center gap-2.5 pl-1.5 pr-3.5 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] text-[13px] font-medium text-[#93a1b5] mb-10 reveal reveal-1 hover:border-white/20 hover:text-white transition">
             <span class="px-2 py-0.5 rounded-full bg-[#4ade80]/15 text-[#4ade80] text-[11px] font-bold" data-i18n="hero.new">NEW</span>
-            <span data-i18n="hero.badge">v0.26.0 — deterministic --no-llm report</span>
+            <span data-i18n="hero.badge">v0.27.0 — deterministic --no-llm report</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
           </a>
 
@@ -693,7 +693,7 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
               </div>
               <h3 class="font-semibold text-white mb-2" data-i18n="feat.c6t">MCP Compatible</h3>
-              <p class="text-[13.5px] text-[#93a1b5] leading-relaxed" data-i18n="feat.c6b">Standalone server for Cursor, Claude, Windsurf, Zed &amp; co — key-free prompt-only, or fully offline via the embedded local model.</p>
+              <p class="text-[13.5px] text-[#93a1b5] leading-relaxed" data-i18n="feat.c6b">Standalone server for Cursor, Claude, Windsurf, Zed &amp; co — key-free prompt-only, or deterministic reports with zero model.</p>
             </div>
           </div>
         </div>
@@ -744,7 +744,7 @@
                 <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="pkg.p2l3">Optional direct LLM calls via DeepSeek / OpenAI-compatible API</span></li>
                 <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="pkg.p2l4">Local multilingual embeddings for semantic retrieval</span></li>
                 <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n-html="pkg.p2l5"><code class="font-mono text-xs text-[#6ec2ff]">setup</code> wizard — detects your IDE, picks your answer mode, writes the config</span></li>
-                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n-html="pkg.p2l6"><strong class="text-white font-medium">Fully offline</strong> — embedded local model answers, no key, no host</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n-html="pkg.p2l6"><strong class="text-white font-medium">Fully offline</strong> — deterministic <code class="font-mono">--no-llm</code> report, no model, no key</span></li>
               </ul>
               <div class="term mt-7 px-4 py-3 font-mono text-xs text-[#c9d1d9]"><span class="text-[#5b6679]">$</span> npx dsh-codebase-chat-mcp</div>
             </div>
@@ -787,7 +787,7 @@
               </table>
             </div>
             <div class="px-5 py-3.5 border-t border-white/[0.05] text-xs text-[#5b6679]" data-i18n-html="tools.foot">
-              All tools accept <code class="font-mono text-[#6ec2ff]">projectPath</code>, <code class="font-mono text-[#6ec2ff]">lang</code> (fr/en), <code class="font-mono text-[#6ec2ff]">embed</code>, <code class="font-mono text-[#6ec2ff]">promptOnly</code>, and <code class="font-mono text-[#6ec2ff]">localLlm</code>.
+              All tools accept <code class="font-mono text-[#6ec2ff]">projectPath</code>, <code class="font-mono text-[#6ec2ff]">lang</code> (fr/en), <code class="font-mono text-[#6ec2ff]">embed</code>, <code class="font-mono text-[#6ec2ff]">promptOnly</code>, and <code class="font-mono text-[#6ec2ff]">diff</code>.
             </div>
           </div>
         </div>
@@ -877,7 +877,7 @@
           <div class="text-center mb-14 on-scroll">
             <p class="kicker mb-4" data-i18n="mcp.kicker">Configuration</p>
             <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight mb-4" data-i18n="mcp.title">MCP configuration</h2>
-            <p class="text-[#93a1b5]" data-i18n="mcp.sub">Run the setup wizard or paste this block into your IDE's MCP settings. No API key needed — the host model answers, or the embedded local model runs fully offline.</p>
+            <p class="text-[#93a1b5]" data-i18n="mcp.sub">Run the setup wizard or paste this block into your IDE's MCP settings. No API key needed — the host model answers, or go fully offline with the deterministic report.</p>
           </div>
           <div class="term on-scroll">
             <div class="term-bar justify-between">
@@ -893,7 +893,7 @@
   }
 <span class="text-[#5b6679]">}</span></code></pre>
           </div>
-          <p class="text-xs text-[#5b6679] mt-4 text-center on-scroll" data-i18n-html="mcp.foot">Optional <code class="font-mono">env</code>: <code class="font-mono text-[#93a1b5]">DEEPSEEK_API_KEY</code>, <code class="font-mono text-[#93a1b5]">OPENAI_API_KEY</code>, <code class="font-mono text-[#93a1b5]">CODEBASE_MODEL</code> — direct LLM calls; <code class="font-mono text-[#93a1b5]">CODEBASE_LOCAL_LLM</code> — offline mode.</p>
+          <p class="text-xs text-[#5b6679] mt-4 text-center on-scroll" data-i18n-html="mcp.foot">Optional <code class="font-mono">env</code>: <code class="font-mono text-[#93a1b5]">DEEPSEEK_API_KEY</code>, <code class="font-mono text-[#93a1b5]">OPENAI_API_KEY</code>, <code class="font-mono text-[#93a1b5]">CODEBASE_MODEL</code> — direct LLM calls.</p>
         </div>
       </section>
 
@@ -974,7 +974,7 @@
                 <span class="text-xs text-[#5b6679]" data-i18n="rm.nextSub">Recently shipped</span>
               </div>
               <ul class="space-y-3 text-[13.5px] text-[#93a1b5]">
-                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="rm.n1">Embedded local LLM — fully offline answers</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="rm.n1">Deterministic report — zero model, zero key, zero network</span></li>
                 <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="rm.n2">Watch mode — hot index while you code</span></li>
                 <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n-html="rm.n3">Setup wizard + <code class="font-mono text-xs">.codebase-chat.json</code></span></li>
                 <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="rm.n4">Diff-aware retrieval on changed files</span></li>
@@ -1026,11 +1026,11 @@
             </details>
             <details class="card rounded-xl p-5 group on-scroll">
               <summary class="font-semibold text-white cursor-pointer list-none flex justify-between items-center text-[15px]"><span data-i18n="faq.q2">Does it send my code to the cloud?</span><span class="text-[#93a1b5] group-open:rotate-180 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
-              <p class="text-[#93a1b5] mt-3 text-sm leading-relaxed" data-i18n="faq.a2">No. Indexing, retrieval, and prompt building all run on your machine. In prompt-only or local-model mode, nothing leaves your machine at all — the host model reads the assembled context, or the embedded model answers locally.</p>
+              <p class="text-[#93a1b5] mt-3 text-sm leading-relaxed" data-i18n="faq.a2">No. Indexing, retrieval, and prompt building all run on your machine. In prompt-only mode nothing leaves your machine — the host model reads the assembled context — and the <code class="font-mono text-[#6ec2ff]">--no-llm</code> report is computed locally end to end, zero network.</p>
             </details>
             <details class="card rounded-xl p-5 group on-scroll">
               <summary class="font-semibold text-white cursor-pointer list-none flex justify-between items-center text-[15px]"><span data-i18n="faq.q3">Do I need an API key?</span><span class="text-[#93a1b5] group-open:rotate-180 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
-              <p class="text-[#93a1b5] mt-3 text-sm leading-relaxed" data-i18n-html="faq.a3">No — three ways to get an answer: the host model (<code class="font-mono text-[#6ec2ff]">promptOnly</code>, best quality), a <code class="font-mono text-[#6ec2ff]">DEEPSEEK_API_KEY</code>/<code class="font-mono text-[#6ec2ff]">OPENAI_API_KEY</code> for direct calls, or the embedded local model (<code class="font-mono text-[#6ec2ff]">localLlm</code>) for fully offline answers. The local model is small — great for quick lookups, prefer a hosted model for full reports. Inside DeepSeek Harness, the plugin uses your configured model.</p>
+              <p class="text-[#93a1b5] mt-3 text-sm leading-relaxed" data-i18n-html="faq.a3">No — three ways to get output: the host model (<code class="font-mono text-[#6ec2ff]">promptOnly</code>, best quality — pipe it to a local model like Ollama for offline answers), a <code class="font-mono text-[#6ec2ff]">DEEPSEEK_API_KEY</code>/<code class="font-mono text-[#6ec2ff]">OPENAI_API_KEY</code> for direct calls (<code class="font-mono text-[#6ec2ff]">--call</code>), or the deterministic report (<code class="font-mono text-[#6ec2ff]">--no-llm</code>) — no model at all. Inside DeepSeek Harness, the plugin uses your configured model.</p>
             </details>
             <details class="card rounded-xl p-5 group on-scroll">
               <summary class="font-semibold text-white cursor-pointer list-none flex justify-between items-center text-[15px]"><span data-i18n="faq.q4">Can I use it with Claude, Cursor, or Windsurf?</span><span class="text-[#93a1b5] group-open:rotate-180 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
@@ -1138,7 +1138,7 @@
         nav: { features: "Fonctionnalités", pipeline: "Comment ça marche", tools: "Outils", demo: "Démo", install: "Installation", roadmap: "Feuille de route", faq: "FAQ", star: "Star sur GitHub" },
         hero: {
           new: "NOUVEAU",
-          badge: "v0.24.0 — analyse d\u2019impact + LLM local embarqué",
+          badge: "v0.27.0 — rapport déterministe --no-llm",
           title: 'Votre code,<br><span class="gradient-text-anim">entièrement compris.</span>',
           sub: 'Chattez, recherchez, expliquez, refactorez, auditez — et générez des rapports prêts pour le comité. Chaque affirmation s\u2019appuie sur une citation de source, un score de confiance et un niveau de sévérité. <span class="text-white font-normal">Local-first. Français &amp; anglais. Fonctionne 100 % hors-ligne.</span>',
           cta1: "Commencer",
@@ -1202,7 +1202,7 @@
           c5t: "Refactor & application",
           c5b: "Refactors prêts pour la production, appliqués avec sauvegarde, dry-run, vérification et rollback.",
           c6t: "Compatible MCP",
-          c6b: "Serveur autonome pour Cursor, Claude, Windsurf, Zed &amp; co — prompt-only sans clé, ou 100 % hors-ligne via le modèle local embarqué."
+          c6b: "Serveur autonome pour Cursor, Claude, Windsurf, Zed &amp; co — prompt-only sans clé, ou rapports déterministes sans aucun modèle."
         },
         pkg: {
           kicker: "Distribution",
@@ -1220,7 +1220,7 @@
           p2l3: "Appels LLM directs optionnels via API DeepSeek / compatible OpenAI",
           p2l4: "Embeddings multilingues locaux pour la recherche sémantique",
           p2l5: 'Wizard <code class="font-mono text-xs text-[#6ec2ff]">setup</code> — détecte votre IDE, choisit le mode de réponse, écrit la config',
-          p2l6: '<strong class="text-white font-medium">100 % hors-ligne</strong> — le modèle local embarqué répond, sans clé ni hôte'
+          p2l6: '<strong class="text-white font-medium">100 % hors-ligne</strong> — rapport déterministe <code class="font-mono">--no-llm</code>, sans modèle ni clé'
         },
         tools: {
           kicker: "Référence",
@@ -1240,7 +1240,7 @@
           r11: "Angles créatifs et marketing extraits du code",
           r12: 'Analyse statique <span class="text-[#4ade80] font-medium">déterministe</span> — cycles, code mort, duplication, complexité, score de santé. Aucun LLM requis',
           r13: 'Rayon d\u2019impact <span class="text-[#4ade80] font-medium">déterministe</span> — quels fichiers dépendent de la cible, transitivement. Aucun LLM requis',
-          foot: 'Tous les outils acceptent <code class="font-mono text-[#6ec2ff]">projectPath</code>, <code class="font-mono text-[#6ec2ff]">lang</code> (fr/en), <code class="font-mono text-[#6ec2ff]">embed</code>, <code class="font-mono text-[#6ec2ff]">promptOnly</code> et <code class="font-mono text-[#6ec2ff]">localLlm</code>.'
+          foot: 'Tous les outils acceptent <code class="font-mono text-[#6ec2ff]">projectPath</code>, <code class="font-mono text-[#6ec2ff]">lang</code> (fr/en), <code class="font-mono text-[#6ec2ff]">embed</code>, <code class="font-mono text-[#6ec2ff]">promptOnly</code> et <code class="font-mono text-[#6ec2ff]">diff</code>.'
         },
         demo: {
           kicker: "Voyez-le en action",
@@ -1271,8 +1271,8 @@
         mcp: {
           kicker: "Configuration",
           title: "Configuration MCP",
-          sub: "Lancez le wizard setup ou collez ce bloc dans les réglages MCP de votre IDE. Aucune clé API requise — le modèle hôte répond, ou le modèle local tourne 100 % hors-ligne.",
-          foot: '<code class="font-mono">env</code> optionnelles : <code class="font-mono text-[#93a1b5]">DEEPSEEK_API_KEY</code>, <code class="font-mono text-[#93a1b5]">OPENAI_API_KEY</code>, <code class="font-mono text-[#93a1b5]">CODEBASE_MODEL</code> — appels LLM directs ; <code class="font-mono text-[#93a1b5]">CODEBASE_LOCAL_LLM</code> — mode hors-ligne.'
+          sub: "Lancez le wizard setup ou collez ce bloc dans les réglages MCP de votre IDE. Aucune clé API requise — le modèle hôte répond, ou le rapport déterministe tourne 100 % hors-ligne.",
+          foot: '<code class="font-mono">env</code> optionnelles : <code class="font-mono text-[#93a1b5]">DEEPSEEK_API_KEY</code>, <code class="font-mono text-[#93a1b5]">OPENAI_API_KEY</code>, <code class="font-mono text-[#93a1b5]">CODEBASE_MODEL</code> — appels LLM directs.'
         },
         cmd: {
           kicker: "Commandes",
@@ -1297,7 +1297,7 @@
           next: "LIVRÉ", nextSub: "Récemment livré",
           planned: "PROCHAIN", plannedSub: "Intégrations & sorties",
           exploring: "À L\u2019ÉTUDE", exploringSub: "Horizon lointain",
-          n1: "LLM local embarqué — réponses 100 % hors-ligne",
+          n1: "Rapport déterministe — zéro modèle, zéro clé, zéro réseau",
           n2: "Mode watch — index à chaud pendant que vous codez",
           n3: 'Wizard setup + <code class="font-mono text-xs">.codebase-chat.json</code>',
           n4: "Recherche sensible au diff sur les fichiers modifiés",
@@ -1319,9 +1319,9 @@
           q1: "Je ne suis pas développeur — puis-je quand même l\u2019utiliser ?",
           a1: "Oui. Installez-le, pointez-le vers un dossier de projet et posez des questions en langage clair. Les rapports sont écrits pour des humains — fondateurs, managers, designers et développeurs — pas seulement pour la personne qui a écrit le code.",
           q2: "Est-ce qu\u2019il envoie mon code dans le cloud ?",
-          a2: "Non. L\u2019indexation, la recherche et la construction du prompt tournent sur votre machine. En mode prompt-only ou modèle local, rien ne quitte du tout votre machine — le modèle hôte lit le contexte assemblé, ou le modèle embarqué répond localement.",
+          a2: "Non. L\u2019indexation, la recherche et la construction du prompt tournent sur votre machine. En mode prompt-only rien ne quitte votre machine — le modèle hôte lit le contexte assemblé — et le rapport <code class=\"font-mono text-[#6ec2ff]\">--no-llm</code> est calculé localement de bout en bout, zéro réseau.",
           q3: "Ai-je besoin d\u2019une clé API ?",
-          a3: 'Non — trois façons d\u2019obtenir une réponse : le modèle hôte (<code class="font-mono text-[#6ec2ff]">promptOnly</code>, meilleure qualité), une clé <code class="font-mono text-[#6ec2ff]">DEEPSEEK_API_KEY</code>/<code class="font-mono text-[#6ec2ff]">OPENAI_API_KEY</code> pour les appels directs, ou le modèle local embarqué (<code class="font-mono text-[#6ec2ff]">localLlm</code>) pour des réponses 100 % hors-ligne. Le modèle local est petit — pratique pour les recherches rapides, préférez un modèle hébergé pour les rapports complets. Dans DeepSeek Harness, le plugin utilise votre modèle configuré.',
+          a3: 'Non — trois façons d\u2019obtenir une sortie : le modèle hôte (<code class="font-mono text-[#6ec2ff]">promptOnly</code>, meilleure qualité — pipez-le vers un modèle local type Ollama pour du hors-ligne), une clé <code class="font-mono text-[#6ec2ff]">DEEPSEEK_API_KEY</code>/<code class="font-mono text-[#6ec2ff]">OPENAI_API_KEY</code> pour les appels directs (<code class="font-mono text-[#6ec2ff]">--call</code>), ou le rapport déterministe (<code class="font-mono text-[#6ec2ff]">--no-llm</code>) — aucun modèle du tout. Dans DeepSeek Harness, le plugin utilise votre modèle configuré.',
           q4: "Puis-je l\u2019utiliser avec Claude, Cursor ou Windsurf ?",
           a4: 'Oui. Installez <code class="font-mono text-[#6ec2ff]">dsh-codebase-chat-mcp</code> et ajoutez-le à votre config de serveurs MCP — voir le bloc de configuration ci-dessus.',
           q5: "Est-ce que ça marche sans DeepSeek Harness ?",

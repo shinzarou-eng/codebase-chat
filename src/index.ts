@@ -37,6 +37,5 @@ export {
   brandSignature,
 } from './prompts.js';
 export type { ToolPromptOptions } from './prompts.js';
-export { callLocalLlm, isLocalLlmEnabled } from './local-llm.js';
 export { buildDeterministicReport } from './report.js';
 export type * from './types.js';
