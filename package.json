@@ -11,6 +11,7 @@
     "url": "https://github.com/shinzarou-eng/dsh-codebase-chat/issues"
   },
   "type": "module",
+  "packageManager": "pnpm@11.24.0",
   "engines": {
     "node": ">=20"
   },
