@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.7 / mcp 0.8.8 — Robust CPU fallback
+
+**Fixed**
+
+- The GPU→CPU fallback only covered model loading, but CUDA OOM also strikes at context creation (`createContext` allocates GPU buffers). The whole local-inference pipeline now retries on CPU — model, context, session — so `--local`/`localLlm` survives VRAM exhaustion wherever it hits.
+
 ## 0.25.6 / mcp 0.8.7 — CPU fallback for the local LLM
 
 **Fixed**

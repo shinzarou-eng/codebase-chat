@@ -30,11 +30,17 @@ async function importLlama(): Promise<any> {
   }
 }
 
-let modelPromise: Promise<any> | null = null;
+// Models are cached per backend — a GPU-loaded model can't serve a CPU retry.
+const modelPromises = new Map<boolean, Promise<any>>();
 
-function loadLocalModel(): Promise<any> {
-  if (!modelPromise) {
-    modelPromise = (async () => {
+function cpuOnly(): boolean {
+  return /^(0|off|false|cpu)$/i.test(process.env.CODEBASE_LOCAL_GPU || '');
+}
+
+function loadLocalModel(gpu: boolean): Promise<any> {
+  let p = modelPromises.get(gpu);
+  if (!p) {
+    p = (async () => {
       const spec = configuredModel();
       let modelPath = spec;
       if (spec.startsWith('hf:')) {
@@ -48,25 +54,17 @@ function loadLocalModel(): Promise<any> {
         throw new Error(`Local model not found: ${spec}`);
       }
       const { getLlama } = await importLlama();
-      const cpuOnly = /^(0|off|false|cpu)$/i.test(process.env.CODEBASE_LOCAL_GPU || '');
-      const llama = await getLlama(cpuOnly ? { gpu: false } : {});
-      try {
-        return await llama.loadModel({ modelPath });
-      } catch (err) {
-        // GPU backends (CUDA/VRAM) can fail on smaller cards — retry on CPU.
-        if (cpuOnly) throw err;
-        console.error(`[local-llm] GPU load failed (${err instanceof Error ? err.message : err}) — falling back to CPU. Slower, but works. Set CODEBASE_LOCAL_GPU=off to skip GPU entirely.`);
-        const cpuLlama = await getLlama({ gpu: false });
-        return cpuLlama.loadModel({ modelPath });
-      }
+      const llama = await getLlama(gpu ? {} : { gpu: false });
+      return llama.loadModel({ modelPath });
     })();
-    modelPromise.catch(() => { modelPromise = null; });
+    p.catch(() => modelPromises.delete(gpu));
+    modelPromises.set(gpu, p);
   }
-  return modelPromise;
+  return p;
 }
 
-export async function callLocalLlm(prompt: string, lang = 'fr'): Promise<string> {
-  const model = await loadLocalModel();
+async function runPrompt(prompt: string, lang: string, gpu: boolean): Promise<string> {
+  const model = await loadLocalModel(gpu);
   const { LlamaChatSession } = await importLlama();
   const context = await model.createContext({ contextSize: LOCAL_CONTEXT_SIZE });
   try {
@@ -85,5 +83,17 @@ export async function callLocalLlm(prompt: string, lang = 'fr'): Promise<string>
     });
   } finally {
     await context.dispose();
+  }
+}
+
+export async function callLocalLlm(prompt: string, lang = 'fr'): Promise<string> {
+  if (cpuOnly()) return runPrompt(prompt, lang, false);
+  try {
+    return await runPrompt(prompt, lang, true);
+  } catch (err) {
+    // CUDA OOM can hit at model load OR context creation — retry the whole
+    // pipeline on CPU.
+    console.error(`[local-llm] GPU run failed (${err instanceof Error ? err.message : err}) — falling back to CPU. Slower, but works. Set CODEBASE_LOCAL_GPU=off to skip GPU entirely.`);
+    return runPrompt(prompt, lang, false);
   }
 }
