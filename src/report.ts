@@ -291,6 +291,8 @@ function pkgRoot(spec: string): string {
   return s.split('/')[0];
 }
 
+
+
 /** All external package names imported in the codebase. */
 function importedPackages(fileTexts: Map<string, string>): Set<string> {
   const imported = new Set<string>();
@@ -315,7 +317,7 @@ async function missingDeps(abs: string, fileTexts: Map<string, string>, pkg: Rec
   const missing = new Set<string>();
   for (const spec of importedPackages(fileTexts)) {
     const root = pkgRoot(spec);
-    if (!NODE_BUILTINS.has(root) && !declared.has(root)) missing.add(root);
+    if (!NODE_BUILTINS.has(root) && !declared.has(root) && !root.startsWith('@/') && !root.startsWith('~/')) missing.add(root);
   }
   return [...missing].sort();
 }
@@ -745,7 +747,8 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   if (git) out.push(`- ${git.commits} ${t.gitCommits} · ${git.authors.size} ${en ? 'author(s)' : 'auteur(s)'} · ${t.gitLast} : ${git.lastDate}`);
   out.push('');
 
-  out.push(`## 2. ${t.stack}`);
+  let secN = 2;
+  out.push(`## ${secN++}. ${t.stack}`);
   if (pkg.name) out.push(`- **${en ? 'Package' : 'Package'}** : \`${pkg.name}${pkg.version ? `@${pkg.version}` : ''}\``);
   if (langs.length) out.push(`- **${t.lang}** : ${langs.map(([l, n]) => `${l} (${n})`).join(', ')}`);
   if (deps.length) out.push(`- **${t.deps}** (${deps.length}) : ${deps.slice(0, 12).map(d => `\`${d}\``).join(', ')}${deps.length > 12 ? ' …' : ''}`);
@@ -771,7 +774,7 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   }
   out.push('');
 
-  out.push(`## 3. ${t.arch}`);
+  out.push(`## ${secN++}. ${t.arch}`);
   if (hubs.length) {
     out.push(`**${t.hubs}** :`, '');
     for (const [f, n] of hubs) out.push(`- \`${f}\` ← ${n} ${en ? 'importers' : 'importeurs'}`);
@@ -809,7 +812,7 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   }
 
   if (git) {
-    out.push(`## 4. ${t.gitTitle}`, '');
+    out.push(`## ${secN++}. ${t.gitTitle}`, '');
     const topAuthors = [...git.authors.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
       .map(([a, n]) => `${a} (${n})`).join(', ');
     const soloCount = [...git.fileAuthors.values()].filter(a => a.size === 1).length;
@@ -851,7 +854,7 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
     }
   }
 
-  out.push(`## 5. ${t.debt}`);
+  out.push(`## ${secN++}. ${t.debt}`);
   const smellKeys = Object.keys(smells);
   if (!smellKeys.length) out.push(en ? '_Nothing detected._' : '_Rien détecté._');
   for (const key of smellKeys) {
@@ -866,7 +869,7 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   }
   out.push('');
 
-  out.push(`## 6. ${t.secu}`);
+  out.push(`## ${secN++}. ${t.secu}`);
   if (sensitive.length) {
     out.push(`- **${t.sensitive}** — ${sensitive.length}`);
     for (const f of sensitive.slice(0, 6)) out.push(`  - \`${f}\`${git?.sensitiveTracked.includes(f) ? (en ? ' (tracked by git!)' : ' (suivi par git !)') : ''}`);
@@ -881,12 +884,12 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   }
   out.push('');
 
-  out.push(`## 7. ${t.constraints}`);
+  out.push(`## ${secN++}. ${t.constraints}`);
   out.push(index.constraints.length ? index.constraints.map(c => `- ${c}`).join('\n') : t.none, '');
 
-  out.push(formatHealthReportMd(health, lang).replace(/^## /, '## 8. ').replace(/\n### /g, '\n#### '), '');
+  out.push(formatHealthReportMd(health, lang).replace(/^## /, `## ${secN++}. `).replace(/\n### /g, '\n#### '), '');
 
-  out.push(`## 9. ${t.reco}`, '');
+  out.push(`## ${secN++}. ${t.reco}`, '');
   out.push(`| ${t.sev} | ${t.action} |`, '|---|---|');
   const SEV_ICON: Record<Reco['severity'], string> = { Critique: '🔴', 'Élevée': '🟠', Moyenne: '🟡', Faible: '🔵' };
   for (const r of recommendations(health, hasTests, smells, sec, git, infra, riskFiles, { sensitive, envUndoc: env.undocumented, deadDeps, tsStrict: cfg.tsStrict, untestedRisk: untestedRisk.map(r => r.file), brokenEntries, deepRel: deepRel.length, deepNest: shape.deepNest.map(d => d.file), commitConv: commitQ?.conventionalPct ?? null, missingDeps: missing, lockDrift }, lang)) out.push(`| ${SEV_ICON[r.severity]} ${r.severity} | ${r.text} |`);
