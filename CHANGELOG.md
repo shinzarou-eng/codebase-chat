@@ -2,6 +2,12 @@
 
 ## 0.24.0 / mcp 0.8.1 — Faster, sharper analysis
 
+**New**
+
+- `codebase_impact` — 13th tool: deterministic blast-radius analysis. Give it a file, get every file that transitively depends on it (by depth), its exported symbols, cycle/entry-point flags and a LOW/MEDIUM/HIGH risk score. Also available as `--impact <file>` on the CLI and `/codebase-impact` in DeepSeek Harness.
+- Embedded local LLM — `localLlm: true` on any tool (or `CODEBASE_LOCAL_LLM=1`) answers with a small on-device model (node-llama-cpp + Qwen2.5-1.5B-Instruct GGUF, ~1 GB downloaded once). Fully offline, no API key, no host model. Custom `hf:owner/repo:QUANT` URIs and local `.gguf` paths supported.
+- Setup wizard now asks the answer mode (prompt-only host model / API key / offline local model) and covers 11 clients: Claude Desktop, Claude Code, Cursor, Windsurf, VS Code (+ workspace), Zed, Gemini CLI, Kiro, Cline and Roo Code — plus a manual snippet for everything else.
+
 **Improved**
 
 - `codebase_health` is ~13× faster on large repos: cycle detection now uses Tarjan SCC (linear) instead of path enumeration, and unused-export detection is single-pass instead of a regex per export per file. Health on a 300-file codebase: ~1s instead of ~12s.
