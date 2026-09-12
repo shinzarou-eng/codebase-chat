@@ -6,8 +6,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt } from "dsh-codebase-chat";
-import { callLocalLlm, isLocalLlmEnabled } from "./local-llm.mjs";
+import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, callLocalLlm, isLocalLlmEnabled } from "dsh-codebase-chat";
 
 // `dsh-codebase-chat-mcp setup` runs the interactive client-config wizard
 // instead of starting the MCP server.

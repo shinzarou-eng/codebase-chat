@@ -10,4 +10,6 @@ export default defineConfig({
   clean: true,
   dts: true,
   outDir: 'dist',
+  // Optional native dep — resolved at runtime only when the local LLM is used.
+  external: ['node-llama-cpp'],
 });

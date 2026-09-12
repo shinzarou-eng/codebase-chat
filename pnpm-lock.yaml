@@ -45,6 +45,10 @@ importers:
       vitest:
         specifier: ^5.0.0
         version: 5.0.0(@types/node@22.20.2)(vite@8.3.0(@types/node@22.20.2)(esbuild@0.27.7))
+    optionalDependencies:
+      node-llama-cpp:
+        specifier: ^3.20.0
+        version: 3.20.0(typescript@5.7.3)
 
   mcp:
     dependencies:

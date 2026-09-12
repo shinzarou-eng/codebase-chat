@@ -32,7 +32,6 @@
   },
   "files": [
     "index.mjs",
-    "local-llm.mjs",
     "setup.mjs",
     "README.md",
     "package.json"

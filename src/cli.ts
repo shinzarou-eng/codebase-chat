@@ -8,6 +8,7 @@ import { findProjectRoot, getWalkOptions, resolveProjectPath } from './project.j
 import { analyzeProject, formatHealthReport } from './analysis.js';
 import { analyzeImpact, formatImpactReport } from './impact.js';
 import { buildToolPrompt } from './prompts.js';
+import { callLocalLlm, isLocalLlmEnabled } from './local-llm.js';
 import { getChangedFiles } from './diff.js';
 import { loadProjectConfig } from './config.js';
 import { disposeTreeSitter } from './treesitter.js';
@@ -39,6 +40,8 @@ Usage:
   npx dsh-codebase-chat --project <path> --health --diff main
   npx dsh-codebase-chat --project <path> --watch
   npx dsh-codebase-chat --project <path> --prompt intelligence
+  npx dsh-codebase-chat --project <path> --prompt intelligence --call   # answered via DEEPSEEK_API_KEY
+  npx dsh-codebase-chat --project <path> --prompt intelligence --local  # answered 100% offline
 
 Options:
   -p, --project <path>   Project directory (default: current directory)
@@ -56,6 +59,11 @@ Options:
                          Pipe it to any LLM (e.g. ... --prompt intelligence | dsh).
                          Query modes read --ask/--search/--file; --focus and
                          --style (ouf|punchy|dense|pedagogique|minimal) apply.
+  --call                 With --prompt: send it to the API (needs DEEPSEEK_API_KEY
+                         or OPENAI_API_KEY; DEEPSEEK_BASE_URL / CODEBASE_MODEL
+                         customize endpoint/model) instead of printing it.
+  --local                With --prompt: answer with the embedded local model
+                         (node-llama-cpp, ~1 GB download on first use, offline).
   -w, --watch            Keep the index hot — rebuild incrementally on file changes
   -e, --embed            Enable local semantic embeddings (slower, more relevant)
   --lang <en|fr>         Language for headings (default: .codebase-chat.json lang, else fr)
@@ -85,6 +93,8 @@ async function main() {
       prompt: { type: 'string' },
       focus: { type: 'string' },
       style: { type: 'string' },
+      call: { type: 'boolean', default: false },
+      local: { type: 'boolean', default: false },
       watch: { type: 'boolean', short: 'w', default: false },
       embed: { type: 'boolean', short: 'e', default: false },
       lang: { type: 'string' },
@@ -221,8 +231,9 @@ async function main() {
       }
     }
     const projectName = basename(result.absProject);
+    let prompt: string;
     try {
-      console.log(buildToolPrompt(tool, {
+      prompt = buildToolPrompt(tool, {
         context: `${result.context}${staticSection}`,
         projectName,
         lang,
@@ -231,13 +242,57 @@ async function main() {
         focus: values.focus ?? query,
         filePath: values.file ?? '',
         description: query,
-      }));
+      });
     } catch {
       console.error(lang === 'en'
         ? `unknown prompt mode "${mode}" — expected: intelligence, report, audit, tasks, ceo, player, chat, search, explain, refactor, crea`
         : `mode de prompt inconnu "${mode}" — attendu : intelligence, report, audit, tasks, ceo, player, chat, search, explain, refactor, crea`);
       exit(1);
     }
+
+    if (values.local || isLocalLlmEnabled()) {
+      console.error(lang === 'en'
+        ? 'Answering with the embedded local model (first run downloads ~1 GB)...'
+        : 'Réponse via le modèle local embarqué (premier lancement : ~1 Go de téléchargement)...');
+      console.log(await callLocalLlm(prompt, lang));
+      exit(0);
+    }
+
+    if (values.call) {
+      const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || '';
+      if (!apiKey) {
+        console.error(lang === 'en'
+          ? '--call needs DEEPSEEK_API_KEY or OPENAI_API_KEY in the environment'
+          : '--call nécessite DEEPSEEK_API_KEY ou OPENAI_API_KEY dans l\u2019environnement');
+        exit(1);
+      }
+      const baseUrl = process.env.DEEPSEEK_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.deepseek.com/v1';
+      const model = process.env.CODEBASE_MODEL || 'deepseek-chat';
+      const res = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        signal: AbortSignal.timeout(120_000),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: lang === 'en' ? 'You are a senior codebase analyst. Be precise and cite files.' : 'Tu es un analyste codebase senior. Sois précis et cite les fichiers.' },
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.3,
+          max_tokens: 8192,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        console.error(`API error ${res.status}: ${text}`);
+        exit(1);
+      }
+      const data = await res.json() as { choices?: { message?: { content?: string } }[] };
+      console.log(data.choices?.[0]?.message?.content || '');
+      exit(0);
+    }
+
+    console.log(prompt);
     exit(0);
   }
 
