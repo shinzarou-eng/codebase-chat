@@ -83,6 +83,10 @@ export interface GitStats {
   months: Map<string, number>;
   /** git-tracked files matching sensitive patterns (.env, *.pem, …) */
   sensitiveTracked: string[];
+  /** file -> date of its most recent commit (first seen in log order) */
+  fileLastCommit: Map<string, string>;
+  /** commit subjects for message-quality stats */
+  subjects: string[];
 }
 
 const SENSITIVE_PATS = /(^|\/)\.env$|(^|\/)\.env\.(local|prod|production|dev|development)$|\.(pem|key|p12|pfx|keystore)$|id_rsa|id_ed25519|credentials\.json|service-account/i;
@@ -90,15 +94,18 @@ const SENSITIVE_PATS = /(^|\/)\.env$|(^|\/)\.env\.(local|prod|production|dev|dev
 async function gitActivity(abs: string): Promise<GitStats | null> {
   try {
     const { stdout } = await run('git', [
-      '-C', abs, 'log', '--numstat', '--format=@@@%an|%ad', '--date=short', '-n', '400',
+      '-C', abs, 'log', '--numstat', '--format=@@@%an|%ad|%s', '--date=short', '-n', '400',
     ], { maxBuffer: 32 * 1024 * 1024 });
-    const stats: GitStats = { commits: 0, authors: new Map(), lastDate: '', churn: new Map(), fileAuthors: new Map(), months: new Map(), sensitiveTracked: [] };
+    const stats: GitStats = { commits: 0, authors: new Map(), lastDate: '', churn: new Map(), fileAuthors: new Map(), months: new Map(), sensitiveTracked: [], fileLastCommit: new Map(), subjects: [] };
     let author = '';
+    let date = '';
     for (const line of stdout.split('\n')) {
       if (line.startsWith('@@@')) {
         stats.commits++;
-        const [a, d] = line.slice(3).split('|');
+        const [a, d, s] = line.slice(3).split('|');
         author = a;
+        date = d;
+        if (s) stats.subjects.push(s);
         if (!stats.lastDate) stats.lastDate = d;
         stats.authors.set(a, (stats.authors.get(a) ?? 0) + 1);
         const month = d.slice(0, 7);
@@ -110,6 +117,7 @@ async function gitActivity(abs: string): Promise<GitStats | null> {
       const file = m[3].replace(/\\/g, '/');
       const delta = Number(m[1]) + Number(m[2]);
       stats.churn.set(file, (stats.churn.get(file) ?? 0) + delta);
+      if (!stats.fileLastCommit.has(file) && date) stats.fileLastCommit.set(file, date);
       if (author) (stats.fileAuthors.get(file) ?? stats.fileAuthors.set(file, new Set()).get(file)!).add(author);
     }
     try {
@@ -187,6 +195,84 @@ function functionHotspots(index: { files: Record<string, { relPath: string; chun
   return out.sort((a, b) => b.lines - a.lines).slice(0, 6);
 }
 
+/** package.json entry points (bin/main/exports) that don't exist on disk. */
+async function brokenPkgEntries(abs: string, pkg: Record<string, any>): Promise<string[]> {
+  const targets: string[] = [];
+  if (typeof pkg.main === 'string') targets.push(pkg.main);
+  if (typeof pkg.bin === 'string') targets.push(pkg.bin);
+  else if (pkg.bin && typeof pkg.bin === 'object') targets.push(...Object.values(pkg.bin).filter((v): v is string => typeof v === 'string'));
+  const walkExports = (e: any): void => {
+    if (typeof e === 'string' && e.startsWith('.')) targets.push(e);
+    else if (e && typeof e === 'object') Object.values(e).forEach(walkExports);
+  };
+  walkExports(pkg.exports);
+  const broken: string[] = [];
+  for (const t of [...new Set(targets)]) {
+    try { await access(join(abs, t)); } catch { broken.push(t); }
+  }
+  return broken;
+}
+
+/** Deep relative imports (../../.. chains) — coupling smell. */
+function deepImports(fileTexts: Map<string, string>): Finding[] {
+  const out: Finding[] = [];
+  const re = /from\s+['"]((?:\.\.\/){3,}[^'"]*)['"]/;
+  for (const [file, text] of fileTexts) {
+    if (/test|spec|__tests__/i.test(file)) continue;
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(re);
+      if (m) out.push({ file, line: i + 1, sample: m[1] });
+    }
+  }
+  return out.slice(0, 8);
+}
+
+/** Max indentation depth + comment density per file. */
+function codeShape(fileTexts: Map<string, string>) {
+  let commentLines = 0, codeLines = 0;
+  const deepNest: { file: string; depth: number }[] = [];
+  for (const [file, text] of fileTexts) {
+    if (/test|spec|__tests__|\.d\.ts$/i.test(file)) continue;
+    let maxDepth = 0, inBlock = false;
+    for (const line of text.split('\n')) {
+      const t = line.trim();
+      if (!t) continue;
+      codeLines++;
+      if (inBlock) { commentLines++; if (t.includes('*/')) inBlock = false; continue; }
+      if (t.startsWith('//') || t.startsWith('*')) { commentLines++; continue; }
+      if (t.startsWith('/*')) { commentLines++; if (!t.includes('*/')) inBlock = true; continue; }
+      const indent = line.match(/^[\t ]*/)![0];
+      const depth = indent.replace(/\t/g, '    ').length / 4;
+      if (depth > maxDepth) maxDepth = depth;
+    }
+    if (maxDepth >= 6) deepNest.push({ file, depth: Math.round(maxDepth) });
+  }
+  return { commentPct: codeLines ? Math.round((commentLines / codeLines) * 100) : 0, deepNest: deepNest.sort((a, b) => b.depth - a.depth).slice(0, 5) };
+}
+
+/** README quality: install/usage sections, code blocks, badges. */
+async function readmeAudit(abs: string): Promise<{ install: boolean; usage: boolean; codeBlocks: number; badges: number } | null> {
+  try {
+    const text = await readFile(join(abs, 'README.md'), 'utf8');
+    return {
+      install: /^#{1,3}.*(install|installation|getting started|démarrage)/im.test(text),
+      usage: /^#{1,3}.*(usage|utilisation|quickstart|quick start)/im.test(text),
+      codeBlocks: (text.match(/```/g) ?? []).length / 2,
+      badges: (text.match(/!\[/g) ?? []).length,
+    };
+  } catch { return null; }
+}
+
+/** Commit message quality: % conventional, avg subject length. */
+function commitQuality(subjects: string[]) {
+  if (!subjects.length) return null;
+  const CONV = /^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert|tweak|release|hotfix|init|merge|wip)(\(.+\))?!?:\s/i;
+  const conv = subjects.filter(s => CONV.test(s)).length;
+  const avgLen = Math.round(subjects.reduce((s, x) => s + x.length, 0) / subjects.length);
+  return { conventionalPct: Math.round((conv / subjects.length) * 100), avgLen };
+}
+
 /** Docstring coverage: exported declarations preceded by a comment line. */
 function docCoverage(fileTexts: Map<string, string>): { documented: number; total: number } {
   let documented = 0, total = 0;
@@ -224,9 +310,15 @@ function detectInfra(indexPaths: Set<string>): string[] {
 
 interface Reco { severity: 'Critique' | 'Élevée' | 'Moyenne' | 'Faible'; text: string; }
 
-function recommendations(r: HealthReport, hasTests: boolean, smells: SmellScan, sec: SmellScan, git: GitStats | null, infra: string[], riskFiles: { file: string; churn: number; score: number }[], extras: { sensitive: string[]; envUndoc: string[]; deadDeps: string[]; tsStrict: boolean | null; untestedRisk: string[] }, lang: 'fr' | 'en'): Reco[] {
+function recommendations(r: HealthReport, hasTests: boolean, smells: SmellScan, sec: SmellScan, git: GitStats | null, infra: string[], riskFiles: { file: string; churn: number; score: number }[], extras: { sensitive: string[]; envUndoc: string[]; deadDeps: string[]; tsStrict: boolean | null; untestedRisk: string[]; brokenEntries: string[]; deepRel: number; deepNest: string[]; commitConv: number | null }, lang: 'fr' | 'en'): Reco[] {
   const en = lang === 'en';
   const out: Reco[] = [];
+  if (extras.brokenEntries.length) out.push({
+    severity: 'Critique',
+    text: en
+      ? `package.json points to missing files: ${extras.brokenEntries.map(e => `\`${e}\``).join(', ')} — the package is broken for consumers.`
+      : `package.json pointe vers des fichiers absents : ${extras.brokenEntries.map(e => `\`${e}\``).join(', ')} — le package est cassé pour les consommateurs.`,
+  });
   if (extras.sensitive.length) out.push({
     severity: 'Critique',
     text: en
@@ -263,6 +355,24 @@ function recommendations(r: HealthReport, hasTests: boolean, smells: SmellScan, 
   if (extras.tsStrict === false) out.push({
     severity: 'Moyenne',
     text: en ? 'TypeScript `strict` is off — enable it progressively (`strict: true` or `strictNullChecks` first).' : 'Le `strict` TypeScript est désactivé — l\u2019activer progressivement (`strict: true` ou `strictNullChecks` d\u2019abord).',
+  });
+  if (extras.deepRel > 3) out.push({
+    severity: 'Moyenne',
+    text: en
+      ? `${extras.deepRel} deep relative imports (\`../../..\` 3+ levels) — expose a public barrel or move the module closer.`
+      : `${extras.deepRel} imports relatifs profonds (\`../../..\` 3+ niveaux) — exposer un barrel public ou rapprocher le module.`,
+  });
+  if (extras.deepNest.length) out.push({
+    severity: 'Moyenne',
+    text: en
+      ? `Nesting ≥6 levels in ${extras.deepNest.map(d => `\`${d}\``).join(', ')} — early returns / extraction will flatten it.`
+      : `Imbrication ≥6 niveaux dans ${extras.deepNest.map(d => `\`${d}\``).join(', ')} — early returns / extraction pour aplatir.`,
+  });
+  if (extras.commitConv !== null && extras.commitConv < 50) out.push({
+    severity: 'Faible',
+    text: en
+      ? `Only ${extras.commitConv}% of commits are conventional — a shared format makes history machine-readable.`
+      : `Seulement ${extras.commitConv}% des commits sont conventionnels — un format partagé rend l'historique lisible par machine.`,
   });
   if (extras.deadDeps.length) out.push({
     severity: 'Faible',
@@ -384,6 +494,20 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   const deadDeps = unusedDeps(deps, graph.fileTexts);
   const cfg = await configAudit(health.projectPath, pkg, indexPaths, !!git);
   const longFns = functionHotspots(index);
+  const brokenEntries = await brokenPkgEntries(health.projectPath, pkg);
+  const deepRel = deepImports(graph.fileTexts);
+  const shape = codeShape(graph.fileTexts);
+  const readme = await readmeAudit(health.projectPath);
+  const commitQ = git ? commitQuality(git.subjects) : null;
+  const typedFiles = graph.codeFiles.filter(f => /\.(ts|tsx)$/.test(f)).length;
+  const typedPct = graph.codeFiles.length ? Math.round((typedFiles / graph.codeFiles.length) * 100) : 0;
+  // Stale hubs: heavily imported files not touched in the longest time.
+  const staleHubs = git
+    ? hubs.filter(([f]) => git.fileLastCommit.has(f))
+        .map(([f, n]) => ({ f, n, last: git.fileLastCommit.get(f)! }))
+        .sort((a, b) => a.last.localeCompare(b.last))
+        .slice(0, 5)
+    : [];
   const testBases = new Set(testFiles.map(f => basename(f).replace(/\.(test|spec)\.[^.]+$/i, '').toLowerCase()));
   const sensitive = [...(git?.sensitiveTracked ?? [])];
   if (!git) { // no git → check the working tree directly
@@ -424,6 +548,10 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
         untested: 'Untested risk hotspots', envUsed: 'Env vars used', envUndoc: 'not documented in .env.example',
         deadDeps: 'Dependencies never imported', sensitive: 'Sensitive files present',
         cfg: 'Config hygiene', cfgStrict: 'tsconfig strict: off', cfgGitignore: 'no .gitignore', cfgPkg: 'package.json missing',
+        pkgBroken: 'broken package entries', typed: 'typed files', comments: 'comment density',
+        deepImports: 'Deep relative imports (3+ levels)', deepNest: 'Deep nesting (6+ levels)',
+        readmeTitle: 'README audit', readmeInstall: 'install section', readmeUsage: 'usage section', readmeCode: 'code blocks', readmeBadges: 'badges',
+        commitQ: 'Commit messages', commitConv: 'conventional', staleHubs: 'Stable core (hubs untouched longest)',
         reco: 'Recommendations', sev: 'Severity', action: 'Action',
         labels: {
           todo: 'TODO/FIXME markers', console: 'console.* calls', tsIgnore: '@ts-ignore/-expect-error',
@@ -446,6 +574,10 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
         untested: 'Hotspots à risque non testés', envUsed: 'Variables d\u2019env utilisées', envUndoc: 'non documentées dans .env.example',
         deadDeps: 'Dépendances jamais importées', sensitive: 'Fichiers sensibles présents',
         cfg: 'Hygiène de config', cfgStrict: 'tsconfig strict : off', cfgGitignore: 'pas de .gitignore', cfgPkg: 'package.json incomplet',
+        pkgBroken: 'entrées package cassées', typed: 'fichiers typés', comments: 'densité de commentaires',
+        deepImports: 'Imports relatifs profonds (3+ niveaux)', deepNest: 'Imbrication profonde (6+ niveaux)',
+        readmeTitle: 'Audit README', readmeInstall: 'section install', readmeUsage: 'section usage', readmeCode: 'blocs de code', readmeBadges: 'badges',
+        commitQ: 'Messages de commit', commitConv: 'conventionnels', staleHubs: 'Noyau stable (hubs les plus anciens)',
         reco: 'Recommandations', sev: 'Sévérité', action: 'Action',
         labels: {
           todo: 'Marqueurs TODO/FIXME', console: 'Appels console.*', tsIgnore: '@ts-ignore/-expect-error',
@@ -485,6 +617,12 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   if (cfg.isGit && !cfg.gitignore) cfgNotes.push(t.cfgGitignore);
   if (cfg.pkgMissing.length) cfgNotes.push(`${t.cfgPkg} : ${cfg.pkgMissing.map(k => `\`${k}\``).join(', ')}`);
   if (cfgNotes.length) out.push(`- **${t.cfg}** : ${cfgNotes.join(' · ')}`);
+  if (brokenEntries.length) out.push(`- ⚠️ **${t.pkgBroken}** : ${brokenEntries.map(e => `\`${e}\``).join(', ')}`);
+  out.push(`- ${typedPct}% ${t.typed} (${typedFiles}/${graph.codeFiles.length}) · ${shape.commentPct}% ${t.comments}`);
+  if (readme) {
+    const ok = (b: boolean) => (b ? '✅' : '❌');
+    out.push(`- **${t.readmeTitle}** : ${t.readmeInstall} ${ok(readme.install)} · ${t.readmeUsage} ${ok(readme.usage)} · ${readme.codeBlocks} ${t.readmeCode} · ${readme.badges} ${t.readmeBadges}`);
+  }
   out.push('');
 
   out.push(`## 3. ${t.arch}`);
@@ -504,6 +642,14 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
     for (const f of longFns) out.push(`- \`${f.file}\` → \`${f.name}\` (${f.lines}l)`);
     out.push('');
   }
+  if (deepRel.length) {
+    out.push(`**${t.deepImports}** — ${deepRel.length} :`, '');
+    for (const d of deepRel.slice(0, 5)) out.push(`- \`${d.file}:${d.line}\` → \`${d.sample}\``);
+    out.push('');
+  }
+  if (shape.deepNest.length) {
+    out.push(`**${t.deepNest}** : ${shape.deepNest.map(d => `\`${d.file}\` (${d.depth})`).join(', ')}`, '');
+  }
 
   if (git) {
     out.push(`## 4. ${t.gitTitle}`, '');
@@ -511,7 +657,9 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
       .map(([a, n]) => `${a} (${n})`).join(', ');
     const soloCount = [...git.fileAuthors.values()].filter(a => a.size === 1).length;
     out.push(`- ${git.commits} ${t.gitCommits} · **${t.gitAuthors}** : ${topAuthors}`);
-    out.push(`- ${soloCount} ${t.gitSolo}`, '');
+    out.push(`- ${soloCount} ${t.gitSolo}`);
+    if (commitQ) out.push(`- ${t.commitQ} : ${commitQ.conventionalPct}% ${t.commitConv} · ~${commitQ.avgLen} ${en ? 'chars' : 'car.'}`);
+    out.push('');
     out.push(`**${t.gitChurn}** :`, '');
     for (const [f, c] of topChurn) {
       const n = git.fileAuthors.get(f)?.size ?? 0;
@@ -534,6 +682,11 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
       out.push('```');
       for (const [m, n] of months) out.push(`${m} ${'▇'.repeat(Math.max(1, Math.round((n / max) * 20)))} ${n}`);
       out.push('```', '');
+    }
+    if (staleHubs.length) {
+      out.push(`**${t.staleHubs}** :`, '');
+      for (const s of staleHubs) out.push(`- \`${s.f}\` ← ${s.n} ${en ? 'importers' : 'importeurs'} · ${en ? 'last change' : 'dernière modif'} ${s.last}`);
+      out.push('');
     }
   }
 
@@ -571,7 +724,7 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   out.push(`## 9. ${t.reco}`, '');
   out.push(`| ${t.sev} | ${t.action} |`, '|---|---|');
   const SEV_ICON: Record<Reco['severity'], string> = { Critique: '🔴', 'Élevée': '🟠', Moyenne: '🟡', Faible: '🔵' };
-  for (const r of recommendations(health, hasTests, smells, sec, git, infra, riskFiles, { sensitive, envUndoc: env.undocumented, deadDeps, tsStrict: cfg.tsStrict, untestedRisk: untestedRisk.map(r => r.file) }, lang)) out.push(`| ${SEV_ICON[r.severity]} ${r.severity} | ${r.text} |`);
+  for (const r of recommendations(health, hasTests, smells, sec, git, infra, riskFiles, { sensitive, envUndoc: env.undocumented, deadDeps, tsStrict: cfg.tsStrict, untestedRisk: untestedRisk.map(r => r.file), brokenEntries, deepRel: deepRel.length, deepNest: shape.deepNest.map(d => d.file), commitConv: commitQ?.conventionalPct ?? null }, lang)) out.push(`| ${SEV_ICON[r.severity]} ${r.severity} | ${r.text} |`);
   out.push('');
   out.push('---');
   out.push(`_${en ? 'Made with passion by shinzarou-eng' : 'Fait avec passion par shinzarou-eng'} — dsh-codebase-chat · ${en ? 'deterministic mode' : 'mode déterministe'}_`);
