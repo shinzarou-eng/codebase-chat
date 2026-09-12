@@ -1,12 +1,22 @@
 # Changelog
 
-## 0.27.0 / mcp 0.9.0 — `--no-llm` report, ultra edition + local LLM removed
+## 0.28.0 / mcp 0.9.0 — `--no-llm` report, ultra edition
+
+**New**
+
+- `--no-llm` becomes a full static audit (~30 analyses, 9 sections):
+  - **Git activity & risk** — per-file churn, authors, bus factor (single-author files), churn × complexity hotspots, commit timeline, commit size stats, commit message quality, stale core (untouched hubs)
+  - **Dependencies** — imported-but-undeclared packages (install breakage), declared-but-never-imported deps, lockfile drift, broken `bin`/`main`/`exports` entries
+  - **Code quality** — per-function cyclomatic complexity (branch counting on tree-sitter chunks), longest functions, `async` without `await`, sync I/O calls, deep relative imports, deep nesting, duplicate file names, comment density, docstring coverage of exports
+  - **Security** — hardcoded secrets, dangerous sinks, sensitive files (`*.env`, `*.pem`, keys) including git-tracked detection
+  - **Hygiene** — env vars used vs `.env.example`, tsconfig strict, `.gitignore`, package.json completeness, README audit (install/usage/code blocks/badges), infra detection (CI, Docker, lockfiles, test runners), typed-file ratio
+- Every finding still cited `file:line`, severity-ranked recommendations, FR/EN, zero LLM, zero network.
+
+## 0.27.0 / mcp 0.9.0 — `--no-llm` deep scan + local LLM removed
 
 **New**
 
 - `--no-llm` goes deep: debt & smells scan (TODO/FIXME, console.*, `@ts-ignore`, `any`, empty catch, `debugger`), security signals (hardcoded secrets, eval/Function, child_process, innerHTML, dynamic RegExp), test/src ratio, largest files, docs presence — every finding cited `file:line`, all deterministic.
-
-**Removed**
 
 **Removed**
 
