@@ -210,6 +210,8 @@ async function main() {
         : `--prompt ${mode} nécessite une requête : ajoute --ask/--search/--file (ou --focus)`);
       exit(1);
     }
+    // The embedded model has a small context window — cap the prompt budget.
+    const useLocal = values.local || isLocalLlmEnabled();
     const result = await buildContext({
       project: values.project,
       query,
@@ -218,6 +220,7 @@ async function main() {
       lang,
       embed: values.embed,
       diff: values.diff,
+      maxTokens: useLocal ? 3500 : undefined,
     });
     // Same parity as the MCP server: report modes get the deterministic
     // static analysis appended to the retrieved context.
@@ -233,16 +236,22 @@ async function main() {
     const projectName = basename(result.absProject);
     let prompt: string;
     try {
-      prompt = buildToolPrompt(tool, {
-        context: `${result.context}${staticSection}`,
-        projectName,
-        lang,
-        style: values.style,
-        query,
-        focus: values.focus ?? query,
-        filePath: values.file ?? '',
-        description: query,
-      });
+      // Small embedded models can't follow the full structured brief — give
+      // them a compact instruction so the answer stays grounded in the code.
+      prompt = useLocal
+        ? `${result.context}${staticSection}\n\n${lang === 'en'
+            ? `Answer based only on the codebase context above (${mode} mode). Be concise and cite file paths and lines.${query ? ` Question: ${query}` : ''}`
+            : `Réponds en t'appuyant uniquement sur le contexte du codebase ci-dessus (mode ${mode}). Sois concis et cite les chemins de fichiers et lignes.${query ? ` Question : ${query}` : ''}`}\n\n${lang === 'en' ? 'Answer' : 'Réponse'} :`
+        : buildToolPrompt(tool, {
+            context: `${result.context}${staticSection}`,
+            projectName,
+            lang,
+            style: values.style,
+            query,
+            focus: values.focus ?? query,
+            filePath: values.file ?? '',
+            description: query,
+          });
     } catch {
       console.error(lang === 'en'
         ? `unknown prompt mode "${mode}" — expected: intelligence, report, audit, tasks, ceo, player, chat, search, explain, refactor, crea`

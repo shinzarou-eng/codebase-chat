@@ -102,7 +102,7 @@ async function buildPrompt(name, args) {
   // The local model context is small — cap the assembled prompt accordingly.
   const useLocal = args.localLlm === true || isLocalLlmEnabled();
   const maxTokens = useLocal
-    ? Math.min(Math.max(Number(args.maxTokens) || 6000, 1000), 6000)
+    ? Math.min(Math.max(Number(args.maxTokens) || 3500, 1000), 6000)
     : Math.min(Math.max(Number(args.maxTokens) || 60000, 1000), 200000);
 
   const { context, absProject } = await buildContext({
@@ -122,18 +122,25 @@ async function buildPrompt(name, args) {
   }
 
   const projectName = basename(await findProjectRoot(resolveProjectPath(base.project)));
-  // Same rich prompt the DeepSeek Harness plugin sends — ASCII banner,
-  // persona, mandatory sections, citation rules — for identical reports.
-  const final = buildToolPrompt(name, {
-    context: `${context}${staticSection}`,
-    projectName,
-    lang,
-    style: args.style,
-    query: base.query || base.searchQuery || "",
-    focus: base.query || "",
-    filePath: base.filePath || "",
-    description: base.query || "",
-  });
+  const query = base.query || base.searchQuery || "";
+  // The embedded model can't follow the full structured brief — a compact
+  // instruction keeps its answer grounded in the code. Hosted/host models
+  // still get the same rich prompt the DeepSeek Harness plugin sends.
+  const mode = name.replace(/^codebase_/, "");
+  const final = useLocal
+    ? `${context}${staticSection}\n\n${lang === "en"
+        ? `Answer based only on the codebase context above (${mode} mode). Be concise and cite file paths and lines.${query ? ` Question: ${query}` : ""}`
+        : `Réponds en t'appuyant uniquement sur le contexte du codebase ci-dessus (mode ${mode}). Sois concis et cite les chemins de fichiers et lignes.${query ? ` Question : ${query}` : ""}`}\n\n${lang === "en" ? "Answer" : "Réponse"} :`
+    : buildToolPrompt(name, {
+        context: `${context}${staticSection}`,
+        projectName,
+        lang,
+        style: args.style,
+        query,
+        focus: base.query || "",
+        filePath: base.filePath || "",
+        description: base.query || "",
+      });
 
   return { prompt: final, projectName };
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.2 / mcp 0.8.4 — Local answers actually grounded
+
+**Fixed**
+
+- `--local` / `localLlm: true` sent the full structured brief (11 mandatory sections, ~2k tokens of instructions) plus up to 60k tokens of context to a 1.5B model with an 8k window — the context overflowed and the model ignored the code, answering generically or echoing the file tree. Local mode now caps context at ~3500 tokens and uses a compact instruction, so answers stay grounded in the codebase.
+
 ## 0.25.1 / mcp 0.8.3 — CLI answers, not just prompts
 
 **New**
