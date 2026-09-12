@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.5 — Readable terminal reports
+
+**Improved**
+
+- `--call` / `--local` answers now render as formatted output in the terminal — colored headers, bold, bullets, dimmed code blocks and highlighted `[source: file:line]` citations — instead of raw Markdown. Piped output stays plain Markdown.
+
 ## 0.25.4 / mcp 0.8.6 — Local answers no longer loop
 
 **Fixed**

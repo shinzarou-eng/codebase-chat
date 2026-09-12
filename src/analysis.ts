@@ -314,6 +314,12 @@ export function formatHealthReport(r: HealthReport, lang: 'fr' | 'en' = 'fr'): s
 
   const out: string[] = [];
   out.push(`== ${t.title} — ${basename(r.projectPath)} ==`);
+  if (r.analyzedFiles === 0) {
+    out.push(lang === 'en'
+      ? 'No code files detected in this project — check the path or your .codebase-chat.json ignore rules.'
+      : 'Aucun fichier de code détecté dans ce projet — vérifie le chemin ou les règles ignore de .codebase-chat.json.');
+    return out.join('\n');
+  }
   out.push(`${t.score}: ${r.score}/100 (${r.grade}) · ${r.analyzedFiles} ${t.files} · ${r.importEdges} ${t.edges}`);
   out.push('');
 
@@ -378,6 +384,12 @@ export function formatHealthReportMd(r: HealthReport, lang: 'fr' | 'en' = 'fr'):
   const out: string[] = [];
   out.push(`## ${GRADE_ICON[r.grade]} ${t.title} — \`${basename(r.projectPath)}\``);
   out.push('');
+  if (r.analyzedFiles === 0) {
+    out.push(lang === 'en'
+      ? '_No code files detected in this project — check the path or your `.codebase-chat.json` ignore rules._'
+      : '_Aucun fichier de code détecté dans ce projet — vérifie le chemin ou les règles ignore de `.codebase-chat.json`._');
+    return out.join('\n');
+  }
   out.push(`**${t.score} : ${scoreBar(r.score)} ${r.score}/100 (${r.grade})** · ${r.analyzedFiles} ${t.files} · ${r.importEdges} ${t.edges}`);
   out.push('');
 

@@ -13,6 +13,36 @@ import { getChangedFiles } from './diff.js';
 import { loadProjectConfig } from './config.js';
 import { disposeTreeSitter } from './treesitter.js';
 
+// Minimal Markdown→ANSI renderer so --call/--local answers read like a real
+// report in the terminal instead of raw `##`/`**`/backticks. Only used when
+// stdout is a TTY — piped output stays plain Markdown.
+const ANSI = { reset: '\x1b[0m', bold: '\x1b[1m', dim: '\x1b[2m', cyan: '\x1b[36m', yellow: '\x1b[33m', magenta: '\x1b[35m', green: '\x1b[32m' };
+
+function renderAnswerTerminal(md: string): string {
+  let inCode = false;
+  const inline = (s: string) => s
+    .replace(/\*\*([^*]+)\*\*/g, `${ANSI.bold}$1${ANSI.reset}`)
+    .replace(/`([^`]+)`/g, `${ANSI.cyan}$1${ANSI.reset}`)
+    .replace(/\[source: ([^\]]+)\]/g, `${ANSI.dim}${ANSI.cyan}[source: $1]${ANSI.reset}`);
+  return md.split('\n').map((line) => {
+    if (/^\s*```/.test(line)) {
+      inCode = !inCode;
+      return `${ANSI.dim}  ────────────────────────────${ANSI.reset}`;
+    }
+    if (inCode) return `${ANSI.dim}  ${line}${ANSI.reset}`;
+    const h = line.match(/^(#{1,6})\s+(.*)/);
+    if (h) {
+      const color = h[1].length <= 2 ? `${ANSI.bold}${ANSI.magenta}` : `${ANSI.bold}${ANSI.yellow}`;
+      return `\n${color}${h[2]}${ANSI.reset}`;
+    }
+    const bullet = line.match(/^(\s*)([-*•]|\d+\.)\s+(.*)/);
+    if (bullet) return `${bullet[1]}${ANSI.cyan}${bullet[2]}${ANSI.reset} ${inline(bullet[3])}`;
+    if (/^\s*>/.test(line)) return `${ANSI.dim}${ANSI.green}│${ANSI.reset}${ANSI.dim} ${inline(line.replace(/^\s*>\s?/, ''))}${ANSI.reset}`;
+    if (/^\s*(---+|\*\*\*+)\s*$/.test(line)) return `${ANSI.dim}${'─'.repeat(60)}${ANSI.reset}`;
+    return inline(line);
+  }).join('\n');
+}
+
 class ExitSignal {
   constructor(public code: number) {}
 }
@@ -263,7 +293,8 @@ async function main() {
       console.error(lang === 'en'
         ? 'Answering with the embedded local model (first run downloads ~1 GB)...'
         : 'Réponse via le modèle local embarqué (premier lancement : ~1 Go de téléchargement)...');
-      console.log(await callLocalLlm(prompt, lang));
+      const answer = await callLocalLlm(prompt, lang);
+      console.log(process.stdout.isTTY ? renderAnswerTerminal(answer) : answer);
       exit(0);
     }
 
@@ -297,7 +328,8 @@ async function main() {
         exit(1);
       }
       const data = await res.json() as { choices?: { message?: { content?: string } }[] };
-      console.log(data.choices?.[0]?.message?.content || '');
+      const answer = data.choices?.[0]?.message?.content || '';
+      console.log(process.stdout.isTTY ? renderAnswerTerminal(answer) : answer);
       exit(0);
     }
 
