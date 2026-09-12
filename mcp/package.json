@@ -1,0 +1,51 @@
+{
+  "name": "dsh-codebase-chat-mcp",
+  "version": "0.8.1",
+  "description": "Standalone MCP server for dsh-codebase-chat — codebase intelligence tools for Cursor, Claude, Windsurf and any MCP client. Works without DeepSeek Harness.",
+  "author": "shinzarou-eng",
+  "mcpName": "io.github.shinzarou-eng/dsh-codebase-chat",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "codebase",
+    "code-intelligence",
+    "code-search",
+    "cursor",
+    "claude",
+    "windsurf",
+    "deepseek",
+    "developer-tools",
+    "local-ai"
+  ],
+  "type": "module",
+  "bin": {
+    "dsh-codebase-chat-mcp": "index.mjs"
+  },
+  "main": "index.mjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shinzarou-eng/dsh-codebase-chat.git"
+  },
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "files": [
+    "index.mjs",
+    "local-llm.mjs",
+    "setup.mjs",
+    "README.md",
+    "package.json"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "dsh-codebase-chat": "workspace:^"
+  },
+  "optionalDependencies": {
+    "node-llama-cpp": "^3.20.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

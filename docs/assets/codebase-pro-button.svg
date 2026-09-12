@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="48" viewBox="0 0 240 48" role="img" aria-label="Codebase Pro button">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8dd6ff"/>
+      <stop offset="100%" stop-color="#5fed83"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="48" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="1" y="1" width="238" height="46" rx="9" fill="url(#g)" opacity="0.12"/>
+  <circle cx="28" cy="24" r="10" fill="#0d1117" stroke="#8dd6ff" stroke-width="1.5"/>
+  <path d="M23 24l4 4 7-7" stroke="#5fed83" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="48" y="29" fill="#f0f6fc" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="600">Codebase Pro</text>
+</svg>

@@ -1,0 +1,10 @@
+packages:
+  - '.'
+  - 'mcp'
+allowBuilds:
+  esbuild: true
+  node-llama-cpp: true
+  protobufjs: true
+  sharp: true
+minimumReleaseAgeExclude:
+  - dsh-codebase-chat@0.16.0 || 0.21.0 || 0.22.0

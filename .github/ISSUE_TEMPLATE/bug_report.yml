@@ -1,0 +1,44 @@
+name: Bug report
+description: Report a bug or unexpected behavior
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: dsh-codebase-chat version or Git commit
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Runtime
+      options:
+        - DeepSeek Harness (web)
+        - DeepSeek Harness (desktop)
+        - DeepSeek Harness (headless)
+        - MCP / Windsurf
+        - MCP / Cursor
+        - MCP / Claude
+        - Standalone
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context

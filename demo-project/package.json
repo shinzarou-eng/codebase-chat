@@ -1,0 +1,18 @@
+{
+  "name": "demo-petstore",
+  "version": "1.0.0",
+  "description": "Demo project for dsh-codebase-chat — a small petstore API with intentional issues",
+  "type": "module",
+  "main": "src/app.ts",
+  "scripts": {
+    "dev": "tsx src/app.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

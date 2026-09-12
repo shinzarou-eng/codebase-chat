@@ -1,0 +1,253 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1620px;
+    font-family: 'Inter', sans-serif;
+    background: #05070b;
+    position: relative; overflow: hidden;
+    padding: 46px 44px 42px;
+  }
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 95% 90% at 50% 45%, black 30%, transparent 85%);
+  }
+  .aurora { position: absolute; border-radius: 50%; filter: blur(90px); }
+  .a1 { width: 420px; height: 420px; top: -220px; left: -80px; background: radial-gradient(circle, rgba(110,194,255,0.20), transparent 65%); }
+  .a2 { width: 380px; height: 380px; top: -180px; right: -60px; background: radial-gradient(circle, rgba(167,139,250,0.18), transparent 65%); }
+  .a3 { width: 340px; height: 340px; bottom: -220px; left: 42%; background: radial-gradient(circle, rgba(74,222,128,0.12), transparent 65%); }
+
+  .head { position: relative; display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 30px; }
+  .title { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; color: #f4f7fb; }
+  .title em { font-style: normal; background: linear-gradient(95deg,#6ec2ff,#a78bfa,#4ade80); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .legend { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #5b6679; display: flex; align-items: center; gap: 8px; }
+  .legend b { color: #4ade80; font-weight: 600; }
+  .legend svg { width: 13px; height: 13px; color: #4ade80; }
+
+  .flow { position: relative; display: flex; align-items: center; gap: 0; }
+
+  /* ---- local box ---- */
+  .local {
+    flex: 1;
+    border: 1.5px dashed rgba(74,222,128,0.55);
+    border-radius: 18px;
+    background: rgba(8,11,16,0.72);
+    padding: 40px 22px 22px;
+    position: relative;
+  }
+  .local-tag {
+    position: absolute; top: -14px; left: 22px;
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600;
+    color: #4ade80; background: #05070b; padding: 4px 12px;
+    border: 1.5px dashed rgba(74,222,128,0.55); border-radius: 999px;
+  }
+  .local-tag svg { width: 13px; height: 13px; }
+
+  .steps { display: flex; gap: 0; align-items: stretch; }
+  .step {
+    flex: 1; border-radius: 14px;
+    background: #10141c; border: 1px solid #2b3444;
+    padding: 15px 15px 14px;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .step.hl { border-color: rgba(251,191,36,0.6); background: #181a12; }
+  .step .top { display: flex; align-items: center; justify-content: space-between; }
+  .step .num { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: #6ec2ff; letter-spacing: 0.08em; }
+  .step.hl .num { color: #fbbf24; }
+  .step .icon { width: 17px; height: 17px; color: #8b98ad; }
+  .step.hl .icon { color: #fbbf24; }
+  .step .name { font-size: 15.5px; font-weight: 700; color: #f4f7fb; letter-spacing: -0.01em; }
+  .step .desc { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.5; color: #7d8aa0; }
+  .arrow {
+    align-self: center; flex-shrink: 0;
+    width: 26px; display: flex; align-items: center; justify-content: center;
+    color: #5b6679;
+  }
+  .arrow svg { width: 16px; height: 16px; }
+
+  .det {
+    margin-top: 14px;
+    border-radius: 12px;
+    border: 1.5px dotted rgba(167,139,250,0.7);
+    background: rgba(21,16,25,0.85);
+    padding: 11px 16px;
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .det svg { width: 15px; height: 15px; color: #a78bfa; flex-shrink: 0; }
+  .det .l { font-size: 12.5px; color: #c9d1d9; font-weight: 600; white-space: nowrap; }
+  .det .r { font-size: 10.5px; color: #7d8aa0; white-space: nowrap; margin-left: auto; }
+
+  /* ---- boundary ---- */
+  .boundary {
+    flex-shrink: 0; width: 140px; position: relative; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  }
+  .boundary .lbl {
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 600;
+    color: #4ade80; background: #05070b; padding: 3px 8px; white-space: nowrap;
+    border-radius: 999px; border: 1px solid rgba(74,222,128,0.4);
+  }
+  .boundary .lbl.dim { color: #a78bfa; border-color: rgba(167,139,250,0.4); }
+  .boundary .arr { color: #4ade80; display: flex; }
+  .boundary .arr svg { width: 30px; height: 20px; }
+  .boundary .arr.dim { color: #7d8aa0; }
+  .boundary .arr.dim svg { width: 24px; height: 16px; }
+
+  /* ---- models + answer ---- */
+  .models { flex-shrink: 0; width: 218px; display: flex; flex-direction: column; gap: 12px; justify-content: center; }
+  .model {
+    border-radius: 14px; padding: 14px 16px;
+    background: #0d1823; border: 1.5px solid rgba(110,194,255,0.6);
+    display: flex; gap: 11px; align-items: flex-start;
+  }
+  .model.v { background: #171226; border-color: rgba(167,139,250,0.55); }
+  .model svg { width: 17px; height: 17px; color: #6ec2ff; flex-shrink: 0; margin-top: 1px; }
+  .model.v svg { color: #a78bfa; }
+  .model .name { font-size: 15px; font-weight: 700; color: #f4f7fb; }
+  .model .desc { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #7d8aa0; margin-top: 4px; line-height: 1.5; }
+
+  .tail { flex-shrink: 0; width: 48px; display: flex; align-items: center; justify-content: center; color: #5b6679; }
+  .tail svg { width: 26px; height: 18px; }
+
+  .answer {
+    flex-shrink: 0; width: 228px;
+    border-radius: 16px;
+    background: #0d2013; border: 1.5px solid rgba(74,222,128,0.7);
+    padding: 18px;
+    display: flex; flex-direction: column; justify-content: center; gap: 9px;
+    box-shadow: 0 0 60px -18px rgba(74,222,128,0.35);
+  }
+  .answer .top { display: flex; align-items: center; gap: 9px; }
+  .answer .top svg { width: 18px; height: 18px; color: #4ade80; }
+  .answer .name { font-size: 16px; font-weight: 800; color: #f4f7fb; }
+  .answer .receipt {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+    color: #4ade80; background: rgba(74,222,128,0.1);
+    border-radius: 6px; padding: 4px 8px; width: fit-content;
+  }
+  .answer .meta { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #7d8aa0; line-height: 1.6; }
+
+  .foot { position: relative; margin-top: 30px; display: flex; gap: 10px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 14px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    color: #c9d1d9; font-size: 13px; font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .chip i { width: 7px; height: 7px; border-radius: 50%; display: block; }
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="aurora a1"></div>
+  <div class="aurora a2"></div>
+  <div class="aurora a3"></div>
+
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <g id="i-file"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></g>
+      <g id="i-braces"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1"/><path d="M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></g>
+      <g id="i-crosshair"><circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/></g>
+      <g id="i-clip"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></g>
+      <g id="i-sigma"><path d="M18 7V4H6l6 8-6 8h12v-3"/></g>
+      <g id="i-cpu"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></g>
+      <g id="i-cloud"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></g>
+      <g id="i-check"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></g>
+      <g id="i-lock"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></g>
+      <g id="i-arrow"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></g>
+    </defs>
+  </svg>
+
+  <div class="head">
+    <div class="title">How it <em>works</em></div>
+    <div class="legend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-lock"/></svg> inside the dashed box = <b>&nbsp;your machine</b>&nbsp;— nothing leaves by default</div>
+  </div>
+
+  <div class="flow">
+    <div class="local">
+      <div class="local-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-lock"/></svg> YOUR MACHINE — local-first</div>
+      <div class="steps">
+        <div class="step">
+          <div class="top"><span class="num">01</span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-file"/></svg></div>
+          <span class="name">Source</span>
+          <span class="desc">JS · TS · Py · Go<br>Rust · Java · C# · PHP</span>
+        </div>
+        <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow"/></svg></div>
+        <div class="step">
+          <div class="top"><span class="num">02</span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-braces"/></svg></div>
+          <span class="name">AST index</span>
+          <span class="desc">Babel + tree-sitter WASM<br>incremental disk cache</span>
+        </div>
+        <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow"/></svg></div>
+        <div class="step">
+          <div class="top"><span class="num">03</span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-crosshair"/></svg></div>
+          <span class="name">Retrieval</span>
+          <span class="desc">lexical + local embeddings<br>token-budgeted chunks</span>
+        </div>
+        <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow"/></svg></div>
+        <div class="step hl">
+          <div class="top"><span class="num">04</span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-clip"/></svg></div>
+          <span class="name">Briefing</span>
+          <span class="desc">module graph · metrics<br>debt signals · cite rules</span>
+        </div>
+      </div>
+      <div class="det">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-sigma"/></svg>
+        <span class="l">Deterministic analysis</span>
+        <span class="r">cycles · dead code · duplication · score — no LLM needed</span>
+      </div>
+    </div>
+
+    <div class="boundary">
+      <span class="lbl">promptOnly · default</span>
+      <span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow"/></svg></span>
+      <span class="lbl dim">API key set</span>
+      <span class="arr dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow"/></svg></span>
+    </div>
+
+    <div class="models">
+      <div class="model">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-cpu"/></svg>
+        <div>
+          <div class="name">Host model</div>
+          <div class="desc">Claude · Cursor · Windsurf · Devin<br>reads the briefing in-context</div>
+        </div>
+      </div>
+      <div class="model v">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-cloud"/></svg>
+        <div>
+          <div class="name">DeepSeek / OpenAI</div>
+          <div class="desc">direct LLM calls<br>only if a key is set</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow"/></svg></div>
+
+    <div class="answer">
+      <div class="top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg><span class="name">Cited answer</span></div>
+      <div class="receipt">[source: file:line]</div>
+      <div class="meta">[Confidence: 87%]<br>[Severity: High]<br>verify in seconds</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span class="chip"><i style="background:#6ec2ff"></i>local-first</span>
+    <span class="chip"><i style="background:#fbbf24"></i>token-budgeted</span>
+    <span class="chip"><i style="background:#a78bfa"></i>deterministic audits</span>
+    <span class="chip"><i style="background:#4ade80"></i>zero API key</span>
+  </div>
+</body>
+</html>

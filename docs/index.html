@@ -1,0 +1,1511 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dsh-codebase-chat — Codebase Intelligence for DeepSeek Harness & MCP IDEs</title>
+  <meta name="description" content="Local-first, multi-language codebase intelligence. Chat, search, audit, refactor, and generate board-ready reports from your code — in DeepSeek Harness, Cursor, Claude, Windsurf, or any MCP client.">
+  <meta name="theme-color" content="#05070b">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="dsh-codebase-chat — Codebase Intelligence">
+  <meta property="og:description" content="Chat, audit, refactor, and report on any codebase. Local-first. FR & EN. DeepSeek Harness plugin + standalone MCP server.">
+  <meta property="og:url" content="https://shinzarou-eng.github.io/dsh-codebase-chat/">
+  <meta property="og:image" content="https://raw.githubusercontent.com/shinzarou-eng/dsh-codebase-chat/main/docs/assets/social-preview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="dsh-codebase-chat — Codebase Intelligence">
+  <meta name="twitter:description" content="Local-first codebase intelligence for DeepSeek Harness and MCP IDEs.">
+  <meta name="twitter:image" content="https://raw.githubusercontent.com/shinzarou-eng/dsh-codebase-chat/main/docs/assets/social-preview.png">
+
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="canonical" href="https://shinzarou-eng.github.io/dsh-codebase-chat/">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "dsh-codebase-chat",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Windows, macOS, Linux",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": { "@type": "Person", "name": "shinzarou-eng" },
+    "license": "https://opensource.org/licenses/MIT"
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #05070b;
+      --panel: #0b0e14;
+      --panel-2: #10141c;
+      --line: rgba(255,255,255,0.07);
+      --line-strong: rgba(255,255,255,0.12);
+      --text: #f4f7fb;
+      --text-2: #93a1b5;
+      --text-3: #5b6679;
+      --blue: #6ec2ff;
+      --violet: #a78bfa;
+      --green: #4ade80;
+      --rose: #fb7185;
+      --amber: #fbbf24;
+      --cyan: #22d3ee;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: "cv11", "ss01";
+    }
+    .font-mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace; }
+
+    ::selection { background: rgba(110,194,255,0.25); color: #fff; }
+
+    .gradient-text {
+      background: linear-gradient(95deg, #6ec2ff 0%, #a78bfa 50%, #4ade80 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+
+    /* ---------- ambient ---------- */
+    .hero-glow {
+      position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 55% 45% at 50% -5%, rgba(110,194,255,0.13), transparent 65%),
+        radial-gradient(ellipse 40% 35% at 75% 10%, rgba(167,139,250,0.09), transparent 60%),
+        radial-gradient(ellipse 40% 35% at 25% 15%, rgba(74,222,128,0.06), transparent 60%);
+    }
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse 85% 60% at 50% 0%, black 30%, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse 85% 60% at 50% 0%, black 30%, transparent 75%);
+    }
+    .noise::after {
+      content: '';
+      position: fixed; inset: 0;
+      opacity: 0.025;
+      pointer-events: none;
+      z-index: 60;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* ---------- surfaces ---------- */
+    .card {
+      position: relative;
+      background: linear-gradient(180deg, rgba(255,255,255,0.028), rgba(255,255,255,0.012));
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+      transition: transform .3s cubic-bezier(.22,1,.36,1), border-color .3s, box-shadow .3s;
+    }
+    .card::before {
+      content: '';
+      position: absolute; inset: 0 0 auto 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.09), transparent);
+      border-radius: 1rem 1rem 0 0;
+      pointer-events: none;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(110,194,255,0.22);
+      box-shadow: 0 24px 48px -20px rgba(0,0,0,0.7), 0 0 40px -18px rgba(110,194,255,0.15);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+
+    /* ---------- buttons ---------- */
+    .btn-primary {
+      background: #f4f7fb;
+      color: #05070b;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 10px 30px -10px rgba(255,255,255,0.25);
+      transition: all .2s;
+    }
+    .btn-primary:hover { transform: translateY(-1px); background: #fff; box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset, 0 16px 40px -10px rgba(255,255,255,0.3); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--line-strong);
+      transition: all .2s;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.22); transform: translateY(-1px); }
+
+    /* ---------- eyebrow / kicker ---------- */
+    .kicker {
+      display: inline-flex; align-items: center; gap: 0.9rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--blue);
+    }
+    .kicker::before, .kicker::after {
+      content: ''; width: 2.2rem; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(110,194,255,0.5));
+    }
+    .kicker::after { background: linear-gradient(90deg, rgba(110,194,255,0.5), transparent); }
+
+    /* ---------- reveals ---------- */
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      animation: reveal .8s cubic-bezier(.22,1,.36,1) forwards;
+    }
+    .reveal-1 { animation-delay: .06s; }
+    .reveal-2 { animation-delay: .14s; }
+    .reveal-3 { animation-delay: .22s; }
+    .reveal-4 { animation-delay: .32s; }
+    .reveal-5 { animation-delay: .44s; }
+    @keyframes reveal { to { opacity: 1; transform: translateY(0); } }
+
+    .on-scroll { opacity: 0; transform: translateY(24px); transition: opacity .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1); }
+    .on-scroll.visible { opacity: 1; transform: translateY(0); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal, .on-scroll { opacity: 1 !important; transform: none !important; }
+    }
+
+    /* ---------- nav ---------- */
+    .nav-link { position: relative; transition: color .2s; }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      left: 50%; bottom: -5px;
+      width: 3px; height: 3px;
+      border-radius: 50%;
+      background: var(--blue);
+      transform: translateX(-50%) scale(0);
+      transition: transform .25s;
+    }
+    .nav-link:hover::after, .nav-link.active::after { transform: translateX(-50%) scale(1); }
+    .nav-link.active { color: #fff; }
+
+    /* ---------- terminal / code ---------- */
+    .term {
+      background: #07090d;
+      border: 1px solid var(--line);
+      border-radius: 0.9rem;
+      overflow: hidden;
+    }
+    .term-bar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 0.55rem 0.9rem;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* ---------- evidence annotations ---------- */
+    .ev-tag {
+      display: inline-block;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 11.5px;
+      line-height: 1.4;
+      padding: 1px 7px;
+      border-radius: 6px;
+      vertical-align: baseline;
+      white-space: nowrap;
+    }
+    .ev-src { color: #6ec2ff; background: rgba(110,194,255,0.09); border: 1px solid rgba(110,194,255,0.2); }
+    .ev-sev { color: #fb7185; background: rgba(251,113,133,0.1); border: 1px solid rgba(251,113,133,0.28); }
+    .ev-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+
+    /* ---------- pipeline timeline ---------- */
+    .timeline { position: relative; padding-left: 1rem; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 1.5rem; top: 1.4rem; bottom: 1.4rem;
+      width: 1px;
+      background: linear-gradient(180deg, rgba(110,194,255,0.4), rgba(167,139,250,0.35), rgba(251,191,36,0.3), rgba(74,222,128,0.4));
+    }
+    .tl-step { position: relative; display: flex; gap: 1.3rem; padding: 0.9rem 0; }
+    .tl-step:last-child { padding-bottom: 0; }
+    .tl-step:first-child { padding-top: 0; }
+    .tl-ic {
+      position: relative; z-index: 1;
+      width: 2.6rem; height: 2.6rem; flex-shrink: 0;
+      border-radius: 0.8rem;
+      display: flex; align-items: center; justify-content: center;
+      background-color: var(--panel);
+      border: 1px solid;
+      box-shadow: 0 0 0 5px var(--bg);
+    }
+    .tl-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em;
+      color: var(--text-3);
+    }
+    .cursor-blink { color: var(--green); animation: blink 1.1s step-end infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ---------- chips ---------- */
+    .chip {
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      padding: 0.42rem 0.9rem;
+      border-radius: 9999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+      color: var(--text-2);
+      font-size: 0.8rem; font-weight: 500;
+      transition: all .2s;
+    }
+    .chip:hover { border-color: rgba(110,194,255,0.3); color: var(--text); }
+
+    /* ---------- table ---------- */
+    .tools-table td, .tools-table th { padding: 0.72rem 1rem; }
+    .tools-table tbody tr { border-top: 1px solid rgba(255,255,255,0.045); transition: background .15s; }
+    .tools-table tbody tr:hover { background: rgba(255,255,255,0.025); }
+
+    details summary::-webkit-details-marker { display: none; }
+
+    /* ---------- demo frame ---------- */
+    .demo-frame {
+      border: 1px solid var(--line-strong);
+      border-radius: 1.1rem;
+      overflow: hidden;
+      background: #07090d;
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.4),
+        0 30px 80px -20px rgba(0,0,0,0.8),
+        0 0 90px -30px rgba(110,194,255,0.18);
+    }
+    .demo-tab { transition: all .2s; }
+    .demo-tab.active { background: rgba(255,255,255,0.07); color: #fff; border-color: rgba(255,255,255,0.18); }
+
+    .hairline { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); }
+
+    /* ---------- lang switcher ---------- */
+    .lang-btn.active { background: rgba(255,255,255,0.09); color: #fff; }
+
+    /* ---------- scroll progress ---------- */
+    #scroll-progress {
+      position: fixed; top: 0; left: 0; height: 2px; width: 0%;
+      background: linear-gradient(90deg, var(--blue), var(--violet), var(--green));
+      z-index: 100; pointer-events: none;
+      transition: width .1s linear;
+    }
+
+    /* ---------- aurora hero ---------- */
+    .aurora { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .5; pointer-events: none; will-change: transform; }
+    .aurora-1 { width: 480px; height: 480px; top: -160px; left: 12%; background: radial-gradient(circle, rgba(110,194,255,0.22), transparent 65%); animation: drift1 22s ease-in-out infinite alternate; }
+    .aurora-2 { width: 420px; height: 420px; top: -80px; right: 8%; background: radial-gradient(circle, rgba(167,139,250,0.18), transparent 65%); animation: drift2 26s ease-in-out infinite alternate; }
+    .aurora-3 { width: 360px; height: 360px; top: 120px; left: 42%; background: radial-gradient(circle, rgba(74,222,128,0.10), transparent 65%); animation: drift3 30s ease-in-out infinite alternate; }
+    @keyframes drift1 { from { transform: translate(0,0) scale(1); } to { transform: translate(70px,50px) scale(1.12); } }
+    @keyframes drift2 { from { transform: translate(0,0) scale(1.05); } to { transform: translate(-80px,70px) scale(0.95); } }
+    @keyframes drift3 { from { transform: translate(0,0) scale(0.95); } to { transform: translate(-50px,-40px) scale(1.15); } }
+
+    /* ---------- spotlight cards ---------- */
+    .spot { position: relative; overflow: hidden; }
+    .spot::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(560px circle at var(--mx, 50%) var(--my, -20%), rgba(110,194,255,0.075), transparent 42%);
+      opacity: 0; transition: opacity .35s;
+      pointer-events: none;
+    }
+    .spot:hover::after { opacity: 1; }
+
+    /* ---------- section kicker with rule ---------- */
+    .kicker-row { display: inline-flex; align-items: center; gap: 0.9rem; }
+    .kicker-row::before, .kicker-row::after {
+      content: ''; width: 2.2rem; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(110,194,255,0.5));
+    }
+    .kicker-row::after { background: linear-gradient(90deg, rgba(110,194,255,0.5), transparent); }
+
+    /* ---------- marquee ---------- */
+    .marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent); }
+    .marquee-track { display: flex; gap: 0.6rem; width: max-content; animation: marquee 26s linear infinite; }
+    .marquee:hover .marquee-track { animation-play-state: paused; }
+    @keyframes marquee { to { transform: translateX(-50%); } }
+
+    /* ---------- recommended glow ---------- */
+    .reco-card { border-color: rgba(167,139,250,0.35) !important; box-shadow: 0 0 40px -14px rgba(167,139,250,0.35); }
+    .reco-card:hover { box-shadow: 0 24px 48px -20px rgba(0,0,0,0.7), 0 0 55px -12px rgba(167,139,250,0.45); }
+
+    /* ---------- gradient section titles ---------- */
+    .section-title { letter-spacing: -0.02em; }
+
+    /* ---------- animated hero title shine ---------- */
+    .gradient-text-anim {
+      background: linear-gradient(95deg, #6ec2ff, #a78bfa, #4ade80, #6ec2ff);
+      background-size: 250% 100%;
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: transparent;
+      animation: shine 9s ease-in-out infinite;
+    }
+    @keyframes shine { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+  </style>
+</head>
+<body class="antialiased">
+
+  <div id="scroll-progress"></div>
+  <div class="min-h-screen flex flex-col relative noise">
+
+    <!-- ===================== NAV ===================== -->
+    <header class="sticky top-0 z-50 border-b border-white/[0.05] bg-[#05070b]/75 backdrop-blur-xl">
+      <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <a href="#" class="flex items-center gap-2.5 font-semibold text-white tracking-tight">
+          <img src="assets/logo.png" alt="" class="w-7 h-7 rounded-lg">
+          <span class="hidden sm:inline text-[15px]">dsh-codebase-chat</span>
+        </a>
+        <nav class="hidden lg:flex items-center gap-8 text-[13px] text-[#93a1b5]">
+          <a href="#features" class="nav-link" data-nav="features" data-i18n="nav.features">Features</a>
+          <a href="#pipeline" class="nav-link" data-nav="pipeline" data-i18n="nav.pipeline">How it works</a>
+          <a href="#tools" class="nav-link" data-nav="tools" data-i18n="nav.tools">Tools</a>
+          <a href="#demo" class="nav-link" data-nav="demo" data-i18n="nav.demo">Demo</a>
+          <a href="#install" class="nav-link" data-nav="install" data-i18n="nav.install">Install</a>
+          <a href="#roadmap" class="nav-link" data-nav="roadmap" data-i18n="nav.roadmap">Roadmap</a>
+          <a href="#faq" class="nav-link" data-nav="faq" data-i18n="nav.faq">FAQ</a>
+        </nav>
+        <div class="flex items-center gap-2.5">
+          <div class="flex items-center rounded-lg border border-white/10 overflow-hidden text-[11px] font-bold" role="group" aria-label="Language">
+            <button data-lang="en" class="lang-btn px-2.5 py-1.5 text-[#5b6679] hover:text-white transition" aria-label="English">EN</button>
+            <button data-lang="fr" class="lang-btn px-2.5 py-1.5 text-[#5b6679] hover:text-white transition" aria-label="Français">FR</button>
+          </div>
+          <a href="https://www.npmjs.com/package/dsh-codebase-chat" class="hidden sm:flex btn-secondary items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#93a1b5]">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M0 7.334v8h6.666v1.332H8v-8H6.666v6.668H5.334V7.334H0zm6.668 0v9.332h3.332v-1.332h3.334V7.334H6.668zm3.334 6.666H8.668V8.666h1.334V14z"/></svg>
+            npm
+          </a>
+          <a href="https://github.com/shinzarou-eng/dsh-codebase-chat" class="btn-secondary flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
+            <span data-i18n="nav.star">Star on GitHub</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 relative z-10">
+
+      <!-- ===================== HERO ===================== -->
+      <section class="relative overflow-hidden">
+        <div class="hero-glow"></div>
+        <div class="aurora aurora-1"></div>
+        <div class="aurora aurora-2"></div>
+        <div class="aurora aurora-3"></div>
+        <div class="absolute inset-0 grid-bg pointer-events-none"></div>
+
+        <div class="relative max-w-6xl mx-auto px-6 pt-24 pb-20 text-center">
+          <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/CHANGELOG.md" class="inline-flex items-center gap-2.5 pl-1.5 pr-3.5 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] text-[13px] font-medium text-[#93a1b5] mb-10 reveal reveal-1 hover:border-white/20 hover:text-white transition">
+            <span class="px-2 py-0.5 rounded-full bg-[#4ade80]/15 text-[#4ade80] text-[11px] font-bold" data-i18n="hero.new">NEW</span>
+            <span data-i18n="hero.badge">v0.23.0 — embedded local LLM, fully offline mode</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </a>
+
+          <h1 class="text-[2.9rem] sm:text-6xl md:text-[4.6rem] font-extrabold tracking-[-0.03em] mb-6 leading-[1.04] reveal reveal-2" data-i18n-html="hero.title">
+            Your codebase,<br>
+            <span class="gradient-text-anim">fully understood.</span>
+          </h1>
+
+          <p class="text-lg md:text-xl text-[#93a1b5] max-w-2xl mx-auto mb-10 leading-relaxed font-light reveal reveal-3" data-i18n-html="hero.sub">
+            Chat, search, explain, refactor, audit — and generate board-ready reports.
+            Every claim carries a source citation, a confidence score, and a severity label.
+            <span class="text-white font-normal">Local-first. French &amp; English. Works fully offline.</span>
+          </p>
+
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 reveal reveal-3">
+            <a href="#install" class="btn-primary px-7 py-3 rounded-xl font-semibold text-[15px]" data-i18n="hero.cta1">Get started</a>
+            <a href="https://github.com/shinzarou-eng/dsh-codebase-chat" class="btn-secondary px-7 py-3 rounded-xl font-semibold text-[15px] text-white" data-i18n="hero.cta2">View on GitHub</a>
+          </div>
+
+          <div class="mt-7 reveal reveal-4 inline-flex items-center gap-3 term px-4 py-2.5 font-mono text-[13px] text-[#c9d1d9]">
+            <span class="text-[#5b6679]">$</span>
+            <code id="code-0">npx dsh-codebase-chat-mcp setup</code>
+            <button onclick="copyCode('code-0', this)" class="px-2.5 py-1 rounded-md text-[11px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 text-[#93a1b5] transition" data-i18n="btn.copy">Copy</button>
+          </div>
+          <p class="mt-2.5 text-[12px] text-[#5b6679] reveal reveal-4" data-i18n="hero.oneCmd">one command — auto-detects your IDE and writes the config</p>
+
+          <div class="flex flex-wrap items-center justify-center gap-2.5 mt-9 reveal reveal-4">
+            <img src="https://img.shields.io/npm/v/dsh-codebase-chat?logo=npm&color=6ec2ff&labelColor=0b0e14" alt="npm version" class="h-6 rounded-md">
+            <img src="https://img.shields.io/npm/v/dsh-codebase-chat-mcp?logo=npm&color=a78bfa&labelColor=0b0e14&label=mcp" alt="npm mcp version" class="h-6 rounded-md">
+            <img src="https://img.shields.io/github/license/shinzarou-eng/dsh-codebase-chat?color=93a1b5&labelColor=0b0e14" alt="license" class="h-6 rounded-md">
+            <img src="https://img.shields.io/badge/node-%3E%3D20-4ade80?logo=nodedotjs&labelColor=0b0e14" alt="node >= 20" class="h-6 rounded-md">
+          </div>
+
+          <div class="mt-9 reveal reveal-4">
+            <p class="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#5b6679] mb-4" data-i18n="hero.works">Works everywhere you code</p>
+            <div class="marquee max-w-2xl mx-auto">
+              <div class="marquee-track py-1">
+                <span class="chip"><span class="w-1.5 h-1.5 rounded-full bg-[#6ec2ff]"></span>DeepSeek Harness</span>
+                <span class="chip"><span class="w-1.5 h-1.5 rounded-full bg-[#a78bfa]"></span>Cursor</span>
+                <span class="chip"><span class="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></span>Claude</span>
+                <span class="chip"><span class="w-1.5 h-1.5 rounded-full bg-[#22d3ee]"></span>Windsurf</span>
+                <span class="chip"><span class="w-1.5 h-1.5 rounded-full bg-[#4ade80]"></span><span data-i18n="hero.chip.mcp">Any MCP client</span></span>
+                <span class="chip"><span class="w-1.5 h-1.5 rounded-full bg-[#fb7185]"></span><span data-i18n="hero.chip.cli">Terminal CLI</span></span>
+                <span class="chip" aria-hidden="true"><span class="w-1.5 h-1.5 rounded-full bg-[#6ec2ff]"></span>DeepSeek Harness</span>
+                <span class="chip" aria-hidden="true"><span class="w-1.5 h-1.5 rounded-full bg-[#a78bfa]"></span>Cursor</span>
+                <span class="chip" aria-hidden="true"><span class="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></span>Claude</span>
+                <span class="chip" aria-hidden="true"><span class="w-1.5 h-1.5 rounded-full bg-[#22d3ee]"></span>Windsurf</span>
+                <span class="chip" aria-hidden="true"><span class="w-1.5 h-1.5 rounded-full bg-[#4ade80]"></span><span data-i18n="hero.chip.mcp">Any MCP client</span></span>
+                <span class="chip" aria-hidden="true"><span class="w-1.5 h-1.5 rounded-full bg-[#fb7185]"></span><span data-i18n="hero.chip.cli">Terminal CLI</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real demo in hero -->
+          <div class="mt-16 max-w-4xl mx-auto reveal reveal-5">
+            <div class="demo-frame">
+              <img src="assets/demo.gif" alt="dsh-codebase-chat real CLI demo" class="w-full block" data-i18n-alt="hero.demoAlt">
+            </div>
+            <p class="mt-3 text-[11px] font-mono text-[#5b6679]" data-i18n="hero.demoCap">real output — no mockups</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== PLAIN WORDS ===================== -->
+      <section class="py-28 border-b border-white/[0.05]">
+        <div class="max-w-4xl mx-auto px-6">
+          <div class="text-center mb-14 on-scroll">
+            <p class="kicker mb-4" data-i18n="pw.kicker">Start here</p>
+            <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight mb-4" data-i18n="pw.title">What is this, exactly?</h2>
+            <p class="text-[#93a1b5] max-w-2xl mx-auto" data-i18n="pw.lead">In plain words — no jargon required.</p>
+            <p class="mt-6 text-[14px] text-[#93a1b5] max-w-2xl mx-auto leading-relaxed" data-i18n="pw.intro">Point it at a folder of code on your computer. Ask questions in plain language — "How does login work?", "Is there a hardcoded password?", "What should I fix first?" — in French or English. Every answer cites the exact file and line it came from, so you can verify it in seconds. Nothing is uploaded anywhere.</p>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-5 mb-10">
+            <div class="card p-7 text-center on-scroll">
+              <div class="w-12 h-12 mx-auto rounded-xl bg-[#6ec2ff]/10 border border-[#6ec2ff]/20 flex items-center justify-center mb-5 text-[#6ec2ff]">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/></svg>
+              </div>
+              <h3 class="font-semibold text-white mb-2" data-i18n="pw.c1t">Point it at a folder</h3>
+              <p class="text-[13.5px] text-[#93a1b5] leading-relaxed" data-i18n="pw.c1b">Give it any project on your computer. It reads the code and builds a map of it — nothing is uploaded anywhere.</p>
+            </div>
+            <div class="card p-7 text-center on-scroll">
+              <div class="w-12 h-12 mx-auto rounded-xl bg-[#a78bfa]/10 border border-[#a78bfa]/20 flex items-center justify-center mb-5 text-[#a78bfa]">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg>
+              </div>
+              <h3 class="font-semibold text-white mb-2" data-i18n="pw.c2t">Ask in plain language</h3>
+              <p class="text-[13.5px] text-[#93a1b5] leading-relaxed" data-i18n="pw.c2b">"How does login work?", "Is there a hardcoded password?", "What should I fix first?" — in French or English.</p>
+            </div>
+            <div class="card p-7 text-center on-scroll">
+              <div class="w-12 h-12 mx-auto rounded-xl bg-[#4ade80]/10 border border-[#4ade80]/20 flex items-center justify-center mb-5 text-[#4ade80]">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>
+              </div>
+              <h3 class="font-semibold text-white mb-2" data-i18n="pw.c3t">Get answers with receipts</h3>
+              <p class="text-[13.5px] text-[#93a1b5] leading-relaxed" data-i18n="pw.c3b">Every answer cites the exact file and line it came from — so you can check it yourself in seconds.</p>
+            </div>
+          </div>
+
+          <div class="card p-7 on-scroll">
+            <h3 class="font-semibold text-white mb-4 text-center" data-i18n="pw.glossT">New to some of these words?</h3>
+            <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-[13.5px]">
+              <div>
+                <dt class="font-mono text-[#6ec2ff] text-xs mb-1" data-i18n="pw.g1t">MCP server</dt>
+                <dd class="text-[#93a1b5] leading-relaxed" data-i18n="pw.g1b">A plug format that lets AI assistants (Claude, Cursor…) use extra tools. Install it once, and your IDE can "see" your code.</dd>
+              </div>
+              <div>
+                <dt class="font-mono text-[#6ec2ff] text-xs mb-1" data-i18n="pw.g2t">Index</dt>
+                <dd class="text-[#93a1b5] leading-relaxed" data-i18n="pw.g2b">Like the index at the back of a book — a map of every function and file, so answers are instant instead of reading everything again.</dd>
+              </div>
+              <div>
+                <dt class="font-mono text-[#6ec2ff] text-xs mb-1" data-i18n="pw.g3t">Prompt-only mode</dt>
+                <dd class="text-[#93a1b5] leading-relaxed" data-i18n="pw.g3b">The tool prepares the context; your existing AI (Cursor, Claude…) writes the answer. No extra API key, no extra cost.</dd>
+              </div>
+              <div>
+                <dt class="font-mono text-[#6ec2ff] text-xs mb-1" data-i18n="pw.g4t">Deterministic analysis</dt>
+                <dd class="text-[#93a1b5] leading-relaxed" data-i18n="pw.g4b">Checks computed directly from your code — same input, same result, every time. No guessing.</dd>
+              </div>
+              <div>
+                <dt class="font-mono text-[#6ec2ff] text-xs mb-1" data-i18n="pw.g5t">Offline mode</dt>
+                <dd class="text-[#93a1b5] leading-relaxed" data-i18n="pw.g5b">A small model runs on your machine and answers by itself — no key, no host, no cloud. Handy for quick lookups; bigger models still do the heavy reports.</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== STATS ===================== -->
+      <section class="border-y border-white/[0.05] bg-white/[0.015]">
+        <div class="max-w-5xl mx-auto px-6 py-12 grid grid-cols-2 sm:grid-cols-4 gap-8 text-center">
+          <div class="on-scroll">
+            <div class="text-[2rem] font-extrabold tracking-tight gradient-text">12</div>
+            <div class="text-[13px] text-[#5b6679] mt-1" data-i18n="stats.tools">MCP tools exposed</div>
+          </div>
+          <div class="on-scroll">
+            <div class="text-[2rem] font-extrabold tracking-tight gradient-text">2</div>
+            <div class="text-[13px] text-[#5b6679] mt-1" data-i18n="stats.pkgs">Packages — plugin &amp; MCP</div>
+          </div>
+          <div class="on-scroll">
+            <div class="text-[2rem] font-extrabold tracking-tight gradient-text">100%</div>
+            <div class="text-[13px] text-[#5b6679] mt-1" data-i18n="stats.local">Local-first indexing</div>
+          </div>
+          <div class="on-scroll">
+            <div class="text-[2rem] font-extrabold tracking-tight gradient-text">FR / EN</div>
+            <div class="text-[13px] text-[#5b6679] mt-1" data-i18n="stats.lang">Bilingual out of the box</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== PIPELINE ===================== -->
+      <section id="pipeline" class="py-28">
+        <div class="max-w-6xl mx-auto px-6">
+          <div class="text-center mb-16 on-scroll">
+            <p class="kicker mb-4" data-i18n="pipe.kicker">How it works</p>
+            <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight mb-4" data-i18n="pipe.title">From messy code to clear decisions</h2>
+            <p class="text-[#93a1b5] max-w-xl mx-auto" data-i18n="pipe.sub">Four steps — all on your machine, before anything reaches an AI model.</p>
+          </div>
+
+          <div class="grid lg:grid-cols-2 gap-10 items-center">
+            <!-- Vertical timeline -->
+            <div class="timeline on-scroll">
+              <div class="tl-step">
+                <div class="tl-ic bg-[#6ec2ff]/10 border-[#6ec2ff]/25 text-[#6ec2ff]">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+                </div>
+                <div class="tl-body">
+                  <div class="flex items-center gap-2.5 mb-1.5">
+                    <span class="tl-num">01</span>
+                    <h3 class="font-semibold text-white" data-i18n="pipe.s1t">Index</h3>
+                  </div>
+                  <p class="text-[#93a1b5] text-[13.5px] leading-relaxed" data-i18n="pipe.s1b">Real AST parsing (Babel + tree-sitter) maps every function, class and import in JS/TS, Python, Go, Rust, Java, C# and PHP — once, then only what changed.</p>
+                </div>
+              </div>
+              <div class="tl-step">
+                <div class="tl-ic bg-[#a78bfa]/10 border-[#a78bfa]/25 text-[#a78bfa]">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </div>
+                <div class="tl-body">
+                  <div class="flex items-center gap-2.5 mb-1.5">
+                    <span class="tl-num">02</span>
+                    <h3 class="font-semibold text-white" data-i18n="pipe.s2t">Retrieve</h3>
+                  </div>
+                  <p class="text-[#93a1b5] text-[13.5px] leading-relaxed" data-i18n="pipe.s2b">Finds the code that actually matters for your question — nothing more, nothing less.</p>
+                </div>
+              </div>
+              <div class="tl-step">
+                <div class="tl-ic bg-[#fbbf24]/10 border-[#fbbf24]/25 text-[#fbbf24]">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                </div>
+                <div class="tl-body">
+                  <div class="flex items-center gap-2.5 mb-1.5">
+                    <span class="tl-num">03</span>
+                    <h3 class="font-semibold text-white" data-i18n="pipe.s3t">Prompt</h3>
+                  </div>
+                  <p class="text-[#93a1b5] text-[13.5px] leading-relaxed" data-i18n="pipe.s3b">Packs the relevant code into one briefing for the AI — with citations, in French or English.</p>
+                </div>
+              </div>
+              <div class="tl-step">
+                <div class="tl-ic bg-[#4ade80]/10 border-[#4ade80]/25 text-[#4ade80]">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                </div>
+                <div class="tl-body">
+                  <div class="flex items-center gap-2.5 mb-1.5">
+                    <span class="tl-num">04</span>
+                    <h3 class="font-semibold text-white" data-i18n="pipe.s4t">Decide</h3>
+                  </div>
+                  <p class="text-[#93a1b5] text-[13.5px] leading-relaxed" data-i18n-html="pipe.s4b">You get an answer you can verify — every claim points to <code class="font-mono text-xs text-[#6ec2ff]">[source: file:line]</code>.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live terminal visual -->
+            <div class="on-scroll">
+              <div class="demo-frame">
+                <div class="term-bar">
+                  <span class="dot" style="background:#fb7185"></span>
+                  <span class="dot" style="background:#fbbf24"></span>
+                  <span class="dot" style="background:#4ade80"></span>
+                  <span class="ml-2 text-[11px] font-mono text-[#5b6679]">dsh-codebase-chat — my-app</span>
+                </div>
+                <div class="px-5 py-4 font-mono text-[12.5px] leading-[1.85] text-[#c9d1d9] overflow-x-auto">
+                  <div><span class="text-[#5b6679]">$</span> <span class="text-white">npx dsh-codebase-chat --project . --ask "how is auth handled?"</span></div>
+                  <div class="mt-2"><span class="text-[#6ec2ff]">[index]</span> <span class="text-[#5b6679]">scanning 214 files… AST: babel + tree-sitter</span></div>
+                  <div><span class="text-[#6ec2ff]">[index]</span> <span class="text-[#5b6679]">1,847 symbols · cache fresh (12 files changed)</span></div>
+                  <div class="mt-2"><span class="text-[#a78bfa]">[retrieve]</span> <span class="text-[#5b6679]">23 chunks scored → top 8 kept (38,204 tokens)</span></div>
+                  <div><span class="text-[#a78bfa]">[retrieve]</span> <span class="text-[#93a1b5]">src/auth.ts · src/session.ts · middleware/guard.ts</span></div>
+                  <div class="mt-2"><span class="text-[#fbbf24]">[prompt]</span> <span class="text-[#5b6679]">briefing assembled — module graph + citations, en</span></div>
+                  <div class="mt-2"><span class="text-[#4ade80]">[answer]</span> <span class="text-[#93a1b5]">Auth uses JWT with refresh rotation</span> <span class="text-[#6ec2ff]">[source: src/auth.ts:42]</span></div>
+                  <div><span class="text-[#4ade80]">[answer]</span> <span class="text-[#93a1b5]">Tokens expire after 15 min</span> <span class="text-[#6ec2ff]">[source: src/session.ts:18]</span></div>
+                  <div class="mt-2"><span class="cursor-blink">▍</span></div>
+                </div>
+              </div>
+              <p class="mt-3 text-[11px] font-mono text-[#5b6679] text-center" data-i18n="pipe.termCap">stylized view of a real pipeline run — nothing leaves the machine</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== FEATURES ===================== -->
+      <section id="features" class="py-28 border-t border-white/[0.05]">
+        <div class="max-w-6xl mx-auto px-6">
+          <div class="text-center mb-16 on-scroll">
+            <p class="kicker mb-4" data-i18n="feat.kicker">Capabilities</p>
+            <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight mb-4" data-i18n="feat.title">Built for professional code reviews</h2>
+            <p class="text-[#93a1b5] max-w-2xl mx-auto" data-i18n="feat.sub">Not just a chat box — a full intelligence layer over your repository.</p>
+          </div>
+
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="card p-6 on-scroll lg:col-span-2 flex flex-col sm:flex-row sm:items-center gap-5">
+              <div class="w-11 h-11 shrink-0 rounded-xl bg-[#6ec2ff]/10 border border-[#6ec2ff]/20 flex items-center justify-center text-[#6ec2ff]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div>
+                <h3 class="font-semibold text-white mb-2" data-i18n="feat.c1t">Chat &amp; Search</h3>
+                <p class="text-[13.5px] text-[#93a1b5] leading-relaxed" data-i18n="feat.c1b">Ask natural questions, find symbols, explain files — every answer cites file and line.</p>
+              </div>
+            </div>
+
+            <div class="card p-6 on-scroll">
+              <div class="w-11 h-11 rounded-xl bg-[#4ade80]/10 border border-[#4ade80]/20 flex items-center justify-center mb-5 text-[#4ade80]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <h3 class="font-semibold text-white mb-2" data-i18n-html="feat.c2t">Static Health <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#4ade80]/15 text-[#4ade80] align-middle">NEW</span></h3>
+              <p class="text-[13.5px] text-[#93a1b5] leading-relaxed" data-i18n="feat.c2b">Deterministic analysis — circular deps, dead code, duplication, complexity, health score. No LLM needed.</p>
+            </div>
+
+            <div class="card p-6 on-scroll">
+              <div class="w-11 h-11 rounded-xl bg-[#a78bfa]/10 border border-[#a78bfa]/20 flex items-center justify-center mb-5 text-[#a78bfa]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+              </div>
+              <h3 class="font-semibold text-white mb-2" data-i18n="feat.c3t">Intelligence Pro</h3>
+              <p class="text-[13.5px] text-[#93a1b5] leading-relaxed" data-i18n="feat.c3b">CTO-level brief: architecture, tech radar, debt map, security posture, competitor signals.</p>
+            </div>
+
+            <div class="card p-6 on-scroll">
+              <div class="w-11 h-11 rounded-xl bg-[#fb7185]/10 border border-[#fb7185]/20 flex items-center justify-center mb-5 text-[#fb7185]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h6"/><path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/><path d="M19 5h1a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1"/><path d="M9 12l2 2 4-4"/></svg>
+              </div>
+              <h3 class="font-semibold text-white mb-2" data-i18n="feat.c4t">Audit &amp; Tasks</h3>
+              <p class="text-[13.5px] text-[#93a1b5] leading-relaxed" data-i18n="feat.c4b">Detect TODO/FIXME/any/debugger and generate a sprinted TASKS.md with Before/After patches.</p>
+            </div>
+
+            <div class="card p-6 on-scroll">
+              <div class="w-11 h-11 rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20 flex items-center justify-center mb-5 text-[#fbbf24]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 8-8"/><path d="M20 12a8 8 0 0 1-8 8"/><path d="M8 4l-4 4 4 4"/><path d="M16 20l4-4-4-4"/></svg>
+              </div>
+              <h3 class="font-semibold text-white mb-2" data-i18n="feat.c5t">Refactor &amp; Apply</h3>
+              <p class="text-[13.5px] text-[#93a1b5] leading-relaxed" data-i18n="feat.c5b">Production-ready refactors applied with backup, dry-run, verification, and rollback.</p>
+            </div>
+
+            <div class="card p-6 on-scroll">
+              <div class="w-11 h-11 rounded-xl bg-[#22d3ee]/10 border border-[#22d3ee]/20 flex items-center justify-center mb-5 text-[#22d3ee]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </div>
+              <h3 class="font-semibold text-white mb-2" data-i18n="feat.c6t">MCP Compatible</h3>
+              <p class="text-[13.5px] text-[#93a1b5] leading-relaxed" data-i18n="feat.c6b">Standalone server for Cursor, Claude, Windsurf, Zed &amp; co — key-free prompt-only, or fully offline via the embedded local model.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== TWO PACKAGES ===================== -->
+      <section class="py-28 border-t border-white/[0.05]">
+        <div class="max-w-5xl mx-auto px-6">
+          <div class="text-center mb-14 on-scroll">
+            <p class="kicker mb-4" data-i18n="pkg.kicker">Distribution</p>
+            <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight mb-4" data-i18n="pkg.title">Two packages, one engine</h2>
+            <p class="text-[#93a1b5] max-w-xl mx-auto" data-i18n="pkg.sub">Same intelligence core — pick the integration that fits your workflow.</p>
+          </div>
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="card p-8 on-scroll">
+              <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-[#6ec2ff]/10 border border-[#6ec2ff]/20 flex items-center justify-center text-[#6ec2ff]">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-white font-mono text-[13px]">dsh-codebase-chat</h3>
+                  <p class="text-xs text-[#5b6679]" data-i18n="pkg.p1sub">DeepSeek Harness plugin + CLI</p>
+                </div>
+              </div>
+              <ul class="space-y-2.5 text-[13.5px] text-[#93a1b5]">
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="pkg.p1l1">Codebase Pro panel inside DeepSeek Harness</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n-html="pkg.p1l2">Slash commands: <code class="font-mono text-xs text-[#6ec2ff]">/codebase-intel</code>, <code class="font-mono text-xs text-[#6ec2ff]">/codebase-audit</code>…</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="pkg.p1l3">Standalone CLI for any project</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="pkg.p1l4">Safe apply: backup, dry-run, rollback</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n-html="pkg.p1l5">Per-project config — <code class="font-mono text-xs text-[#6ec2ff]">.codebase-chat.json</code></span></li>
+              </ul>
+              <div class="term mt-7 px-4 py-3 font-mono text-xs text-[#c9d1d9]"><span class="text-[#5b6679]">$</span> npm install dsh-codebase-chat</div>
+            </div>
+
+            <div class="card p-8 on-scroll">
+              <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-[#a78bfa]/10 border border-[#a78bfa]/20 flex items-center justify-center text-[#a78bfa]">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-white font-mono text-[13px]">dsh-codebase-chat-mcp</h3>
+                  <p class="text-xs text-[#5b6679]" data-i18n="pkg.p2sub">Standalone MCP server</p>
+                </div>
+              </div>
+              <ul class="space-y-2.5 text-[13.5px] text-[#93a1b5]">
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="pkg.p2l1">12 tools over stdio — works in Cursor, Claude, Windsurf</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n-html="pkg.p2l2"><strong class="text-white font-medium">Prompt-only mode</strong> — no API key needed, the host model answers</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="pkg.p2l3">Optional direct LLM calls via DeepSeek / OpenAI-compatible API</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="pkg.p2l4">Local multilingual embeddings for semantic retrieval</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n-html="pkg.p2l5"><code class="font-mono text-xs text-[#6ec2ff]">setup</code> wizard — detects your IDE, picks your answer mode, writes the config</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n-html="pkg.p2l6"><strong class="text-white font-medium">Fully offline</strong> — embedded local model answers, no key, no host</span></li>
+              </ul>
+              <div class="term mt-7 px-4 py-3 font-mono text-xs text-[#c9d1d9]"><span class="text-[#5b6679]">$</span> npx dsh-codebase-chat-mcp</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== TOOLS MATRIX ===================== -->
+      <section id="tools" class="py-28 border-t border-white/[0.05]">
+        <div class="max-w-5xl mx-auto px-6">
+          <div class="text-center mb-14 on-scroll">
+            <p class="kicker mb-4" data-i18n="tools.kicker">Reference</p>
+            <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight mb-4" data-i18n="tools.title">The full tool suite</h2>
+            <p class="text-[#93a1b5] max-w-xl mx-auto" data-i18n="tools.sub">Every tool is available in DeepSeek Harness and through the MCP server.</p>
+          </div>
+          <div class="card overflow-hidden on-scroll !rounded-2xl">
+            <div class="overflow-x-auto">
+              <table class="tools-table w-full text-sm text-left">
+                <thead>
+                  <tr class="text-[11px] uppercase tracking-[0.15em] text-[#5b6679] bg-white/[0.02]">
+                    <th class="font-semibold">Tool</th>
+                    <th class="font-semibold" data-i18n="tools.th">What it does</th>
+                  </tr>
+                </thead>
+                <tbody class="text-[#c9d1d9] text-[13.5px]">
+                  <tr><td class="font-mono text-[#6ec2ff]">codebase_chat</td><td data-i18n="tools.r1">Q&amp;A on your project with cited sources</td></tr>
+                  <tr><td class="font-mono text-[#6ec2ff]">codebase_search</td><td data-i18n="tools.r2">Find symbols, terms, and usages across the repo</td></tr>
+                  <tr><td class="font-mono text-[#6ec2ff]">codebase_explain</td><td data-i18n="tools.r3">Explain a file or a symbol — fallback symbol search included</td></tr>
+                  <tr><td class="font-mono text-[#6ec2ff]">codebase_refactor</td><td data-i18n="tools.r4">Propose a concrete refactor with Before/After diff</td></tr>
+                  <tr><td class="font-mono text-[#6ec2ff]">codebase_intelligence</td><td data-i18n="tools.r5">Full CTO brief: architecture, debt, security, roadmap</td></tr>
+                  <tr><td class="font-mono text-[#6ec2ff]">codebase_audit</td><td data-i18n="tools.r6">Tech-debt and non-conformity scan with severity</td></tr>
+                  <tr><td class="font-mono text-[#6ec2ff]">codebase_report</td><td data-i18n="tools.r7">Strategic board report — SWOT, risks, opportunities</td></tr>
+                  <tr><td class="font-mono text-[#6ec2ff]">codebase_ceo</td><td data-i18n="tools.r8">One-page executive brief</td></tr>
+                  <tr><td class="font-mono text-[#6ec2ff]">codebase_tasks</td><td data-i18n="tools.r9">Generate a sprinted TASKS.md action plan</td></tr>
+                  <tr><td class="font-mono text-[#6ec2ff]">codebase_player</td><td data-i18n="tools.r10">UX / playthrough brief from a user's point of view</td></tr>
+                  <tr><td class="font-mono text-[#6ec2ff]">codebase_crea</td><td data-i18n="tools.r11">Creative and marketing angles extracted from the code</td></tr>
+                  <tr><td class="font-mono text-[#6ec2ff]">codebase_health</td><td data-i18n-html="tools.r12"><span class="text-[#4ade80] font-medium">Deterministic</span> static analysis — cycles, dead code, duplication, complexity, health score. No LLM needed</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="px-5 py-3.5 border-t border-white/[0.05] text-xs text-[#5b6679]" data-i18n-html="tools.foot">
+              All tools accept <code class="font-mono text-[#6ec2ff]">projectPath</code>, <code class="font-mono text-[#6ec2ff]">lang</code> (fr/en), <code class="font-mono text-[#6ec2ff]">embed</code>, <code class="font-mono text-[#6ec2ff]">promptOnly</code>, and <code class="font-mono text-[#6ec2ff]">localLlm</code>.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== DEMO ===================== -->
+      <section id="demo" class="py-28 border-t border-white/[0.05]">
+        <div class="max-w-5xl mx-auto px-6">
+          <div class="text-center mb-10 on-scroll">
+            <p class="kicker mb-4" data-i18n="demo.kicker">See it in action</p>
+            <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight mb-4" data-i18n="demo.title">Real terminal output, no mockups</h2>
+            <p class="text-[#93a1b5]" data-i18n-html="demo.sub">Every frame is the actual tool running against the bundled <code class="font-mono text-xs text-[#6ec2ff]">demo-project/</code>.</p>
+          </div>
+          <div class="flex items-center justify-center gap-2 mb-7 on-scroll">
+            <button onclick="switchDemo('demo', this)" class="demo-tab active px-4 py-2 rounded-lg text-sm font-medium border border-white/10 text-[#93a1b5] hover:text-white">CLI</button>
+            <button onclick="switchDemo('demo-conv', this)" class="demo-tab px-4 py-2 rounded-lg text-sm font-medium border border-white/10 text-[#93a1b5] hover:text-white" data-i18n="demo.tabConv">Real chat</button>
+            <button onclick="switchDemo('demo-power', this)" class="demo-tab px-4 py-2 rounded-lg text-sm font-medium border border-white/10 text-[#93a1b5] hover:text-white" data-i18n="demo.tabPower">PR review</button>
+            <button onclick="switchDemo('demo-mcp', this)" class="demo-tab px-4 py-2 rounded-lg text-sm font-medium border border-white/10 text-[#93a1b5] hover:text-white" data-i18n="demo.tabMcp">MCP server</button>
+            <button onclick="switchDemo('demo-fr', this)" class="demo-tab px-4 py-2 rounded-lg text-sm font-medium border border-white/10 text-[#93a1b5] hover:text-white" data-i18n="demo.tabFr">Mode français</button>
+          </div>
+          <div class="demo-frame on-scroll">
+            <img id="demo-img" src="assets/demo.gif" alt="dsh-codebase-chat demo" class="w-full block" data-i18n-alt="demo.imgAlt">
+          </div>
+          <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-6 text-xs text-[#5b6679] on-scroll">
+            <span data-i18n-html="demo.l1"><strong class="text-[#93a1b5]">CLI</strong> — index → stats → search → health → ask</span>
+            <span data-i18n-html="demo.l5"><strong class="text-[#93a1b5]">Real chat</strong> — real MCP session on a 422-file codebase: 324 circular deps found, cited answers</span>
+            <span data-i18n-html="demo.l4"><strong class="text-[#93a1b5]">PR review</strong> — real git repo, planted circular dep caught by <code class="font-mono text-[#6ec2ff]">--diff HEAD</code> + live <code class="font-mono text-[#6ec2ff]">--watch</code></span>
+            <span data-i18n-html="demo.l2"><strong class="text-[#93a1b5]">MCP</strong> — real stdio session, 12 tools, no API key</span>
+            <span data-i18n-html="demo.l3"><strong class="text-[#93a1b5]">FR</strong> — symbol fallback + French prompts</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== INSTALL ===================== -->
+      <section id="install" class="py-28 border-t border-white/[0.05]">
+        <div class="max-w-4xl mx-auto px-6">
+          <div class="text-center mb-14 on-scroll">
+            <p class="kicker mb-4" data-i18n="install.kicker">Get started</p>
+            <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight mb-4" data-i18n="install.title">Install in seconds</h2>
+            <p class="text-[#93a1b5]" data-i18n="install.sub">Three ways to run it. All read code locally.</p>
+          </div>
+
+          <div class="space-y-5">
+            <div class="card reco-card p-5 on-scroll flex flex-col sm:flex-row sm:items-center gap-4">
+              <div class="flex items-center gap-3 sm:w-72 shrink-0">
+                <span class="w-7 h-7 rounded-lg bg-[#a78bfa]/10 border border-[#a78bfa]/20 text-[#a78bfa] text-xs font-bold flex items-center justify-center">1</span>
+                <div>
+                  <h3 class="font-semibold text-white text-[15px]" data-i18n="install.s1">MCP server — setup wizard</h3>
+                  <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#4ade80]/15 text-[#4ade80]" data-i18n="install.reco">RECOMMENDED</span>
+                </div>
+              </div>
+              <div class="term flex-1 px-4 py-3 font-mono text-[13px] text-[#c9d1d9] flex items-center justify-between gap-4">
+                <code id="code-1">npx dsh-codebase-chat-mcp setup</code>
+                <button onclick="copyCode('code-1', this)" class="shrink-0 px-2.5 py-1 rounded-md text-[11px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 text-[#93a1b5] transition" data-i18n="btn.copy">Copy</button>
+              </div>
+            </div>
+            <p class="text-[12px] text-[#5b6679] -mt-1 px-1 on-scroll" data-i18n="install.s1b">Detects Claude, Cursor, Windsurf, VS Code and writes the config for you — no JSON to edit.</p>
+
+            <div class="card p-5 on-scroll flex flex-col sm:flex-row sm:items-center gap-4">
+              <div class="flex items-center gap-3 sm:w-72 shrink-0">
+                <span class="w-7 h-7 rounded-lg bg-[#6ec2ff]/10 border border-[#6ec2ff]/20 text-[#6ec2ff] text-xs font-bold flex items-center justify-center">2</span>
+                <h3 class="font-semibold text-white text-[15px]" data-i18n="install.s2">DeepSeek Harness plugin</h3>
+              </div>
+              <div class="term flex-1 px-4 py-3 font-mono text-[13px] text-[#c9d1d9] flex items-center justify-between gap-4">
+                <code id="code-2">dsh plugin --profile web add dsh-codebase-chat</code>
+                <button onclick="copyCode('code-2', this)" class="shrink-0 px-2.5 py-1 rounded-md text-[11px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 text-[#93a1b5] transition" data-i18n="btn.copy">Copy</button>
+              </div>
+            </div>
+
+            <div class="card p-5 on-scroll flex flex-col sm:flex-row sm:items-center gap-4">
+              <div class="flex items-center gap-3 sm:w-72 shrink-0">
+                <span class="w-7 h-7 rounded-lg bg-[#4ade80]/10 border border-[#4ade80]/20 text-[#4ade80] text-xs font-bold flex items-center justify-center">3</span>
+                <h3 class="font-semibold text-white text-[15px]" data-i18n="install.s3">From source</h3>
+              </div>
+              <div class="term flex-1 px-4 py-3 font-mono text-[13px] text-[#c9d1d9] flex items-center justify-between gap-4">
+                <code id="code-3">git clone https://github.com/shinzarou-eng/dsh-codebase-chat && cd dsh-codebase-chat && pnpm install</code>
+                <button onclick="copyCode('code-3', this)" class="shrink-0 px-2.5 py-1 rounded-md text-[11px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 text-[#93a1b5] transition" data-i18n="btn.copy">Copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== MCP CONFIG ===================== -->
+      <section id="mcp" class="py-28 border-t border-white/[0.05]">
+        <div class="max-w-4xl mx-auto px-6">
+          <div class="text-center mb-14 on-scroll">
+            <p class="kicker mb-4" data-i18n="mcp.kicker">Configuration</p>
+            <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight mb-4" data-i18n="mcp.title">MCP configuration</h2>
+            <p class="text-[#93a1b5]" data-i18n="mcp.sub">Run the setup wizard or paste this block into your IDE's MCP settings. No API key needed — the host model answers, or the embedded local model runs fully offline.</p>
+          </div>
+          <div class="term on-scroll">
+            <div class="term-bar justify-between">
+              <span class="text-[11px] font-mono text-[#5b6679]">mcp.json</span>
+              <button onclick="copyCode('code-4', this)" class="px-2.5 py-1 rounded-md text-[11px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 text-[#93a1b5] transition" data-i18n="btn.copy">Copy</button>
+            </div>
+            <pre class="p-5 overflow-x-auto font-mono text-[13px] leading-relaxed"><code id="code-4"><span class="text-[#5b6679]">{</span>
+  <span class="text-[#6ec2ff]">"mcpServers"</span><span class="text-[#5b6679]">:</span> {
+    <span class="text-[#6ec2ff]">"dsh-codebase-chat"</span><span class="text-[#5b6679]">:</span> {
+      <span class="text-[#6ec2ff]">"command"</span><span class="text-[#5b6679]">:</span> <span class="text-[#a5d6ff]">"npx"</span><span class="text-[#5b6679]">,</span>
+      <span class="text-[#6ec2ff]">"args"</span><span class="text-[#5b6679]">:</span> [<span class="text-[#a5d6ff]">"dsh-codebase-chat-mcp"</span>]
+    }
+  }
+<span class="text-[#5b6679]">}</span></code></pre>
+          </div>
+          <p class="text-xs text-[#5b6679] mt-4 text-center on-scroll" data-i18n-html="mcp.foot">Optional <code class="font-mono">env</code>: <code class="font-mono text-[#93a1b5]">DEEPSEEK_API_KEY</code>, <code class="font-mono text-[#93a1b5]">OPENAI_API_KEY</code>, <code class="font-mono text-[#93a1b5]">CODEBASE_MODEL</code> — direct LLM calls; <code class="font-mono text-[#93a1b5]">CODEBASE_LOCAL_LLM</code> — offline mode.</p>
+        </div>
+      </section>
+
+      <!-- ===================== COMMANDS ===================== -->
+      <section id="commands" class="py-28 border-t border-white/[0.05]">
+        <div class="max-w-4xl mx-auto px-6">
+          <div class="text-center mb-12 on-scroll">
+            <p class="kicker mb-4" data-i18n="cmd.kicker">Commands</p>
+            <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight mb-4" data-i18n="cmd.title">One command per job</h2>
+            <p class="text-[#93a1b5]" data-i18n="cmd.sub">Run them headless in CI or interactively inside DeepSeek Harness.</p>
+          </div>
+          <div class="grid md:grid-cols-2 gap-5 on-scroll">
+            <div class="term">
+              <div class="term-bar">
+                <span class="dot bg-[#ff5f57]"></span>
+                <span class="dot bg-[#febc2e]"></span>
+                <span class="dot bg-[#28c840]"></span>
+                <span class="ml-2 text-[11px] font-mono text-[#5b6679]">deepseek harness</span>
+              </div>
+              <pre class="p-4 font-mono text-[13px] leading-relaxed text-[#c9d1d9]"><code><span class="text-[#5b6679]">$</span> dsh <span class="text-[#7ee787]">'/codebase-intel'</span>  C:\my-app
+<span class="text-[#5b6679]">$</span> dsh <span class="text-[#7ee787]">'/codebase-audit'</span>  C:\my-app --lang en
+<span class="text-[#5b6679]">$</span> dsh <span class="text-[#7ee787]">'/codebase-health'</span> C:\my-app
+<span class="text-[#5b6679]">$</span> dsh <span class="text-[#7ee787]">'/codebase-tasks'</span>  C:\my-app --apply
+<span class="text-[#5b6679]">$</span> dsh <span class="text-[#7ee787]">'/codebase-report'</span> C:\my-app</code></pre>
+            </div>
+            <div class="term">
+              <div class="term-bar">
+                <span class="dot bg-[#ff5f57]"></span>
+                <span class="dot bg-[#febc2e]"></span>
+                <span class="dot bg-[#28c840]"></span>
+                <span class="ml-2 text-[11px] font-mono text-[#5b6679]">cli — any shell</span>
+              </div>
+              <pre class="p-4 font-mono text-[13px] leading-relaxed text-[#c9d1d9]"><code><span class="text-[#5b6679]">$</span> npx dsh-codebase-chat --index
+<span class="text-[#5b6679]">$</span> npx dsh-codebase-chat --search "jwt token"
+<span class="text-[#5b6679]">$</span> npx dsh-codebase-chat --health  <span class="text-[#5b6679]" data-i18n="cmd.noLlm"># no LLM</span>
+<span class="text-[#5b6679]">$</span> npx dsh-codebase-chat --file src/auth.ts
+<span class="text-[#5b6679]">$</span> npx dsh-codebase-chat --ask "explain auth"</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== EVIDENCE ===================== -->
+      <section id="evidence" class="py-28 border-t border-white/[0.05]">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+          <div class="on-scroll">
+            <p class="kicker mb-4" data-i18n="ev.kicker">Trust</p>
+            <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight mb-4" data-i18n="ev.title">Evidence &amp; scoring</h2>
+            <p class="text-[#93a1b5] mb-12 max-w-xl mx-auto" data-i18n="ev.sub">Every technical claim, risk, and opportunity is backed by a source citation and scored for confidence and severity.</p>
+          </div>
+          <div class="max-w-2xl mx-auto on-scroll">
+            <div class="card !rounded-2xl p-6 sm:p-7 text-left text-[14px] leading-[1.9] text-[#c9d4e3]">
+              <p>Auth uses JWT with refresh-token rotation. <span class="ev-tag ev-src">[source: src/auth.ts:42]</span>
+              Tokens expire after 15&nbsp;min and live in memory, not localStorage. <span class="ev-tag ev-src">[source: src/session.ts:18]</span>
+              <span data-i18n="ev.warntext">The refresh endpoint lacks rate limiting — brute-forceable.</span> <span class="ev-tag ev-src">[source: src/routes/auth.ts:67]</span> <span class="ev-tag ev-sev" data-i18n="ev.sevtag">[Severity: High]</span></p>
+            </div>
+            <div class="grid sm:grid-cols-3 gap-4 mt-5 text-[13px]">
+              <div class="flex items-start gap-2.5 justify-center"><span class="ev-dot bg-[#6ec2ff]"></span><span class="text-[#93a1b5]" data-i18n-html="ev.l1"><b class="text-white font-semibold">Source</b> — every claim cites file &amp; line</span></div>
+              <div class="flex items-start gap-2.5 justify-center"><span class="ev-dot bg-[#fbbf24]"></span><span class="text-[#93a1b5]" data-i18n-html="ev.l2"><b class="text-white font-semibold">Confidence</b> — scored, not guessed</span></div>
+              <div class="flex items-start gap-2.5 justify-center"><span class="ev-dot bg-[#fb7185]"></span><span class="text-[#93a1b5]" data-i18n-html="ev.l3"><b class="text-white font-semibold">Severity</b> — risks ranked for you</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== ROADMAP ===================== -->
+      <section id="roadmap" class="py-28 border-t border-white/[0.05]">
+        <div class="max-w-5xl mx-auto px-6">
+          <div class="text-center mb-14 on-scroll">
+            <p class="kicker mb-4" data-i18n="rm.kicker">What's next</p>
+            <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight mb-4" data-i18n="rm.title">Roadmap</h2>
+            <p class="text-[#93a1b5] max-w-xl mx-auto" data-i18n-html="rm.sub">Organized by horizon, not by date. Full detail in <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/ROADMAP.md" class="text-[#6ec2ff] hover:underline">ROADMAP.md</a>.</p>
+          </div>
+          <div class="grid md:grid-cols-3 gap-5">
+            <div class="card p-7 on-scroll">
+              <div class="flex items-center gap-2.5 mb-5">
+                <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#4ade80]/10 text-[#4ade80] border border-[#4ade80]/25" data-i18n="rm.next">SHIPPED</span>
+                <span class="text-xs text-[#5b6679]" data-i18n="rm.nextSub">Recently shipped</span>
+              </div>
+              <ul class="space-y-3 text-[13.5px] text-[#93a1b5]">
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="rm.n1">Embedded local LLM — fully offline answers</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="rm.n2">Watch mode — hot index while you code</span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n-html="rm.n3">Setup wizard + <code class="font-mono text-xs">.codebase-chat.json</code></span></li>
+                <li class="flex gap-2.5"><span class="text-[#4ade80]">✓</span><span data-i18n="rm.n4">Diff-aware retrieval on changed files</span></li>
+              </ul>
+            </div>
+            <div class="card p-7 on-scroll">
+              <div class="flex items-center gap-2.5 mb-5">
+                <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#6ec2ff]/10 text-[#6ec2ff] border border-[#6ec2ff]/25" data-i18n="rm.planned">NEXT</span>
+                <span class="text-xs text-[#5b6679]" data-i18n="rm.plannedSub">Integrations &amp; output</span>
+              </div>
+              <ul class="space-y-3 text-[13.5px] text-[#93a1b5]">
+                <li class="flex gap-2.5"><span class="text-[#6ec2ff]">→</span><span data-i18n="rm.p0">GitHub Issues export from TASKS.md</span></li>
+                <li class="flex gap-2.5"><span class="text-[#6ec2ff]">→</span><span data-i18n="rm.p6">Prompt packs — ES, DE, PT</span></li>
+                <li class="flex gap-2.5"><span class="text-[#6ec2ff]">→</span><span data-i18n="rm.p1">VS Code extension — sidebar + inline explain</span></li>
+                <li class="flex gap-2.5"><span class="text-[#6ec2ff]">→</span><span data-i18n="rm.p2">HTTP/SSE transport for the MCP server</span></li>
+                <li class="flex gap-2.5"><span class="text-[#6ec2ff]">→</span><span data-i18n="rm.p3">PR review mode via GitHub API</span></li>
+                <li class="flex gap-2.5"><span class="text-[#6ec2ff]">→</span><span data-i18n="rm.p4">Report export — standalone HTML / PDF</span></li>
+                <li class="flex gap-2.5"><span class="text-[#6ec2ff]">→</span><span data-i18n="rm.p5">Interactive diff viewer in Codebase Pro</span></li>
+              </ul>
+            </div>
+            <div class="card p-7 on-scroll">
+              <div class="flex items-center gap-2.5 mb-5">
+                <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#a78bfa]/10 text-[#a78bfa] border border-[#a78bfa]/25" data-i18n="rm.exploring">EXPLORING</span>
+                <span class="text-xs text-[#5b6679]" data-i18n="rm.exploringSub">Longer horizon</span>
+              </div>
+              <ul class="space-y-3 text-[13.5px] text-[#93a1b5]">
+                <li class="flex gap-2.5"><span class="text-[#a78bfa]">→</span><span data-i18n="rm.e1">Multi-repo workspaces</span></li>
+                <li class="flex gap-2.5"><span class="text-[#a78bfa]">→</span><span data-i18n="rm.e2">Shared team index cache</span></li>
+                <li class="flex gap-2.5"><span class="text-[#a78bfa]">→</span><span data-i18n="rm.e3">CI bot — audit summaries on every PR</span></li>
+                <li class="flex gap-2.5"><span class="text-[#a78bfa]">→</span><span data-i18n="rm.e4">Local reranker for tighter context</span></li>
+                <li class="flex gap-2.5"><span class="text-[#a78bfa]">→</span><span data-i18n="rm.e5">JetBrains &amp; Neovim clients</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== FAQ ===================== -->
+      <section id="faq" class="py-28 border-t border-white/[0.05]">
+        <div class="max-w-3xl mx-auto px-6">
+          <div class="text-center mb-12 on-scroll">
+            <p class="kicker mb-4" data-i18n="faq.kicker">Questions</p>
+            <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight">FAQ</h2>
+          </div>
+          <div class="space-y-3">
+            <details class="card rounded-xl p-5 group on-scroll">
+              <summary class="font-semibold text-white cursor-pointer list-none flex justify-between items-center text-[15px]"><span data-i18n="faq.q1">I'm not a developer — can I still use it?</span><span class="text-[#93a1b5] group-open:rotate-180 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
+              <p class="text-[#93a1b5] mt-3 text-sm leading-relaxed" data-i18n="faq.a1">Yes. Install it, point it at a project folder, and ask questions in plain words. The reports are written for humans — founders, managers, designers and developers — not just for the person who wrote the code.</p>
+            </details>
+            <details class="card rounded-xl p-5 group on-scroll">
+              <summary class="font-semibold text-white cursor-pointer list-none flex justify-between items-center text-[15px]"><span data-i18n="faq.q2">Does it send my code to the cloud?</span><span class="text-[#93a1b5] group-open:rotate-180 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
+              <p class="text-[#93a1b5] mt-3 text-sm leading-relaxed" data-i18n="faq.a2">No. Indexing, retrieval, and prompt building all run on your machine. In prompt-only or local-model mode, nothing leaves your machine at all — the host model reads the assembled context, or the embedded model answers locally.</p>
+            </details>
+            <details class="card rounded-xl p-5 group on-scroll">
+              <summary class="font-semibold text-white cursor-pointer list-none flex justify-between items-center text-[15px]"><span data-i18n="faq.q3">Do I need an API key?</span><span class="text-[#93a1b5] group-open:rotate-180 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
+              <p class="text-[#93a1b5] mt-3 text-sm leading-relaxed" data-i18n-html="faq.a3">No — three ways to get an answer: the host model (<code class="font-mono text-[#6ec2ff]">promptOnly</code>, best quality), a <code class="font-mono text-[#6ec2ff]">DEEPSEEK_API_KEY</code>/<code class="font-mono text-[#6ec2ff]">OPENAI_API_KEY</code> for direct calls, or the embedded local model (<code class="font-mono text-[#6ec2ff]">localLlm</code>) for fully offline answers. The local model is small — great for quick lookups, prefer a hosted model for full reports. Inside DeepSeek Harness, the plugin uses your configured model.</p>
+            </details>
+            <details class="card rounded-xl p-5 group on-scroll">
+              <summary class="font-semibold text-white cursor-pointer list-none flex justify-between items-center text-[15px]"><span data-i18n="faq.q4">Can I use it with Claude, Cursor, or Windsurf?</span><span class="text-[#93a1b5] group-open:rotate-180 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
+              <p class="text-[#93a1b5] mt-3 text-sm leading-relaxed" data-i18n-html="faq.a4">Yes. Install <code class="font-mono text-[#6ec2ff]">dsh-codebase-chat-mcp</code> and add it to your MCP server config — see the configuration block above.</p>
+            </details>
+            <details class="card rounded-xl p-5 group on-scroll">
+              <summary class="font-semibold text-white cursor-pointer list-none flex justify-between items-center text-[15px]"><span data-i18n="faq.q5">Does it work without DeepSeek Harness?</span><span class="text-[#93a1b5] group-open:rotate-180 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
+              <p class="text-[#93a1b5] mt-3 text-sm leading-relaxed" data-i18n-html="faq.a5">Yes. The <code class="font-mono text-[#6ec2ff]">dsh-codebase-chat-mcp</code> package is fully standalone, and the main package ships a CLI that works on any project.</p>
+            </details>
+            <details class="card rounded-xl p-5 group on-scroll">
+              <summary class="font-semibold text-white cursor-pointer list-none flex justify-between items-center text-[15px]"><span data-i18n="faq.q6">Which languages are supported?</span><span class="text-[#93a1b5] group-open:rotate-180 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
+              <p class="text-[#93a1b5] mt-3 text-sm leading-relaxed" data-i18n-html="faq.a6">French and English out of the box via the <code class="font-mono text-[#6ec2ff]">lang</code> parameter on every tool and command. Source-side, AST extraction covers JS/TS, Python, Go, Rust, Java, C# and PHP — everything else is still indexed line-wise.</p>
+            </details>
+            <details class="card rounded-xl p-5 group on-scroll">
+              <summary class="font-semibold text-white cursor-pointer list-none flex justify-between items-center text-[15px]"><span data-i18n="faq.q7">Is applying patches safe?</span><span class="text-[#93a1b5] group-open:rotate-180 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
+              <p class="text-[#93a1b5] mt-3 text-sm leading-relaxed" data-i18n-html="faq.a7">Yes. Apply workflows support dry-run, create <code class="font-mono text-[#6ec2ff]">.dsh-backups/</code> copies before overwriting, enforce protected paths, and keep all writes inside the selected project.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== CTA ===================== -->
+      <section class="py-28 border-t border-white/[0.05]">
+        <div class="max-w-4xl mx-auto px-6 text-center on-scroll">
+          <div class="card !rounded-3xl px-8 py-16 sm:py-20 relative overflow-hidden" style="border-color: rgba(110,194,255,0.14)">
+            <div class="absolute inset-0 pointer-events-none">
+              <div class="absolute inset-0" style="background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px); background-size: 56px 56px; mask-image: radial-gradient(ellipse 75% 80% at 50% 40%, black, transparent); -webkit-mask-image: radial-gradient(ellipse 75% 80% at 50% 40%, black, transparent)"></div>
+              <div class="absolute" style="width: 55%; height: 90%; left: -8%; top: -25%; background: radial-gradient(closest-side, rgba(110,194,255,0.14), transparent 70%); filter: blur(50px)"></div>
+              <div class="absolute" style="width: 55%; height: 90%; right: -8%; top: -25%; background: radial-gradient(closest-side, rgba(167,139,250,0.14), transparent 70%); filter: blur(50px)"></div>
+            </div>
+            <h2 class="relative text-3xl sm:text-[2.9rem] font-bold tracking-tight mb-4" data-i18n="cta.title">Ready to understand your codebase?</h2>
+            <p class="relative text-[#93a1b5] mb-10 max-w-lg mx-auto" data-i18n="cta.sub">One install. Twelve tools. Zero cloud upload.</p>
+            <div class="relative inline-flex items-center gap-3 rounded-xl bg-[#07090d] border border-white/10 px-4 py-3 mb-8 font-mono text-[13.5px] text-[#e6edf7]">
+              <span class="text-[#4ade80]">$</span> <span id="code-cta">npx dsh-codebase-chat-mcp setup</span>
+              <button onclick="copyCode('code-cta', this)" class="px-2.5 py-1 rounded-md text-[11px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 text-[#93a1b5] transition" data-i18n="btn.copy">Copy</button>
+            </div>
+            <div class="relative flex flex-col sm:flex-row items-center justify-center gap-3.5">
+              <a href="#install" class="btn-primary px-8 py-3.5 rounded-xl font-semibold" data-i18n="cta.btn1">Get started</a>
+              <a href="https://github.com/shinzarou-eng/dsh-codebase-chat" class="btn-secondary px-8 py-3.5 rounded-xl font-semibold text-white" data-i18n="cta.btn2">Star on GitHub</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ===================== FOOTER ===================== -->
+    <footer class="border-t border-white/[0.05] py-14 mt-auto">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="flex flex-col md:flex-row items-start justify-between gap-10">
+          <div>
+            <a href="#" class="flex items-center gap-2.5 font-semibold text-white tracking-tight mb-3">
+              <img src="assets/logo.png" alt="" class="w-8 h-8 rounded-lg">
+              dsh-codebase-chat
+            </a>
+            <p class="text-sm text-[#5b6679] max-w-xs leading-relaxed" data-i18n="foot.tagline">Local-first, multi-language codebase intelligence for DeepSeek Harness and any MCP IDE.</p>
+          </div>
+          <div class="flex flex-wrap gap-16 text-sm">
+            <div class="space-y-3">
+              <h4 class="font-semibold text-white text-[13px]" data-i18n="foot.product">Product</h4>
+              <a href="#features" class="block text-[13px] text-[#93a1b5] hover:text-white transition" data-i18n="nav.features">Features</a>
+              <a href="#tools" class="block text-[13px] text-[#93a1b5] hover:text-white transition" data-i18n="nav.tools">Tools</a>
+              <a href="#demo" class="block text-[13px] text-[#93a1b5] hover:text-white transition" data-i18n="nav.demo">Demo</a>
+              <a href="#install" class="block text-[13px] text-[#93a1b5] hover:text-white transition" data-i18n="nav.install">Install</a>
+            </div>
+            <div class="space-y-3">
+              <h4 class="font-semibold text-white text-[13px]" data-i18n="foot.resources">Resources</h4>
+              <a href="https://github.com/shinzarou-eng/dsh-codebase-chat" class="block text-[13px] text-[#93a1b5] hover:text-white transition">GitHub</a>
+              <a href="https://www.npmjs.com/package/dsh-codebase-chat" class="block text-[13px] text-[#93a1b5] hover:text-white transition">npm</a>
+              <a href="https://www.npmjs.com/package/dsh-codebase-chat-mcp" class="block text-[13px] text-[#93a1b5] hover:text-white transition">npm — MCP</a>
+              <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/CHANGELOG.md" class="block text-[13px] text-[#93a1b5] hover:text-white transition">Changelog</a>
+              <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/ROADMAP.md" class="block text-[13px] text-[#93a1b5] hover:text-white transition" data-i18n="nav.roadmap">Roadmap</a>
+            </div>
+            <div class="space-y-3">
+              <h4 class="font-semibold text-white text-[13px]" data-i18n="foot.legal">Legal</h4>
+              <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/LICENSE" class="block text-[13px] text-[#93a1b5] hover:text-white transition" data-i18n="foot.license">MIT License</a>
+              <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/SECURITY.md" class="block text-[13px] text-[#93a1b5] hover:text-white transition" data-i18n="foot.security">Security</a>
+              <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/CONTRIBUTING.md" class="block text-[13px] text-[#93a1b5] hover:text-white transition" data-i18n="foot.contributing">Contributing</a>
+            </div>
+          </div>
+        </div>
+        <div class="hairline my-9"></div>
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-[#5b6679]">
+          <p data-i18n-html="foot.built">Built and maintained by <a href="https://github.com/shinzarou-eng" class="text-[#93a1b5] hover:text-white transition">shinzarou-eng</a>.</p>
+          <p>MIT License · <a href="https://github.com/shinzarou-eng/dsh-codebase-chat" class="text-[#93a1b5] hover:text-white transition">GitHub</a></p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ---------- i18n (EN default in markup, FR dictionary below) ----------
+    const META = {
+      en: {
+        title: 'dsh-codebase-chat — Codebase Intelligence for DeepSeek Harness & MCP IDEs',
+        desc: 'Local-first, multi-language codebase intelligence. Chat, search, audit, refactor, and generate board-ready reports from your code — in DeepSeek Harness, Cursor, Claude, Windsurf, or any MCP client.'
+      },
+      fr: {
+        title: 'dsh-codebase-chat — Intelligence de codebase pour DeepSeek Harness & IDE MCP',
+        desc: 'Intelligence de codebase locale et multilingue. Chat, recherche, audit, refactor et rapports prêts pour le comité depuis votre code — dans DeepSeek Harness, Cursor, Claude, Windsurf ou tout client MCP.'
+      }
+    };
+
+    const I18N = {
+      fr: {
+        nav: { features: "Fonctionnalités", pipeline: "Comment ça marche", tools: "Outils", demo: "Démo", install: "Installation", roadmap: "Feuille de route", faq: "FAQ", star: "Star sur GitHub" },
+        hero: {
+          new: "NOUVEAU",
+          badge: "v0.23.0 — LLM local embarqué, mode 100 % hors-ligne",
+          title: 'Votre code,<br><span class="gradient-text-anim">entièrement compris.</span>',
+          sub: 'Chattez, recherchez, expliquez, refactorez, auditez — et générez des rapports prêts pour le comité. Chaque affirmation s\u2019appuie sur une citation de source, un score de confiance et un niveau de sévérité. <span class="text-white font-normal">Local-first. Français &amp; anglais. Fonctionne 100 % hors-ligne.</span>',
+          cta1: "Commencer",
+          cta2: "Voir sur GitHub",
+          works: "Fonctionne partout où vous codez",
+          chip: { mcp: "Tout client MCP", cli: "CLI terminal" },
+          demoAlt: "démo CLI réelle de dsh-codebase-chat",
+          demoCap: "sortie réelle — aucune maquette",
+          oneCmd: "une commande — détecte votre IDE et écrit la config"
+        },
+        pw: {
+          kicker: "Par où commencer",
+          title: "C\u2019est quoi, exactement ?",
+          lead: "En termes simples — sans jargon.",
+          intro: "Pointez-le vers un dossier de code sur votre ordinateur. Posez des questions en langage clair — « Comment fonctionne la connexion ? », « Y a-t-il un mot de passe codé en dur ? », « Que devrais-je réparer en premier ? » — en français ou en anglais. Chaque réponse cite exactement le fichier et la ligne d\u2019où elle vient : vous pouvez vérifier en quelques secondes. Rien n\u2019est envoyé sur internet.",
+          c1t: "Pointez-le vers un dossier",
+          c1b: "Donnez-lui n\u2019importe quel projet de votre ordinateur. Il lit le code et en construit une carte — rien n\u2019est envoyé nulle part.",
+          c2t: "Posez des questions en langage clair",
+          c2b: "« Comment fonctionne la connexion ? », « Y a-t-il un mot de passe codé en dur ? », « Que devrais-je réparer en premier ? » — en français ou en anglais.",
+          c3t: "Des réponses avec preuves",
+          c3b: "Chaque réponse cite exactement le fichier et la ligne d\u2019où elle vient — vous pouvez vérifier vous-même en quelques secondes.",
+          glossT: "Certains termes vous sont nouveaux ?",
+          g1t: "Serveur MCP",
+          g1b: "Un format de plug qui permet aux assistants IA (Claude, Cursor…) d\u2019utiliser des outils supplémentaires. Installez-le une fois, et votre IDE « voit » votre code.",
+          g2t: "Index",
+          g2b: "Comme l\u2019index à la fin d\u2019un livre — une carte de chaque fonction et fichier, pour des réponses instantanées sans tout relire.",
+          g3t: "Mode prompt-only",
+          g3b: "L\u2019outil prépare le contexte ; votre IA existante (Cursor, Claude…) rédige la réponse. Aucune clé API, aucun coût supplémentaire.",
+          g4t: "Analyse déterministe",
+          g4b: "Des vérifications calculées directement depuis votre code — même entrée, même résultat, à chaque fois. Aucune supposition.",
+          g5t: "Mode hors-ligne",
+          g5b: "Un petit modèle tourne sur votre machine et répond tout seul — sans clé, sans hôte, sans cloud. Pratique pour les recherches rapides ; les gros rapports restent aux modèles hébergés."
+        },
+        stats: { tools: "Outils MCP exposés", pkgs: "Packages — plugin & MCP", local: "Indexation 100 % locale", lang: "Bilingue dès l\u2019installation" },
+        pipe: {
+          kicker: "Comment ça marche",
+          title: "Du code désordonné aux décisions claires",
+          sub: "Quatre étapes — tout sur votre machine, avant que quoi que ce soit n\u2019atteigne un modèle d\u2019IA.",
+          s1t: "Indexation",
+          s1b: "Parsing AST réel (Babel + tree-sitter) qui cartographie chaque fonction, classe et import en JS/TS, Python, Go, Rust, Java, C# et PHP — une fois, puis seulement ce qui a changé.",
+          s2t: "Extraction",
+          s2b: "Trouve le code qui compte vraiment pour votre question — ni plus, ni moins.",
+          s3t: "Prompt",
+          s3b: "Emballe le code pertinent dans un briefing pour l\u2019IA — avec citations, en français ou en anglais.",
+          s4t: "Décision",
+          s4b: 'Vous obtenez une réponse vérifiable — chaque affirmation pointe vers <code class="font-mono text-xs text-[#6ec2ff]">[source: fichier:ligne]</code>.',
+          termCap: "vue stylisée d'un run réel — rien ne quitte la machine"
+        },
+        feat: {
+          kicker: "Fonctionnalités",
+          title: "Conçu pour des revues de code professionnelles",
+          sub: "Pas juste une boîte de dialogue — une couche d\u2019intelligence complète sur votre dépôt.",
+          c1t: "Chat & recherche",
+          c1b: "Posez des questions naturelles, trouvez des symboles, expliquez des fichiers — chaque réponse cite fichier et ligne.",
+          c2t: 'Static Health <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#4ade80]/15 text-[#4ade80] align-middle">NOUVEAU</span>',
+          c2b: "Analyse déterministe — dépendances circulaires, code mort, duplication, complexité, score de santé. Aucun LLM requis.",
+          c3t: "Intelligence Pro",
+          c3b: "Brief niveau CTO : architecture, radar techno, carte de la dette, posture de sécurité, signaux concurrents.",
+          c4t: "Audit & tâches",
+          c4b: "Détecte TODO/FIXME/any/debugger et génère un TASKS.md sprinté avec des patchs Before/After.",
+          c5t: "Refactor & application",
+          c5b: "Refactors prêts pour la production, appliqués avec sauvegarde, dry-run, vérification et rollback.",
+          c6t: "Compatible MCP",
+          c6b: "Serveur autonome pour Cursor, Claude, Windsurf, Zed &amp; co — prompt-only sans clé, ou 100 % hors-ligne via le modèle local embarqué."
+        },
+        pkg: {
+          kicker: "Distribution",
+          title: "Deux packages, un moteur",
+          sub: "Le même cœur d\u2019intelligence — choisissez l\u2019intégration adaptée à votre workflow.",
+          p1sub: "Plugin DeepSeek Harness + CLI",
+          p1l1: "Panneau Codebase Pro dans DeepSeek Harness",
+          p1l2: 'Commandes slash : <code class="font-mono text-xs text-[#6ec2ff]">/codebase-intel</code>, <code class="font-mono text-xs text-[#6ec2ff]">/codebase-audit</code>…',
+          p1l3: "CLI autonome pour tout projet",
+          p1l4: "Application sûre : sauvegarde, dry-run, rollback",
+          p1l5: 'Config par projet — <code class="font-mono text-xs text-[#6ec2ff]">.codebase-chat.json</code>',
+          p2sub: "Serveur MCP autonome",
+          p2l1: "12 outils via stdio — fonctionne dans Cursor, Claude, Windsurf",
+          p2l2: '<strong class="text-white font-medium">Mode prompt-only</strong> — aucune clé API requise, le modèle hôte répond',
+          p2l3: "Appels LLM directs optionnels via API DeepSeek / compatible OpenAI",
+          p2l4: "Embeddings multilingues locaux pour la recherche sémantique",
+          p2l5: 'Wizard <code class="font-mono text-xs text-[#6ec2ff]">setup</code> — détecte votre IDE, choisit le mode de réponse, écrit la config',
+          p2l6: '<strong class="text-white font-medium">100 % hors-ligne</strong> — le modèle local embarqué répond, sans clé ni hôte'
+        },
+        tools: {
+          kicker: "Référence",
+          title: "La suite d\u2019outils complète",
+          sub: "Chaque outil est disponible dans DeepSeek Harness et via le serveur MCP.",
+          th: "Ce qu\u2019il fait",
+          r1: "Q&R sur votre projet avec sources citées",
+          r2: "Trouve symboles, termes et usages dans tout le dépôt",
+          r3: "Explique un fichier ou un symbole — recherche de symbole en secours incluse",
+          r4: "Propose un refactor concret avec diff Before/After",
+          r5: "Brief CTO complet : architecture, dette, sécurité, roadmap",
+          r6: "Scan de dette technique et non-conformités avec sévérité",
+          r7: "Rapport stratégique — SWOT, risques, opportunités",
+          r8: "Brief exécutif d\u2019une page",
+          r9: "Génère un plan d\u2019action TASKS.md sprinté",
+          r10: "Brief UX / playthrough du point de vue utilisateur",
+          r11: "Angles créatifs et marketing extraits du code",
+          r12: 'Analyse statique <span class="text-[#4ade80] font-medium">déterministe</span> — cycles, code mort, duplication, complexité, score de santé. Aucun LLM requis',
+          foot: 'Tous les outils acceptent <code class="font-mono text-[#6ec2ff]">projectPath</code>, <code class="font-mono text-[#6ec2ff]">lang</code> (fr/en), <code class="font-mono text-[#6ec2ff]">embed</code>, <code class="font-mono text-[#6ec2ff]">promptOnly</code> et <code class="font-mono text-[#6ec2ff]">localLlm</code>.'
+        },
+        demo: {
+          kicker: "Voyez-le en action",
+          title: "Sortie terminal réelle, sans maquettes",
+          sub: 'Chaque image est l\u2019outil réel exécuté sur le <code class="font-mono text-xs text-[#6ec2ff]">demo-project/</code> fourni.',
+          tabMcp: "Serveur MCP",
+          tabPower: "Revue de PR",
+          tabConv: "Chat réel",
+          tabFr: "Mode français",
+          l1: '<strong class="text-[#93a1b5]">CLI</strong> — index → stats → recherche → santé → question',
+          l4: '<strong class="text-[#93a1b5]">Revue de PR</strong> — vrai repo git, cycle planté détecté par <code class="font-mono text-[#6ec2ff]">--diff HEAD</code> + <code class="font-mono text-[#6ec2ff]">--watch</code> en direct',
+          l5: '<strong class="text-[#93a1b5]">Chat réel</strong> — vraie session MCP sur un codebase de 422 fichiers : 324 cycles détectés, réponses citées',
+          l2: '<strong class="text-[#93a1b5]">MCP</strong> — vraie session stdio, 12 outils, sans clé API',
+          l3: '<strong class="text-[#93a1b5]">FR</strong> — fallback de symboles + prompts en français',
+          imgAlt: "démo de dsh-codebase-chat"
+        },
+        install: {
+          kicker: "Démarrage",
+          title: "Installé en quelques secondes",
+          sub: "Trois façons de l\u2019utiliser. Toutes lisent le code localement.",
+          s1: "Serveur MCP — wizard d'installation",
+          s1b: "Détecte Claude, Cursor, Windsurf, VS Code et écrit la config pour vous — aucun JSON à éditer.",
+          s2: "Plugin DeepSeek Harness",
+          s3: "Depuis les sources",
+          reco: "RECOMMANDÉ"
+        },
+        btn: { copy: "Copier", copied: "Copié !" },
+        mcp: {
+          kicker: "Configuration",
+          title: "Configuration MCP",
+          sub: "Lancez le wizard setup ou collez ce bloc dans les réglages MCP de votre IDE. Aucune clé API requise — le modèle hôte répond, ou le modèle local tourne 100 % hors-ligne.",
+          foot: '<code class="font-mono">env</code> optionnelles : <code class="font-mono text-[#93a1b5]">DEEPSEEK_API_KEY</code>, <code class="font-mono text-[#93a1b5]">OPENAI_API_KEY</code>, <code class="font-mono text-[#93a1b5]">CODEBASE_MODEL</code> — appels LLM directs ; <code class="font-mono text-[#93a1b5]">CODEBASE_LOCAL_LLM</code> — mode hors-ligne.'
+        },
+        cmd: {
+          kicker: "Commandes",
+          title: "Une commande par tâche",
+          sub: "Lancez-les en CI sans interface ou en interactif dans DeepSeek Harness.",
+          noLlm: "# sans LLM"
+        },
+        ev: {
+          kicker: "Confiance",
+          title: "Preuves & scores",
+          sub: "Chaque affirmation technique, risque et opportunité s\u2019appuie sur une citation de source et est scorée en confiance et en sévérité.",
+          warntext: "L\u2019endpoint de refresh n\u2019a pas de rate limiting — brute-forceable.",
+          sevtag: "[Sévérité : Élevée]",
+          l1: "<b class=\"text-white font-semibold\">Source</b> — chaque affirmation cite fichier & ligne",
+          l2: "<b class=\"text-white font-semibold\">Confiance</b> — scorée, pas devinée",
+          l3: "<b class=\"text-white font-semibold\">Sévérité</b> — risques classés pour vous"
+        },
+        rm: {
+          kicker: "Et ensuite",
+          title: "Feuille de route",
+          sub: 'Organisée par horizon, pas par date. Détail complet dans <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/ROADMAP.md" class="text-[#6ec2ff] hover:underline">ROADMAP.md</a>.',
+          next: "LIVRÉ", nextSub: "Récemment livré",
+          planned: "PROCHAIN", plannedSub: "Intégrations & sorties",
+          exploring: "À L\u2019ÉTUDE", exploringSub: "Horizon lointain",
+          n1: "LLM local embarqué — réponses 100 % hors-ligne",
+          n2: "Mode watch — index à chaud pendant que vous codez",
+          n3: 'Wizard setup + <code class="font-mono text-xs">.codebase-chat.json</code>',
+          n4: "Recherche sensible au diff sur les fichiers modifiés",
+          p0: "Export GitHub Issues depuis TASKS.md",
+          p6: "Packs de prompts — ES, DE, PT",
+          p1: "Extension VS Code — sidebar + explication inline",
+          p2: "Transport HTTP/SSE pour le serveur MCP",
+          p3: "Mode revue de PR via l\u2019API GitHub",
+          p4: "Export de rapports — HTML / PDF autonome",
+          p5: "Visualiseur de diff interactif dans Codebase Pro",
+          e1: "Workspaces multi-dépôts",
+          e2: "Cache d\u2019index partagé en équipe",
+          e3: "Bot CI — résumés d\u2019audit sur chaque PR",
+          e4: "Reranker local pour un contexte plus précis",
+          e5: "Clients JetBrains & Neovim"
+        },
+        faq: {
+          kicker: "Questions",
+          q1: "Je ne suis pas développeur — puis-je quand même l\u2019utiliser ?",
+          a1: "Oui. Installez-le, pointez-le vers un dossier de projet et posez des questions en langage clair. Les rapports sont écrits pour des humains — fondateurs, managers, designers et développeurs — pas seulement pour la personne qui a écrit le code.",
+          q2: "Est-ce qu\u2019il envoie mon code dans le cloud ?",
+          a2: "Non. L\u2019indexation, la recherche et la construction du prompt tournent sur votre machine. En mode prompt-only ou modèle local, rien ne quitte du tout votre machine — le modèle hôte lit le contexte assemblé, ou le modèle embarqué répond localement.",
+          q3: "Ai-je besoin d\u2019une clé API ?",
+          a3: 'Non — trois façons d\u2019obtenir une réponse : le modèle hôte (<code class="font-mono text-[#6ec2ff]">promptOnly</code>, meilleure qualité), une clé <code class="font-mono text-[#6ec2ff]">DEEPSEEK_API_KEY</code>/<code class="font-mono text-[#6ec2ff]">OPENAI_API_KEY</code> pour les appels directs, ou le modèle local embarqué (<code class="font-mono text-[#6ec2ff]">localLlm</code>) pour des réponses 100 % hors-ligne. Le modèle local est petit — pratique pour les recherches rapides, préférez un modèle hébergé pour les rapports complets. Dans DeepSeek Harness, le plugin utilise votre modèle configuré.',
+          q4: "Puis-je l\u2019utiliser avec Claude, Cursor ou Windsurf ?",
+          a4: 'Oui. Installez <code class="font-mono text-[#6ec2ff]">dsh-codebase-chat-mcp</code> et ajoutez-le à votre config de serveurs MCP — voir le bloc de configuration ci-dessus.',
+          q5: "Est-ce que ça marche sans DeepSeek Harness ?",
+          a5: 'Oui. Le package <code class="font-mono text-[#6ec2ff]">dsh-codebase-chat-mcp</code> est totalement autonome, et le package principal embarque une CLI qui fonctionne sur tout projet.',
+          q6: "Quelles langues sont supportées ?",
+          a6: 'Français et anglais dès l\u2019installation via le paramètre <code class="font-mono text-[#6ec2ff]">lang</code> sur chaque outil et commande. Côté source, l\u2019extraction AST couvre JS/TS, Python, Go, Rust, Java, C# et PHP — le reste est indexé ligne à ligne.',
+          q7: "L\u2019application de patchs est-elle sûre ?",
+          a7: 'Oui. Les workflows d\u2019application supportent le dry-run, créent des copies <code class="font-mono text-[#6ec2ff]">.dsh-backups/</code> avant d\u2019écraser, imposent des chemins protégés et gardent toutes les écritures dans le projet sélectionné.'
+        },
+        cta: {
+          title: "Prêt à comprendre votre codebase ?",
+          sub: "Une installation. Douze outils. Zéro envoi dans le cloud.",
+          btn1: "Commencer",
+          btn2: "Star sur GitHub"
+        },
+        foot: {
+          tagline: "Intelligence de codebase locale et multilingue pour DeepSeek Harness et tout IDE MCP.",
+          product: "Produit",
+          resources: "Ressources",
+          legal: "Légal",
+          license: "Licence MIT",
+          security: "Sécurité",
+          contributing: "Contribuer",
+          built: 'Construit et maintenu par <a href="https://github.com/shinzarou-eng" class="text-[#93a1b5] hover:text-white transition">shinzarou-eng</a>.'
+        }
+      }
+    };
+
+    let currentLang = 'en';
+    const origContent = new Map();
+    document.querySelectorAll('[data-i18n],[data-i18n-html],[data-i18n-alt]').forEach(el => {
+      origContent.set(el, { text: el.textContent, html: el.innerHTML, alt: el.getAttribute('alt') });
+    });
+
+    function tr(key) {
+      return key.split('.').reduce((o, k) => (o == null ? o : o[k]), I18N.fr);
+    }
+
+    function applyLang(lang) {
+      currentLang = lang;
+      try { localStorage.setItem('dsh-lang', currentLang); } catch (e) {}
+      document.documentElement.lang = currentLang;
+      document.title = META[currentLang].title;
+      const md = document.querySelector('meta[name="description"]');
+      if (md) md.setAttribute('content', META[currentLang].desc);
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const v = currentLang === 'en' ? origContent.get(el).text : tr(el.dataset.i18n);
+        if (v != null) el.textContent = v;
+      });
+      document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        const v = currentLang === 'en' ? origContent.get(el).html : tr(el.dataset.i18nHtml);
+        if (v != null) el.innerHTML = v;
+      });
+      document.querySelectorAll('[data-i18n-alt]').forEach(el => {
+        const v = currentLang === 'en' ? origContent.get(el).alt : tr(el.dataset.i18nAlt);
+        if (v != null) el.setAttribute('alt', v);
+      });
+      document.querySelectorAll('.lang-btn').forEach(b => {
+        const on = b.dataset.lang === currentLang;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    }
+
+    // Card-flip transition: sections fold away in a staggered cascade,
+    // the language swaps at the midpoint, then they unfold back.
+    let langAnims = [];
+    let langAnimId = 0;
+    function setLang(lang, animate) {
+      lang = lang === 'fr' ? 'fr' : 'en';
+      const id = ++langAnimId;
+      const cards = document.querySelectorAll('main > section, body > div > header, body > div > footer');
+      langAnims.forEach(a => a.cancel());
+      langAnims = [];
+      if (!animate || lang === currentLang || !('animate' in Element.prototype) ||
+          matchMedia('(prefers-reduced-motion: reduce)').matches || !cards.length) {
+        applyLang(lang);
+        return;
+      }
+      const EASE_IN = 'cubic-bezier(.45,0,.8,.4)';
+      const EASE_OUT = 'cubic-bezier(.22,1,.36,1)';
+      const STAGGER = 22;
+      cards.forEach((el, i) => {
+        langAnims.push(el.animate([
+          { transform: 'perspective(1200px) rotateX(0deg) translateY(0)', opacity: 1, filter: 'blur(0px)' },
+          { transform: 'perspective(1200px) rotateX(-14deg) translateY(-10px)', opacity: 0, filter: 'blur(4px)' }
+        ], { duration: 230, delay: i * STAGGER, easing: EASE_IN, fill: 'both' }));
+      });
+      Promise.all(langAnims.map(a => a.finished.catch(() => {}))).then(() => {
+        if (id !== langAnimId) return;
+        applyLang(lang);
+        langAnims.forEach(a => a.cancel());
+        langAnims = [];
+        const total = cards.length - 1;
+        cards.forEach((el, i) => {
+          langAnims.push(el.animate([
+            { transform: 'perspective(1200px) rotateX(14deg) translateY(10px)', opacity: 0, filter: 'blur(4px)' },
+            { transform: 'perspective(1200px) rotateX(0deg) translateY(0)', opacity: 1, filter: 'blur(0px)' }
+          ], { duration: 360, delay: (total - i) * STAGGER, easing: EASE_OUT, fill: 'backwards' }));
+        });
+      });
+    }
+
+    (function initLang() {
+      let lang = 'en';
+      try {
+        const saved = localStorage.getItem('dsh-lang');
+        if (saved === 'fr' || saved === 'en') lang = saved;
+        else if ((navigator.language || '').toLowerCase().indexOf('fr') === 0) lang = 'fr';
+      } catch (e) {}
+      document.querySelectorAll('.lang-btn').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang, true)));
+      applyLang(lang);
+    })();
+
+    function switchDemo(name, btn) {
+      document.getElementById('demo-img').src = 'assets/' + name + '.gif';
+      document.querySelectorAll('.demo-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function copyCode(id, btn) {
+      const el = document.getElementById(id);
+      navigator.clipboard.writeText(el.innerText).then(() => {
+        const original = btn.innerText;
+        btn.innerText = currentLang === 'fr' ? I18N.fr.btn.copied : 'Copied!';
+        btn.classList.add('text-[#4ade80]', 'border-[#4ade80]/30');
+        setTimeout(() => { btn.innerText = original; btn.classList.remove('text-[#4ade80]', 'border-[#4ade80]/30'); }, 1500);
+      });
+    }
+
+    // Scroll-triggered reveals
+    (function () {
+      const els = document.querySelectorAll('.on-scroll');
+      if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        els.forEach(el => el.classList.add('visible'));
+        return;
+      }
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+      }, { threshold: 0.12 });
+      els.forEach(el => io.observe(el));
+    })();
+
+    // Active nav highlighting
+    (function () {
+      const links = document.querySelectorAll('.nav-link[data-nav]');
+      const map = {};
+      links.forEach(l => map[l.dataset.nav] = l);
+      const sections = Object.keys(map).map(id => document.getElementById(id)).filter(Boolean);
+      if (!sections.length || !('IntersectionObserver' in window)) return;
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            links.forEach(l => l.classList.remove('active'));
+            const link = map[e.target.id];
+            if (link) link.classList.add('active');
+          }
+        });
+      }, { rootMargin: '-30% 0px -60% 0px' });
+      sections.forEach(s => io.observe(s));
+    })();
+
+    // Scroll progress bar
+    (function () {
+      const bar = document.getElementById('scroll-progress');
+      const update = () => {
+        const h = document.documentElement;
+        const max = h.scrollHeight - h.clientHeight;
+        bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+      };
+      addEventListener('scroll', update, { passive: true });
+      update();
+    })();
+
+    // Card spotlight — follows the cursor
+    (function () {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      document.querySelectorAll('.card').forEach(c => {
+        c.classList.add('spot');
+        c.addEventListener('mousemove', e => {
+          const r = c.getBoundingClientRect();
+          c.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+          c.style.setProperty('--my', (e.clientY - r.top) + 'px');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
