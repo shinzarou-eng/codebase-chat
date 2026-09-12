@@ -83,8 +83,9 @@ describe('globToRegExp / matchesAnyGlob', () => {
 
   it('handles leading-dot patterns and spaces', () => {
     expect(matchesAnyGlob('.env', ['.*'])).toBe(true);
-    expect(matchesAnyGlob('src/.env', ['.*'])).toBe(false);
+    expect(matchesAnyGlob('src/.env', ['.*'])).toBe(true);
     expect(matchesAnyGlob('my dir/x.ts', ['my dir/*'])).toBe(true);
+    expect(matchesAnyGlob('other/x.ts', ['my dir/*'])).toBe(false);
   });
 
   it('globToRegExp anchors the match', () => {
