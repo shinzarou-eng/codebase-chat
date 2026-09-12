@@ -110,7 +110,7 @@ export const CLIENTS = [
   },
   {
     id: "vscode-workspace",
-    name: "VS Code (ce workspace : .vscode/mcp.json)",
+    name: "VS Code (workspace: .vscode/mcp.json)",
     configPath: (h, cwd) => join(cwd || process.cwd(), ".vscode", "mcp.json"),
     detect: () => [process.cwd()],
     format: "vscodeServers",
@@ -383,8 +383,17 @@ export async function runSetup() {
 
 // Direct invocation (`node setup.mjs`) also runs the wizard.
 if (process.argv[1] && process.argv[1].endsWith("setup.mjs")) {
-  runSetup().catch((err) => {
-    console.error("setup failed:", err.message);
-    process.exit(1);
-  });
+  if (process.argv.includes("--check")) {
+    // Standalone post-install check: handshake + tools/list against the server.
+    const t = T[detectLang()];
+    console.log(t.checking);
+    checkServer()
+      .then((r) => { console.log(r.ok ? t.checkOk(r.tools) : t.checkFail("timeout")); process.exit(r.ok ? 0 : 1); })
+      .catch((e) => { console.log(t.checkFail(e.message)); process.exit(1); });
+  } else {
+    runSetup().catch((err) => {
+      console.error("setup failed:", err.message);
+      process.exit(1);
+    });
+  }
 }

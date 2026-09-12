@@ -356,7 +356,7 @@ async function main() {
   }
 
   printHelp();
-  exit(1);
+  exit(0);
 }
 
 main().catch(err => {
