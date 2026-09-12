@@ -37,6 +37,7 @@ const SMELL_PATS: [string, RegExp][] = [
   ['any', /:\s*any\b/],
   ['emptyCatch', /catch\s*\([^)]*\)\s*\{\s*\}/],
   ['debugger', /\bdebugger\s*;/],
+  ['syncIo', /\b(readFileSync|writeFileSync|appendFileSync|readdirSync|mkdirSync|execSync)\s*\(/],
 ];
 
 const SEC_PATS: [string, RegExp][] = [
@@ -87,6 +88,8 @@ export interface GitStats {
   fileLastCommit: Map<string, string>;
   /** commit subjects for message-quality stats */
   subjects: string[];
+  /** per-commit size: files touched + lines changed */
+  commitSizes: { files: number; lines: number }[];
 }
 
 const SENSITIVE_PATS = /(^|\/)\.env$|(^|\/)\.env\.(local|prod|production|dev|development)$|\.(pem|key|p12|pfx|keystore)$|id_rsa|id_ed25519|credentials\.json|service-account/i;
@@ -96,11 +99,14 @@ async function gitActivity(abs: string): Promise<GitStats | null> {
     const { stdout } = await run('git', [
       '-C', abs, 'log', '--numstat', '--format=@@@%an|%ad|%s', '--date=short', '-n', '400',
     ], { maxBuffer: 32 * 1024 * 1024 });
-    const stats: GitStats = { commits: 0, authors: new Map(), lastDate: '', churn: new Map(), fileAuthors: new Map(), months: new Map(), sensitiveTracked: [], fileLastCommit: new Map(), subjects: [] };
+    const stats: GitStats = { commits: 0, authors: new Map(), lastDate: '', churn: new Map(), fileAuthors: new Map(), months: new Map(), sensitiveTracked: [], fileLastCommit: new Map(), subjects: [], commitSizes: [] };
     let author = '';
     let date = '';
+    let curFiles = 0, curLines = 0;
+    const flush = () => { if (curFiles || curLines) stats.commitSizes.push({ files: curFiles, lines: curLines }); curFiles = 0; curLines = 0; };
     for (const line of stdout.split('\n')) {
       if (line.startsWith('@@@')) {
+        flush();
         stats.commits++;
         const [a, d, s] = line.slice(3).split('|');
         author = a;
@@ -116,10 +122,13 @@ async function gitActivity(abs: string): Promise<GitStats | null> {
       if (!m || m[1] === '-') continue; // binary
       const file = m[3].replace(/\\/g, '/');
       const delta = Number(m[1]) + Number(m[2]);
+      curFiles++;
+      curLines += delta;
       stats.churn.set(file, (stats.churn.get(file) ?? 0) + delta);
       if (!stats.fileLastCommit.has(file) && date) stats.fileLastCommit.set(file, date);
       if (author) (stats.fileAuthors.get(file) ?? stats.fileAuthors.set(file, new Set()).get(file)!).add(author);
     }
+    flush();
     try {
       const { stdout: tracked } = await run('git', ['-C', abs, 'ls-files'], { maxBuffer: 8 * 1024 * 1024 });
       stats.sensitiveTracked = tracked.split('\n').map(l => l.trim()).filter(f => f && SENSITIVE_PATS.test(f));
@@ -160,12 +169,8 @@ async function envAudit(abs: string, fileTexts: Map<string, string>) {
 }
 
 /** package.json dependencies never imported anywhere in the codebase. */
-function unusedDeps(deps: string[], fileTexts: Map<string, string>): string[] {
-  const imported = new Set<string>();
-  const IMPORT_RE = /(?:\bfrom\s+|\bimport\s*\(|\bimport\s+|\brequire\s*\()\s*['"]([^'"./][^'"]*)['"]/g;
-  for (const text of fileTexts.values())
-    for (const m of text.matchAll(IMPORT_RE)) imported.add(m[1]);
-  return deps.filter(d => ![...imported].some(i => i === d || i.startsWith(d + '/')));
+function unusedDeps(deps: string[], imported: Set<string>): string[] {
+  return deps.filter(d => ![...imported].some(i => pkgRoot(i) === d));
 }
 
 /** Config hygiene: tsconfig strict, .gitignore, package.json completeness. */
@@ -273,6 +278,120 @@ function commitQuality(subjects: string[]) {
   return { conventionalPct: Math.round((conv / subjects.length) * 100), avgLen };
 }
 
+const NODE_BUILTINS = new Set([
+  'assert', 'buffer', 'child_process', 'cluster', 'console', 'constants', 'crypto', 'dgram', 'dns',
+  'domain', 'events', 'fs', 'http', 'http2', 'https', 'inspector', 'module', 'net', 'os', 'path',
+  'perf_hooks', 'process', 'punycode', 'querystring', 'readline', 'repl', 'stream', 'string_decoder',
+  'sys', 'timers', 'tls', 'tty', 'url', 'util', 'v8', 'vm', 'worker_threads', 'zlib',
+]);
+
+function pkgRoot(spec: string): string {
+  const s = spec.startsWith('node:') ? spec.slice(5) : spec;
+  if (s.startsWith('@')) return s.split('/').slice(0, 2).join('/');
+  return s.split('/')[0];
+}
+
+/** All external package names imported in the codebase. */
+function importedPackages(fileTexts: Map<string, string>): Set<string> {
+  const imported = new Set<string>();
+  const IMPORT_RE = /(?:\bfrom\s+|\bimport\s*\(|\bimport\s+|\brequire\s*\()\s*['"]([^'"./][^'"]*)['"]/g;
+  for (const text of fileTexts.values())
+    for (const m of text.matchAll(IMPORT_RE)) imported.add(m[1]);
+  return imported;
+}
+
+/** Packages imported in code but absent from any package.json in the repo — breaks installs. */
+async function missingDeps(abs: string, fileTexts: Map<string, string>, pkg: Record<string, any>, indexPaths: Set<string>): Promise<string[]> {
+  const declared = new Set<string>([pkg.name].filter(Boolean) as string[]);
+  const addDeps = (p: Record<string, any>) =>
+    ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies']
+      .forEach(k => Object.keys(p[k] ?? {}).forEach(d => declared.add(d)));
+  addDeps(pkg);
+  // Sub-packages (mcp/, demo/, packages/*) have their own package.json — merge their deps.
+  for (const p of indexPaths) {
+    if (!/(^|\/)package\.json$/.test(p) || p === 'package.json') continue;
+    try { addDeps(JSON.parse(await readFile(join(abs, p), 'utf8'))); } catch {}
+  }
+  const missing = new Set<string>();
+  for (const spec of importedPackages(fileTexts)) {
+    const root = pkgRoot(spec);
+    if (!NODE_BUILTINS.has(root) && !declared.has(root)) missing.add(root);
+  }
+  return [...missing].sort();
+}
+
+/** Declared deps missing from the lockfile → lockfile out of sync. */
+async function lockfileDrift(abs: string, deps: string[]): Promise<string[]> {
+  for (const lf of ['pnpm-lock.yaml', 'package-lock.json', 'yarn.lock', 'bun.lock']) {
+    try {
+      const text = await readFile(join(abs, lf), 'utf8');
+      return deps.filter(d => !text.includes(d));
+    } catch {}
+  }
+  return [];
+}
+
+/** Cyclomatic-ish complexity per function chunk (branches inside the body). */
+function functionComplexity(index: { files: Record<string, { relPath: string; chunks: { kind: string; name?: string; content: string }[] }> }) {
+  const BRANCH = /\b(if|for|while|case|catch)\b|&&|\|\||\?/g;
+  const out: { file: string; name: string; score: number }[] = [];
+  for (const f of Object.values(index.files)) {
+    if (/test|spec|__tests__|\.d\.ts$/i.test(f.relPath)) continue;
+    for (const c of f.chunks) {
+      if ((c.kind === 'function' || c.kind === 'method') && c.name)
+        out.push({ file: f.relPath, name: c.name, score: (c.content.match(BRANCH) ?? []).length });
+    }
+  }
+  return out.sort((a, b) => b.score - a.score).slice(0, 6);
+}
+
+/** Same basename in multiple directories → confusion. */
+function duplicateNames(codeFiles: string[]): { name: string; files: string[] }[] {
+  const byName = new Map<string, string[]>();
+  for (const f of codeFiles) {
+    const b = basename(f).toLowerCase();
+    (byName.get(b) ?? byName.set(b, []).get(b)!).push(f);
+  }
+  return [...byName.entries()]
+    .filter(([n, fs]) => fs.length > 1 && !/^(index|types?|constants?|config)\./.test(n))
+    .map(([name, files]) => ({ name, files }))
+    .slice(0, 5);
+}
+
+/** async functions containing no await — almost always a bug. */
+function asyncWithoutAwait(index: { files: Record<string, { relPath: string; chunks: { kind: string; name?: string; content: string }[] }> }) {
+  const out: { file: string; name: string }[] = [];
+  for (const f of Object.values(index.files)) {
+    if (/test|spec|__tests__|\.d\.ts$/i.test(f.relPath)) continue;
+    for (const c of f.chunks) {
+      if ((c.kind === 'function' || c.kind === 'method') && c.name
+        && /\basync\b/.test(c.content.split('\n')[0]) && !/\bawait\b/.test(c.content))
+        out.push({ file: f.relPath, name: c.name });
+    }
+  }
+  return out.slice(0, 6);
+}
+
+/** Longest dependency chains in the import graph. */
+function graphDepth(edges: { from: string; to: string }[], entryPoints: string[]): number {
+  const adj = new Map<string, string[]>();
+  for (const e of edges) (adj.get(e.from) ?? adj.set(e.from, []).get(e.from)!).push(e.to);
+  let max = 0;
+  const memo = new Map<string, number>();
+  const dfs = (f: string, seen: Set<string>): number => {
+    if (memo.has(f)) return memo.get(f)!;
+    if (seen.has(f)) return 0; // cycle — stop
+    seen.add(f);
+    let d = 0;
+    for (const t of adj.get(f) ?? []) d = Math.max(d, dfs(t, seen) + 1);
+    seen.delete(f);
+    memo.set(f, d);
+    return d;
+  };
+  for (const e of entryPoints) max = Math.max(max, dfs(e, new Set()));
+  return max;
+}
+
 /** Docstring coverage: exported declarations preceded by a comment line. */
 function docCoverage(fileTexts: Map<string, string>): { documented: number; total: number } {
   let documented = 0, total = 0;
@@ -310,9 +429,15 @@ function detectInfra(indexPaths: Set<string>): string[] {
 
 interface Reco { severity: 'Critique' | 'Élevée' | 'Moyenne' | 'Faible'; text: string; }
 
-function recommendations(r: HealthReport, hasTests: boolean, smells: SmellScan, sec: SmellScan, git: GitStats | null, infra: string[], riskFiles: { file: string; churn: number; score: number }[], extras: { sensitive: string[]; envUndoc: string[]; deadDeps: string[]; tsStrict: boolean | null; untestedRisk: string[]; brokenEntries: string[]; deepRel: number; deepNest: string[]; commitConv: number | null }, lang: 'fr' | 'en'): Reco[] {
+function recommendations(r: HealthReport, hasTests: boolean, smells: SmellScan, sec: SmellScan, git: GitStats | null, infra: string[], riskFiles: { file: string; churn: number; score: number }[], extras: { sensitive: string[]; envUndoc: string[]; deadDeps: string[]; tsStrict: boolean | null; untestedRisk: string[]; brokenEntries: string[]; deepRel: number; deepNest: string[]; commitConv: number | null; missingDeps: string[]; lockDrift: string[] }, lang: 'fr' | 'en'): Reco[] {
   const en = lang === 'en';
   const out: Reco[] = [];
+  if (extras.missingDeps.length) out.push({
+    severity: 'Critique',
+    text: en
+      ? `${extras.missingDeps.length} package${extras.missingDeps.length > 1 ? 's' : ''} imported but absent from package.json: ${extras.missingDeps.map(d => `\`${d}\``).join(', ')} — installs will break for everyone else.`
+      : `${extras.missingDeps.length} package${extras.missingDeps.length > 1 ? 's' : ''} importé${extras.missingDeps.length > 1 ? 's' : ''} mais absent${extras.missingDeps.length > 1 ? 's' : ''} de package.json : ${extras.missingDeps.map(d => `\`${d}\``).join(', ')} — l\u2019install cassera chez les autres.`,
+  });
   if (extras.brokenEntries.length) out.push({
     severity: 'Critique',
     text: en
@@ -351,6 +476,12 @@ function recommendations(r: HealthReport, hasTests: boolean, smells: SmellScan, 
     text: en
       ? `${extras.envUndoc.length} env var${extras.envUndoc.length > 1 ? 's' : ''} used but absent from .env.example (e.g. \`${extras.envUndoc[0]}\`) — document them or setup will break for the next dev.`
       : `${extras.envUndoc.length} variable${extras.envUndoc.length > 1 ? 's' : ''} d\u2019env utilisée${extras.envUndoc.length > 1 ? 's' : ''} mais absente${extras.envUndoc.length > 1 ? 's' : ''} de .env.example (ex. \`${extras.envUndoc[0]}\`) — les documenter sinon le setup cassera pour le prochain dev.`,
+  });
+  if (extras.lockDrift.length) out.push({
+    severity: 'Moyenne',
+    text: en
+      ? `${extras.lockDrift.length} declared dep${extras.lockDrift.length > 1 ? 's' : ''} absent from the lockfile (${extras.lockDrift.map(d => `\`${d}\``).join(', ')}) — run the package manager to resync.`
+      : `${extras.lockDrift.length} dépendance${extras.lockDrift.length > 1 ? 's' : ''} déclarée${extras.lockDrift.length > 1 ? 's' : ''} absente${extras.lockDrift.length > 1 ? 's' : ''} du lockfile (${extras.lockDrift.map(d => `\`${d}\``).join(', ')}) — relancer le package manager pour resynchroniser.`,
   });
   if (extras.tsStrict === false) out.push({
     severity: 'Moyenne',
@@ -491,7 +622,14 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   const git = await gitActivity(health.projectPath);
   const infra = detectInfra(indexPaths);
   const env = await envAudit(health.projectPath, graph.fileTexts);
-  const deadDeps = unusedDeps(deps, graph.fileTexts);
+  const imported = importedPackages(graph.fileTexts);
+  const deadDeps = unusedDeps(deps, imported);
+  const missing = await missingDeps(health.projectPath, graph.fileTexts, pkg, indexPaths);
+  const lockDrift = await lockfileDrift(health.projectPath, deps);
+  const fnComplex = functionComplexity(index);
+  const dupNames = duplicateNames(graph.codeFiles);
+  const asyncNoAwait = asyncWithoutAwait(index);
+  const maxDepth = graphDepth(graph.edges, entryPoints);
   const cfg = await configAudit(health.projectPath, pkg, indexPaths, !!git);
   const longFns = functionHotspots(index);
   const brokenEntries = await brokenPkgEntries(health.projectPath, pkg);
@@ -552,6 +690,9 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
         deepImports: 'Deep relative imports (3+ levels)', deepNest: 'Deep nesting (6+ levels)',
         readmeTitle: 'README audit', readmeInstall: 'install section', readmeUsage: 'usage section', readmeCode: 'code blocks', readmeBadges: 'badges',
         commitQ: 'Commit messages', commitConv: 'conventional', staleHubs: 'Stable core (hubs untouched longest)',
+        missingDeps: 'imported but undeclared', lockDrift: 'absent from lockfile', bigCommits: 'Largest commits',
+        fnComplex: 'Most complex functions', dupNames: 'Duplicate file names', asyncNoAwait: 'async without await',
+        graphDepth: 'Max import chain depth',
         reco: 'Recommendations', sev: 'Severity', action: 'Action',
         labels: {
           todo: 'TODO/FIXME markers', console: 'console.* calls', tsIgnore: '@ts-ignore/-expect-error',
@@ -578,6 +719,9 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
         deepImports: 'Imports relatifs profonds (3+ niveaux)', deepNest: 'Imbrication profonde (6+ niveaux)',
         readmeTitle: 'Audit README', readmeInstall: 'section install', readmeUsage: 'section usage', readmeCode: 'blocs de code', readmeBadges: 'badges',
         commitQ: 'Messages de commit', commitConv: 'conventionnels', staleHubs: 'Noyau stable (hubs les plus anciens)',
+        missingDeps: 'importés mais non déclarés', lockDrift: 'absentes du lockfile', bigCommits: 'Plus gros commits',
+        fnComplex: 'Fonctions les plus complexes', dupNames: 'Noms de fichiers dupliqués', asyncNoAwait: 'async sans await',
+        graphDepth: 'Profondeur max des chaînes d\u2019imports',
         reco: 'Recommandations', sev: 'Sévérité', action: 'Action',
         labels: {
           todo: 'Marqueurs TODO/FIXME', console: 'Appels console.*', tsIgnore: '@ts-ignore/-expect-error',
@@ -612,6 +756,8 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   if (env.used.length) out.push(`- **${t.envUsed}** (${env.used.length}) : ${env.used.slice(0, 10).map(v => `\`${v}\``).join(', ')}${env.used.length > 10 ? ' …' : ''}`);
   if (env.undocumented.length && env.hasTemplate) out.push(`  - ⚠️ ${env.undocumented.length} ${t.envUndoc} : ${env.undocumented.slice(0, 8).map(v => `\`${v}\``).join(', ')}`);
   if (deadDeps.length) out.push(`- **${t.deadDeps}** : ${deadDeps.map(d => `\`${d}\``).join(', ')}`);
+  if (missing.length) out.push(`- ⚠️ **${en ? 'Deps' : 'Deps'} ${t.missingDeps}** : ${missing.map(d => `\`${d}\``).join(', ')}`);
+  if (lockDrift.length) out.push(`- ⚠️ ${lockDrift.length} ${en ? 'deps' : 'deps'} ${t.lockDrift} : ${lockDrift.map(d => `\`${d}\``).join(', ')}`);
   const cfgNotes: string[] = [];
   if (cfg.tsStrict === false) cfgNotes.push(t.cfgStrict);
   if (cfg.isGit && !cfg.gitignore) cfgNotes.push(t.cfgGitignore);
@@ -649,6 +795,17 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   }
   if (shape.deepNest.length) {
     out.push(`**${t.deepNest}** : ${shape.deepNest.map(d => `\`${d.file}\` (${d.depth})`).join(', ')}`, '');
+  }
+  if (maxDepth > 0) out.push(`- **${t.graphDepth}** : ${maxDepth}`);
+  if (fnComplex.length) {
+    out.push(`**${t.fnComplex}** :`, '');
+    for (const f of fnComplex) out.push(`- \`${f.file}\` → \`${f.name}\` (${f.score} ${en ? 'branches' : 'branchements'})`);
+    out.push('');
+  }
+  if (dupNames.length) {
+    out.push(`**${t.dupNames}** :`, '');
+    for (const d of dupNames) out.push(`- \`${d.name}\` → ${d.files.map(f => `\`${f}\``).join(', ')}`);
+    out.push('');
   }
 
   if (git) {
@@ -688,6 +845,10 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
       for (const s of staleHubs) out.push(`- \`${s.f}\` ← ${s.n} ${en ? 'importers' : 'importeurs'} · ${en ? 'last change' : 'dernière modif'} ${s.last}`);
       out.push('');
     }
+    if (git.commitSizes.length) {
+      const big = [...git.commitSizes].sort((a, b) => b.lines - a.lines).slice(0, 3);
+      out.push(`**${t.bigCommits}** : ${big.map(c => `${c.lines} ${en ? 'lines' : 'lignes'} / ${c.files} ${en ? 'files' : 'fichiers'}`).join(' · ')}`, '');
+    }
   }
 
   out.push(`## 5. ${t.debt}`);
@@ -698,6 +859,10 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
     out.push(`- **${t.labels[key as keyof typeof t.labels] ?? key}** — ${hits.length}${en ? ' hit' + (hits.length > 1 ? 's' : '') : ''}`);
     for (const h of hits.slice(0, 4)) out.push(`  - \`${h.file}:${h.line}\` — ${h.sample}`);
     if (hits.length > 4) out.push(`  - _…${hits.length - 4} ${en ? 'more' : 'autres'}_`);
+  }
+  if (asyncNoAwait.length) {
+    out.push(`- **${t.asyncNoAwait}** — ${asyncNoAwait.length}`);
+    for (const a of asyncNoAwait.slice(0, 5)) out.push(`  - \`${a.file}\` → \`${a.name}\``);
   }
   out.push('');
 
@@ -724,7 +889,7 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   out.push(`## 9. ${t.reco}`, '');
   out.push(`| ${t.sev} | ${t.action} |`, '|---|---|');
   const SEV_ICON: Record<Reco['severity'], string> = { Critique: '🔴', 'Élevée': '🟠', Moyenne: '🟡', Faible: '🔵' };
-  for (const r of recommendations(health, hasTests, smells, sec, git, infra, riskFiles, { sensitive, envUndoc: env.undocumented, deadDeps, tsStrict: cfg.tsStrict, untestedRisk: untestedRisk.map(r => r.file), brokenEntries, deepRel: deepRel.length, deepNest: shape.deepNest.map(d => d.file), commitConv: commitQ?.conventionalPct ?? null }, lang)) out.push(`| ${SEV_ICON[r.severity]} ${r.severity} | ${r.text} |`);
+  for (const r of recommendations(health, hasTests, smells, sec, git, infra, riskFiles, { sensitive, envUndoc: env.undocumented, deadDeps, tsStrict: cfg.tsStrict, untestedRisk: untestedRisk.map(r => r.file), brokenEntries, deepRel: deepRel.length, deepNest: shape.deepNest.map(d => d.file), commitConv: commitQ?.conventionalPct ?? null, missingDeps: missing, lockDrift }, lang)) out.push(`| ${SEV_ICON[r.severity]} ${r.severity} | ${r.text} |`);
   out.push('');
   out.push('---');
   out.push(`_${en ? 'Made with passion by shinzarou-eng' : 'Fait avec passion par shinzarou-eng'} — dsh-codebase-chat · ${en ? 'deterministic mode' : 'mode déterministe'}_`);
