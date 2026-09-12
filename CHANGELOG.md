@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.25.0 / mcp 0.8.2 — One report style everywhere
+
+**New**
+
+- Shared prompt builders — the ASCII-banner briefs the DeepSeek Harness plugin produces (persona, mandatory sections, `[source: file:line]` citations, confidence/severity badges) are now the exact prompts MCP tools and the CLI emit. One source of truth in `src/prompts.ts`, exported for reuse.
+- `--prompt <mode>` CLI flag — prints the full assembled prompt for `intelligence`, `report`, `audit`, `tasks`, `ceo`, `player`, `chat`, `search`, `explain`, `refactor` or `crea`. Pipe it to any LLM: `--prompt intelligence | dsh`.
+- `style` argument on `codebase_intelligence` / `codebase_report` / `codebase_tasks` now actually applies (`ouf`, `punchy`, `dense`, `pedagogique`, `minimal`).
+
+**Improved**
+
+- MCP prompts upgraded from one-line instructions to the full structured briefs — reports via Cursor/Claude/Windsurf now match the DeepSeek Harness output.
+
 ## 0.24.0 / mcp 0.8.1 — Faster, sharper analysis
 
 **New**
