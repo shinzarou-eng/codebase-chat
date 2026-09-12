@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.26.0 — Deterministic `--no-llm` report
+
+**New**
+
+- `--prompt <mode> --no-llm` — a complete structured report built purely from static analysis: executive summary with health score, stack & dependency inventory, module graph (hubs, entry points, leaves), product constraints, the full deterministic health audit, and severity-ranked recommendations. Zero LLM, zero key, zero network — instant and reproducible. Renders formatted in the terminal, plain Markdown when piped.
+
 ## 0.25.7 / mcp 0.8.8 — Robust CPU fallback
 
 **Fixed**

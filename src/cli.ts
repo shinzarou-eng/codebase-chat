@@ -9,6 +9,7 @@ import { analyzeProject, formatHealthReport } from './analysis.js';
 import { analyzeImpact, formatImpactReport } from './impact.js';
 import { buildToolPrompt } from './prompts.js';
 import { callLocalLlm, isLocalLlmEnabled } from './local-llm.js';
+import { buildDeterministicReport } from './report.js';
 import { getChangedFiles } from './diff.js';
 import { loadProjectConfig } from './config.js';
 import { disposeTreeSitter } from './treesitter.js';
@@ -94,6 +95,8 @@ Options:
                          customize endpoint/model) instead of printing it.
   --local                With --prompt: answer with the embedded local model
                          (node-llama-cpp, ~1 GB download on first use, offline).
+  --no-llm               With --prompt: deterministic full report — pure static
+                         analysis, no model, no key, no network.
   -w, --watch            Keep the index hot — rebuild incrementally on file changes
   -e, --embed            Enable local semantic embeddings (slower, more relevant)
   --lang <en|fr>         Language for headings (default: .codebase-chat.json lang, else fr)
@@ -125,6 +128,7 @@ async function main() {
       style: { type: 'string' },
       call: { type: 'boolean', default: false },
       local: { type: 'boolean', default: false },
+      'no-llm': { type: 'boolean', default: false },
       watch: { type: 'boolean', short: 'w', default: false },
       embed: { type: 'boolean', short: 'e', default: false },
       lang: { type: 'string' },
@@ -239,6 +243,12 @@ async function main() {
         ? `--prompt ${mode} needs a query: add --ask/--search/--file (or --focus)`
         : `--prompt ${mode} nécessite une requête : ajoute --ask/--search/--file (ou --focus)`);
       exit(1);
+    }
+    // --no-llm: the deterministic report needs no context assembly at all.
+    if (values['no-llm']) {
+      const report = await buildDeterministicReport(values.project, lang);
+      console.log(process.stdout.isTTY ? renderAnswerTerminal(report) : report);
+      exit(0);
     }
     // The embedded model has a small context window — cap the prompt budget.
     const useLocal = values.local || isLocalLlmEnabled();

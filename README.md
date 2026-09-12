@@ -143,6 +143,9 @@ npx dsh-codebase-chat --project C:\my-app --health   # offline, no LLM
 npx dsh-codebase-chat --project C:\my-app --health --diff main   # only what changed
 npx dsh-codebase-chat --project C:\my-app --watch    # index stays hot while you code
 npx dsh-codebase-chat --project C:\my-app --prompt intelligence   # same banner brief the IDE gets — pipe to any LLM
+npx dsh-codebase-chat --project C:\my-app --prompt intelligence --call    # DeepSeek/OpenAI answers directly (API key)
+npx dsh-codebase-chat --project C:\my-app --prompt intelligence --local   # embedded model answers, fully offline
+npx dsh-codebase-chat --project C:\my-app --prompt intelligence --no-llm  # deterministic report — zero LLM, zero key
 ```
 
 **From source**
