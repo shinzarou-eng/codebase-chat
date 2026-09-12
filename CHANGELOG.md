@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.27.0 / mcp 0.9.0 — Embedded local LLM removed
+## 0.27.0 / mcp 0.9.0 — `--no-llm` report, ultra edition + local LLM removed
+
+**New**
+
+- `--no-llm` goes deep: debt & smells scan (TODO/FIXME, console.*, `@ts-ignore`, `any`, empty catch, `debugger`), security signals (hardcoded secrets, eval/Function, child_process, innerHTML, dynamic RegExp), test/src ratio, largest files, docs presence — every finding cited `file:line`, all deterministic.
+
+**Removed**
 
 **Removed**
 

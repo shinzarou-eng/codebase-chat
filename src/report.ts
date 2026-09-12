@@ -20,11 +20,71 @@ function bar(score: number): string {
   return '█'.repeat(filled) + '░'.repeat(10 - filled);
 }
 
+// --- Deterministic smell & security scan ---------------------------------
+// Every finding is a real file:line hit — grep-grade evidence, no guessing.
+
+export interface Finding { file: string; line: number; sample: string; }
+export interface SmellScan { [key: string]: Finding[]; }
+
+const SMELL_PATS: [string, RegExp][] = [
+  ['todo', /\b(?:TODO|FIXME|HACK|XXX|WIP)\b/i],
+  ['console', /\bconsole\.(log|warn|error|debug|info)\s*\(/],
+  ['tsIgnore', /@ts-(ignore|expect-error|nocheck)\b/],
+  ['any', /:\s*any\b/],
+  ['emptyCatch', /catch\s*\([^)]*\)\s*\{\s*\}/],
+  ['debugger', /\bdebugger\s*;/],
+];
+
+const SEC_PATS: [string, RegExp][] = [
+  ['secret', /(?:api[_-]?key|secret|passwd|password|token|private[_-]?key)\s*[:=]\s*['"`][A-Za-z0-9_\/+\-.]{8,}['"`]/i],
+  ['eval', /\beval\s*\(|new\s+Function\s*\(/],
+  ['exec', /\bexecSync\s*\(|child_process/],
+  ['innerHTML', /\.innerHTML\s*=/],
+  ['unsafeRegex', /new\s+RegExp\s*\([^'"`]/],
+];
+
+export function scanCode(fileTexts: Map<string, string>, pats: [string, RegExp][], perFileCap = 3): SmellScan {
+  const out: SmellScan = {};
+  for (const [file, text] of fileTexts) {
+    if (/test|spec|__tests__|\.d\.ts$/i.test(file)) continue; // tests legitimately console/TODO
+    const lines = text.split('\n');
+    for (const [key, re] of pats) {
+      let found = 0;
+      for (let i = 0; i < lines.length && found < perFileCap; i++) {
+        if (re.test(lines[i])) {
+          (out[key] ??= []).push({ file, line: i + 1, sample: lines[i].trim().slice(0, 90) });
+          found++;
+        }
+      }
+    }
+  }
+  return out;
+}
+
+function countHits(scan: SmellScan): number {
+  return Object.values(scan).reduce((s, f) => s + f.length, 0);
+}
+
 interface Reco { severity: 'Critique' | 'Élevée' | 'Moyenne' | 'Faible'; text: string; }
 
-function recommendations(r: HealthReport, hasTests: boolean, lang: 'fr' | 'en'): Reco[] {
+function recommendations(r: HealthReport, hasTests: boolean, smells: SmellScan, sec: SmellScan, lang: 'fr' | 'en'): Reco[] {
   const en = lang === 'en';
   const out: Reco[] = [];
+  if (sec.secret?.length) out.push({
+    severity: 'Critique',
+    text: en
+      ? `${sec.secret.length} potential hardcoded secret${sec.secret.length > 1 ? 's' : ''} — e.g. \`${sec.secret[0].file}:${sec.secret[0].line}\`. Move to env vars, rotate if ever committed.`
+      : `${sec.secret.length} secret${sec.secret.length > 1 ? 's' : ''} potentiellement codé${sec.secret.length > 1 ? 's' : ''} en dur — ex. \`${sec.secret[0].file}:${sec.secret[0].line}\`. Déplacer en variables d'env, révoquer si déjà commité.`,
+  });
+  if (sec.eval?.length || sec.exec?.length || sec.innerHTML?.length) {
+    const f = [...(sec.eval ?? []), ...(sec.exec ?? []), ...(sec.innerHTML ?? [])][0];
+    out.push({
+      severity: 'Élevée',
+      text: en
+        ? `Dangerous sinks detected (eval/exec/innerHTML) — e.g. \`${f.file}:${f.line}\`. Audit each call site.`
+        : `Sinks dangereux détectés (eval/exec/innerHTML) — ex. \`${f.file}:${f.line}\`. Auditer chaque site d'appel.`,
+    });
+  }
   if (r.cycles.length) out.push({
     severity: 'Critique',
     text: en
@@ -59,6 +119,18 @@ function recommendations(r: HealthReport, hasTests: boolean, lang: 'fr' | 'en'):
     severity: 'Élevée',
     text: en ? 'No test files detected — add a test suite before refactoring.' : 'Aucun fichier de test détecté — ajouter une suite de tests avant de refactorer.',
   });
+  if (smells.console && smells.console.length > 5) out.push({
+    severity: 'Faible',
+    text: en
+      ? `${smells.console.length} console.* calls in production code — route through a logger (e.g. \`${smells.console[0].file}:${smells.console[0].line}\`).`
+      : `${smells.console.length} appels console.* dans le code de prod — passer par un logger (ex. \`${smells.console[0].file}:${smells.console[0].line}\`).`,
+  });
+  if (smells.todo && smells.todo.length > 5) out.push({
+    severity: 'Faible',
+    text: en
+      ? `${smells.todo.length} TODO/FIXME markers — triage into tracked issues.`
+      : `${smells.todo.length} marqueurs TODO/FIXME — trier en tickets suivis.`,
+  });
   if (!out.length) out.push({
     severity: 'Faible',
     text: en ? 'Nothing structural to fix — keep the hygiene rules that got this score.' : 'Rien de structurel à corriger — garder les règles d\u2019hygiène qui ont produit ce score.',
@@ -90,12 +162,23 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   const devDeps = Object.keys(pkg.devDependencies ?? {});
   const scripts = Object.keys(pkg.scripts ?? {});
 
-  // --- Modules ------------------------------------------------------------
+  // --- Modules, smells, security -------------------------------------------
   const symbols = Object.values(index.files).reduce((s, f) => s + f.chunks.filter(c => c.name).length, 0);
   const hubs = [...graph.inDegree.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
   const entryPoints = graph.codeFiles.filter(f => looksLikeEntry(f, pkg)).slice(0, 10);
   const leaves = graph.codeFiles.filter(f => !graph.edges.some(e => e.from === f)).length;
-  const hasTests = Object.keys(index.files).some(f => /test|spec|__tests__/i.test(f));
+  const testFiles = Object.keys(index.files).filter(f => /test|spec|__tests__/i.test(f));
+  const srcFiles = graph.codeFiles.filter(f => !/test|spec|__tests__/i.test(f));
+  const testRatio = srcFiles.length ? Math.round((testFiles.length / srcFiles.length) * 100) : 0;
+  const largest = graph.codeFiles
+    .map(f => ({ f, lines: graph.fileTexts.get(f)!.split('\n').length }))
+    .sort((a, b) => b.lines - a.lines).slice(0, 5);
+  const indexPaths = new Set(Object.keys(index.files).map(f => f.toLowerCase()));
+  const docs = ['readme.md', 'license', 'license.md', 'changelog.md', 'contributing.md', 'security.md', 'agents.md']
+    .filter(d => indexPaths.has(d));
+  const smells = scanCode(graph.fileTexts, SMELL_PATS);
+  const sec = scanCode(graph.fileTexts, SEC_PATS, 5);
+  const hasTests = testFiles.length > 0;
 
   const t = en
     ? {
@@ -103,7 +186,15 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
         summary: 'Executive summary', stack: 'Stack & structure', lang: 'Languages', deps: 'Runtime deps', devDeps: 'Dev deps', scripts: 'Scripts',
         arch: 'Module graph', hubs: 'Hub modules (most imported)', entries: 'Entry points', leaves: 'leaf modules', syms: 'symbols extracted',
         constraints: 'Product constraints', none: 'None declared',
+        debt: 'Debt & smells', secu: 'Security signals', secuNone: 'No risky pattern detected in scanned code.',
+        tests: 'test/src file ratio', largest: 'Largest files', docs: 'Docs present',
         reco: 'Recommendations', sev: 'Severity', action: 'Action',
+        labels: {
+          todo: 'TODO/FIXME markers', console: 'console.* calls', tsIgnore: '@ts-ignore/-expect-error',
+          any: '`any` types', emptyCatch: 'empty catch blocks', debugger: 'debugger statements',
+          secret: 'hardcoded secrets (suspected)', eval: 'eval / new Function', exec: 'child_process / execSync',
+          innerHTML: 'innerHTML assignments', unsafeRegex: 'dynamic RegExp',
+        },
         verdict: (g: string) => ({ A: 'Excellent health — clean structure.', B: 'Good health — minor debt.', C: 'Correct — visible debt to watch.', D: 'Fragile — refactor before growing.', E: 'Critical — structural debt blocking.' }[g] ?? ''),
       }
     : {
@@ -111,7 +202,15 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
         summary: 'Résumé exécutif', stack: 'Stack & structure', lang: 'Langages', deps: 'Dépendances runtime', devDeps: 'Dépendances dev', scripts: 'Scripts',
         arch: 'Graphe de modules', hubs: 'Modules hubs (les plus importés)', entries: 'Points d\u2019entrée', leaves: 'modules feuilles', syms: 'symboles extraits',
         constraints: 'Contraintes produit', none: 'Aucune déclarée',
+        debt: 'Dette & smells', secu: 'Signaux sécurité', secuNone: 'Aucun pattern risqué détecté dans le code scanné.',
+        tests: 'ratio tests/src', largest: 'Plus gros fichiers', docs: 'Docs présentes',
         reco: 'Recommandations', sev: 'Sévérité', action: 'Action',
+        labels: {
+          todo: 'Marqueurs TODO/FIXME', console: 'Appels console.*', tsIgnore: '@ts-ignore/-expect-error',
+          any: 'Types `any`', emptyCatch: 'catch vides', debugger: 'Instructions debugger',
+          secret: 'Secrets en dur (suspectés)', eval: 'eval / new Function', exec: 'child_process / execSync',
+          innerHTML: 'Affectations innerHTML', unsafeRegex: 'RegExp dynamiques',
+        },
         verdict: (g: string) => ({ A: 'Excellente santé — structure propre.', B: 'Bonne santé — dette mineure.', C: 'Correct — dette visible à surveiller.', D: 'Fragile — refactorer avant de grossir.', E: 'Critique — dette structurelle bloquante.' }[g] ?? ''),
       };
 
@@ -123,6 +222,7 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   out.push(`**${bar(health.score)} ${health.score}/100 (${health.grade})** — ${t.verdict(health.grade)}`);
   out.push('');
   out.push(`- ${health.analyzedFiles} ${en ? 'code files' : 'fichiers de code'} · ${symbols} ${t.syms} · ${health.importEdges} ${en ? 'local imports' : 'imports locaux'} · ${leaves} ${t.leaves}`);
+  out.push(`- ${testFiles.length} ${en ? 'test files' : 'fichiers de test'} (${testRatio}% ${t.tests}) · ${countHits(smells)} ${en ? 'smell hits' : 'smells détectés'} · ${countHits(sec)} ${en ? 'security signals' : 'signaux sécurité'}`);
   out.push('');
 
   out.push(`## 2. ${t.stack}`);
@@ -131,6 +231,7 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   if (deps.length) out.push(`- **${t.deps}** (${deps.length}) : ${deps.slice(0, 12).map(d => `\`${d}\``).join(', ')}${deps.length > 12 ? ' …' : ''}`);
   if (devDeps.length) out.push(`- **${t.devDeps}** (${devDeps.length}) : ${devDeps.slice(0, 8).map(d => `\`${d}\``).join(', ')}${devDeps.length > 8 ? ' …' : ''}`);
   if (scripts.length) out.push(`- **${t.scripts}** : ${scripts.map(s => `\`${s}\``).join(', ')}`);
+  if (docs.length) out.push(`- **${t.docs}** : ${docs.map(d => `\`${d}\``).join(', ')}`);
   out.push('');
 
   out.push(`## 3. ${t.arch}`);
@@ -142,16 +243,41 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   if (entryPoints.length) {
     out.push(`**${t.entries}** : ${entryPoints.map(f => `\`${f}\``).join(', ')}`, '');
   }
+  if (largest.length) {
+    out.push(`**${t.largest}** : ${largest.map(x => `\`${x.f}\` (${x.lines}l)`).join(', ')}`, '');
+  }
 
-  out.push(`## 4. ${t.constraints}`);
+  out.push(`## 4. ${t.debt}`);
+  const smellKeys = Object.keys(smells);
+  if (!smellKeys.length) out.push(en ? '_Nothing detected._' : '_Rien détecté._');
+  for (const key of smellKeys) {
+    const hits = smells[key];
+    out.push(`- **${t.labels[key as keyof typeof t.labels] ?? key}** — ${hits.length}${en ? ' hit' + (hits.length > 1 ? 's' : '') : ''}`);
+    for (const h of hits.slice(0, 4)) out.push(`  - \`${h.file}:${h.line}\` — ${h.sample}`);
+    if (hits.length > 4) out.push(`  - _…${hits.length - 4} ${en ? 'more' : 'autres'}_`);
+  }
+  out.push('');
+
+  out.push(`## 5. ${t.secu}`);
+  const secKeys = Object.keys(sec);
+  if (!secKeys.length) out.push(`_${t.secuNone}_`);
+  for (const key of secKeys) {
+    const hits = sec[key];
+    out.push(`- **${t.labels[key as keyof typeof t.labels] ?? key}** — ${hits.length}`);
+    for (const h of hits.slice(0, 5)) out.push(`  - \`${h.file}:${h.line}\` — ${h.sample}`);
+    if (hits.length > 5) out.push(`  - _…${hits.length - 5} ${en ? 'more' : 'autres'}_`);
+  }
+  out.push('');
+
+  out.push(`## 6. ${t.constraints}`);
   out.push(index.constraints.length ? index.constraints.map(c => `- ${c}`).join('\n') : t.none, '');
 
-  out.push(formatHealthReportMd(health, lang).replace(/^## /, '## 5. ').replace(/\n### /g, '\n#### '), '');
+  out.push(formatHealthReportMd(health, lang).replace(/^## /, '## 7. ').replace(/\n### /g, '\n#### '), '');
 
-  out.push(`## 6. ${t.reco}`, '');
+  out.push(`## 8. ${t.reco}`, '');
   out.push(`| ${t.sev} | ${t.action} |`, '|---|---|');
   const SEV_ICON: Record<Reco['severity'], string> = { Critique: '🔴', 'Élevée': '🟠', Moyenne: '🟡', Faible: '🔵' };
-  for (const r of recommendations(health, hasTests, lang)) out.push(`| ${SEV_ICON[r.severity]} ${r.severity} | ${r.text} |`);
+  for (const r of recommendations(health, hasTests, smells, sec, lang)) out.push(`| ${SEV_ICON[r.severity]} ${r.severity} | ${r.text} |`);
   out.push('');
   out.push('---');
   out.push(`_${en ? 'Made with passion by shinzarou-eng' : 'Fait avec passion par shinzarou-eng'} — dsh-codebase-chat · ${en ? 'deterministic mode' : 'mode déterministe'}_`);
