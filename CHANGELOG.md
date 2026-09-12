@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.4 / mcp 0.8.6 — Local answers no longer loop
+
+**Fixed**
+
+- The embedded model could degenerate into repetition loops at temperature 0.2, echoing the same paragraph until the token cap. Generation now applies a repetition penalty (last 128 tokens, ×1.2) so answers move forward.
+
 ## 0.25.3 / mcp 0.8.5 — Fuller local answers
 
 **Fixed**

@@ -67,7 +67,13 @@ export async function callLocalLlm(prompt: string, lang = 'fr'): Promise<string>
         ? 'You are a senior codebase analyst. Be precise and cite files with [source: path:line].'
         : 'Tu es un analyste codebase senior. Sois precis et cite les fichiers avec [source: chemin:ligne].',
     });
-    return await session.prompt(prompt, { temperature: 0.2, maxTokens: LOCAL_MAX_TOKENS });
+    return await session.prompt(prompt, {
+      temperature: 0.2,
+      maxTokens: LOCAL_MAX_TOKENS,
+      // Small models degenerate into loops at low temperature — penalize
+      // repeated tokens so the answer moves forward instead of echoing.
+      repeatPenalty: { lastTokens: 128, penalty: 1.2, penalizeNewLine: false },
+    });
   } finally {
     await context.dispose();
   }
