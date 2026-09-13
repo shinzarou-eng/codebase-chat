@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
-import { watch } from 'node:fs';
-import { sep, basename } from 'node:path';
+import { watch, existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, copyFileSync, rmSync } from 'node:fs';
+import { sep, basename, join } from 'node:path';
 import { buildContext } from './context.js';
 import { getIndex } from './indexer.js';
 import { findProjectRoot, getWalkOptions, resolveProjectPath } from './project.js';
@@ -104,6 +104,8 @@ Options:
   --unignore <id>        Remove an ignore entry
   --ignores              List silenced findings
   --history              Show past --check runs (verdict + score over time)
+  --hook <install|uninstall|status>
+                         Git pre-commit hook running --check --strict on every commit
   --impact [file|sym]    Blast radius — which files transitively depend on <file>;
                          file#symbol or a bare symbol name scopes to its real
                          users; bare --impact = every file changed vs HEAD
@@ -138,9 +140,14 @@ Environment:
 
 async function main() {
   // Bare `--impact` (no following value) → impact of uncommitted changes vs HEAD.
+  // Bare `--hook` → status.
   const argv0 = process.argv.slice(2);
-  const argv = argv0.map((a, i) =>
-    a === '--impact' && (i === argv0.length - 1 || argv0[i + 1].startsWith('-')) ? '--impact=' : a);
+  const argv = argv0.map((a, i) => {
+    const bare = i === argv0.length - 1 || argv0[i + 1].startsWith('-');
+    if (a === '--impact' && bare) return '--impact=';
+    if (a === '--hook' && bare) return '--hook=status';
+    return a;
+  });
   const { values } = parseArgs({
     args: argv,
     options: {
@@ -167,6 +174,7 @@ async function main() {
       reason: { type: 'string' },
       ignores: { type: 'boolean', default: false },
       history: { type: 'boolean', default: false },
+      hook: { type: 'string' },
       strict: { type: 'boolean', default: false },
       json: { type: 'boolean', default: false },
       watch: { type: 'boolean', short: 'w', default: false },
@@ -321,6 +329,57 @@ async function main() {
         console.log(`  ${e.ts.slice(0, 16).replace('T', ' ')}  ${V[e.verdict]}  score ${e.score}/100  · ${e.changed} fichier(s)  +${e.added}/-${e.resolved} findings  vs ${e.base}`);
     }
     exit(0);
+  }
+
+  if (values.hook !== undefined) {
+    const abs = await findProjectRoot(project);
+    const gitDir = join(abs, '.git');
+    if (!existsSync(gitDir)) {
+      console.error(lang === 'en' ? 'Not a git repository.' : 'Pas un dépôt git.');
+      exit(1);
+    }
+    const hooksDir = join(gitDir, 'hooks');
+    const hookPath = join(hooksDir, 'pre-commit');
+    const MARK = 'dsh-codebase-chat pre-commit hook';
+    const script = `#!/bin/sh
+# ${MARK} — verifies changed files (impact + new findings vs baseline).
+# Skip once with: git commit --no-verify
+if command -v dsh-codebase-chat >/dev/null 2>&1; then
+  dsh-codebase-chat --check --strict
+elif [ -f "dist/cli.js" ]; then
+  node dist/cli.js --check --strict
+else
+  npx --no-install dsh-codebase-chat --check --strict
+fi
+`;
+    if (values.hook === 'install') {
+      if (existsSync(hookPath) && !readFileSync(hookPath, 'utf8').includes(MARK)) {
+        copyFileSync(hookPath, hookPath + '.bak');
+        console.log(lang === 'en' ? `Existing hook backed up to pre-commit.bak` : `Hook existant sauvegardé dans pre-commit.bak`);
+      }
+      mkdirSync(hooksDir, { recursive: true });
+      writeFileSync(hookPath, script);
+      try { chmodSync(hookPath, 0o755); } catch { /* Windows */ }
+      console.log(lang === 'en'
+        ? 'pre-commit hook installed — every commit runs --check --strict (red verdict blocks).'
+        : 'Hook pre-commit installé — chaque commit lance --check --strict (verdict rouge bloque).');
+      exit(0);
+    }
+    if (values.hook === 'uninstall') {
+      if (existsSync(hookPath) && readFileSync(hookPath, 'utf8').includes(MARK)) {
+        rmSync(hookPath);
+        console.log(lang === 'en' ? 'Hook removed.' : 'Hook retiré.');
+      } else {
+        console.log(lang === 'en' ? 'No dsh-codebase-chat hook installed.' : 'Aucun hook dsh-codebase-chat installé.');
+      }
+      exit(0);
+    }
+    // status
+    const installed = existsSync(hookPath) && readFileSync(hookPath, 'utf8').includes(MARK);
+    console.log(installed
+      ? (lang === 'en' ? 'pre-commit hook: installed' : 'Hook pre-commit : installé')
+      : (lang === 'en' ? 'pre-commit hook: not installed — `--hook install`' : 'Hook pre-commit : absent — `--hook install`'));
+    exit(installed ? 0 : 1);
   }
 
   if (values.doctor) {

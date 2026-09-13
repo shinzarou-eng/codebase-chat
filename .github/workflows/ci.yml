@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -19,3 +21,5 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      # Dogfooding: the tool audits its own diff — new findings block the merge.
+      - run: node dist/cli.js --check --strict --diff "${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}"
