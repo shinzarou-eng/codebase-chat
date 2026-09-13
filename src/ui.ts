@@ -28,6 +28,10 @@ const SEV: Record<string, string> = { '🔴': 'crit', '🟠': 'high', '🟡': 'm
 /** Strip a leading emoji — gradient-clipped titles render emoji as blank boxes. */
 const stripEmoji = (s: string) => s.replace(/^\p{Extended_Pictographic}\s*/u, '');
 
+/** Remove every emoji/pictograph — Fluent-style clean text rendering. */
+const EMOJI_RE = /\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*\uFE0F?/gu;
+const stripAllEmoji = (s: string) => s.replace(EMOJI_RE, '');
+
 /** Turn "🔴 Critique" severity markers and ASCII score bars into styled HTML. */
 function severity(html: string): string {
   return html
@@ -116,12 +120,13 @@ export function parseReportMd(md: string, fallbackTitle = 'Report'): ParsedRepor
 
   const scoreM = md.match(/[█▓▒░]+\s*(\d+)\/100(?:\s*\(([A-F])\))?/);
 
+  const clean = (h: string) => stripAllEmoji(severity(h));
   return {
     title,
-    intro: severity(sections.filter(s => !s.title).flatMap(s => s.html).join('\n')),
-    nav: sections.filter(s => s.title).map(s => ({ id: s.id, title: s.title })),
+    intro: clean(sections.filter(s => !s.title).flatMap(s => s.html).join('\n')),
+    nav: sections.filter(s => s.title).map(s => ({ id: s.id, title: stripAllEmoji(s.title).trim() })),
     body: sections.filter(s => s.title).map(s =>
-      `<section id="${s.id}"><h2 class="coll">${esc(s.title)}</h2><div class="sbody">${severity(s.html.join('\n'))}</div></section>`).join('\n'),
+      `<section id="${s.id}"><h2 class="coll">${esc(stripAllEmoji(s.title).trim())}</h2><div class="sbody">${clean(s.html.join('\n'))}</div></section>`).join('\n'),
     score: scoreM ? Number(scoreM[1]) : null,
     grade: scoreM?.[2] ?? null,
   };
@@ -129,66 +134,64 @@ export function parseReportMd(md: string, fallbackTitle = 'Report'): ParsedRepor
 
 /** Shared dashboard stylesheet — violet "Linear-grade" dark theme. */
 export const DASH_CSS = `
-:root{--bg:#0a0a10;--card:#12121c;--card2:#171726;--line:#232335;--line2:#33334d;--txt:#e8eaf2;--dim:#8a90a8;--acc:#8b7bff;--acc2:#c4b5fd;--ok:#34d399;--warn:#fbbf24;--bad:#fb7185;--code:#c4b5fd}
+:root{--bg:#1f1f1f;--card:#2b2b2b;--card2:#333333;--line:#ffffff14;--line2:#ffffff24;--txt:#f0f0f0;--dim:#a3a3a3;--acc:#4cc2ff;--acc2:#8fd3ff;--ok:#6ccb5f;--warn:#fce100;--bad:#ff99a4;--code:#9cdcfe}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.65 "Segoe UI",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
-nav{position:fixed;inset:0 auto 0 0;width:230px;padding:24px 16px;border-right:1px solid var(--line);overflow:auto;background:#0d0d16}
-nav b{display:block;color:var(--acc2);margin-bottom:14px;font-size:13px;letter-spacing:.06em}
-nav a{display:block;color:var(--dim);text-decoration:none;padding:5px 9px;border-radius:7px;font-size:13px;transition:all .12s}
-nav a:hover{background:var(--card);color:var(--txt)}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.6 "Segoe UI Variable","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+nav{position:fixed;inset:0 auto 0 0;width:230px;padding:24px 16px;border-right:1px solid var(--line);overflow:auto;background:#1b1b1b}
+nav b{display:block;color:var(--acc);margin-bottom:14px;font-size:13px;letter-spacing:.04em}
+nav a{display:block;color:var(--dim);text-decoration:none;padding:5px 9px;border-radius:6px;font-size:13px;transition:background .1s}
+nav a:hover{background:#ffffff0d;color:var(--txt)}
 main{margin-left:230px;max-width:1120px;padding:32px 40px}
 header.hero{margin-bottom:28px}
-header.hero h1{font-size:24px;margin:0 0 4px;font-weight:700;letter-spacing:-.02em;background:linear-gradient(90deg,#fff,#b8b0e8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+header.hero h1{font-size:24px;margin:0 0 4px;font-weight:600;letter-spacing:-.01em}
 header.hero .sub{color:var(--dim);font-size:12px}
 .score{display:flex;align-items:center;gap:20px;margin:14px 0}
-section{background:linear-gradient(180deg,var(--card),#0f0f19);border:1px solid var(--line);border-radius:16px;padding:22px 26px;margin-bottom:18px;box-shadow:0 4px 24px rgba(0,0,0,.28);transition:border-color .18s}
+section{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:22px 26px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 section:hover{border-color:var(--line2)}
-h2{margin:0 0 12px;font-size:15px;color:var(--acc2);font-weight:700;letter-spacing:.01em}
+h2{margin:0 0 12px;font-size:15px;color:var(--txt);font-weight:600}
 h2.coll{cursor:pointer;user-select:none;display:flex;align-items:center;gap:9px;margin-bottom:0}
-h2.coll::before{content:'▾';font-size:11px;color:var(--acc);transition:transform .2s}
+h2.coll::before{content:'▾';font-size:11px;color:var(--dim);transition:transform .15s}
 section.collapsed h2.coll::before{transform:rotate(-90deg)}
 section.collapsed .sbody{display:none}
 section:not(.collapsed) .sbody{margin-top:14px}
 h3{margin:16px 0 8px;font-size:14px;color:var(--txt);font-weight:600}
-p{margin:7px 0}ul{margin:7px 0;padding-left:20px}li{margin:4px 0}li::marker{color:var(--acc)}li.sub{color:var(--dim);font-size:13px;margin-left:14px}
-code{font-family:"Cascadia Code",ui-monospace,Consolas,monospace;color:var(--code);background:rgba(139,123,255,.09);border:1px solid rgba(139,123,255,.14);padding:1px 6px;border-radius:5px;font-size:12.5px}
-pre{background:#0c0c14;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font-family:"Cascadia Code",ui-monospace,Consolas,monospace;font-size:12.5px;white-space:pre-wrap}
+p{margin:7px 0}ul{margin:7px 0;padding-left:20px}li{margin:4px 0}li::marker{color:var(--dim)}li.sub{color:var(--dim);font-size:13px;margin-left:14px}
+code{font-family:"Cascadia Code",Consolas,ui-monospace,monospace;color:var(--code);background:#ffffff0f;padding:1px 6px;border-radius:4px;font-size:12.5px}
+pre{background:#1a1a1a;border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow:auto;font-family:"Cascadia Code",Consolas,ui-monospace,monospace;font-size:12.5px;white-space:pre-wrap}
 table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13px}
-th{text-align:left;color:var(--dim);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:9px 12px;border-bottom:1px solid var(--line)}
-td{padding:9px 12px;border-bottom:1px solid #181826;vertical-align:top}
+th{text-align:left;color:var(--dim);font-weight:600;font-size:11.5px;padding:9px 12px;border-bottom:1px solid var(--line)}
+td{padding:9px 12px;border-bottom:1px solid #ffffff09;vertical-align:top}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(139,123,255,.04)}
+tr:hover td{background:#ffffff08}
 strong{color:var(--txt)}em{color:var(--dim)}hr{border:none;border-top:1px solid var(--line);margin:14px 0}
-a{color:var(--acc2)}
-.sev{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 9px;border-radius:20px;vertical-align:middle}
-.sev-crit{background:rgba(251,113,133,.13);color:var(--bad);border:1px solid rgba(251,113,133,.35)}
-.sev-high{background:rgba(251,146,60,.12);color:#fb923c;border:1px solid rgba(251,146,60,.35)}
-.sev-med{background:rgba(251,191,36,.11);color:var(--warn);border:1px solid rgba(251,191,36,.3)}
-.sev-info{background:rgba(139,123,255,.12);color:var(--acc2);border:1px solid rgba(139,123,255,.3)}
+a{color:var(--acc)}
+.sev{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.03em;padding:2px 9px;border-radius:4px;vertical-align:middle}
+.sev-crit{background:rgba(255,153,164,.15);color:var(--bad)}
+.sev-high{background:rgba(255,185,140,.14);color:#ffb98c}
+.sev-med{background:rgba(252,225,0,.12);color:var(--warn)}
+.sev-info{background:rgba(76,194,255,.13);color:var(--acc)}
 .mb{display:inline-flex;align-items:center;gap:10px;vertical-align:middle}
-.mb i{display:inline-block;width:120px;height:7px;background:#1c1c2c;border-radius:5px;overflow:hidden}
-.mb u{display:block;height:100%;background:linear-gradient(90deg,#fb7185,#fbbf24,#34d399);border-radius:5px}
+.mb i{display:inline-block;width:120px;height:6px;background:#ffffff12;border-radius:4px;overflow:hidden}
+.mb u{display:block;height:100%;background:linear-gradient(90deg,#ff99a4,#fce100,#6ccb5f);border-radius:4px}
 .mb b{font-size:13px;font-weight:600}
-.donut .bg{fill:none;stroke:#1e1e30;stroke-width:10}
+.donut .bg{fill:none;stroke:#ffffff12;stroke-width:10}
 .donut .fg{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dasharray 1s ease}
 html{scroll-behavior:smooth}
-::-webkit-scrollbar{width:9px;height:9px}
-::-webkit-scrollbar-thumb{background:#26263a;border-radius:6px}
-::-webkit-scrollbar-thumb:hover{background:#34344e}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#ffffff1a;border-radius:6px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:#ffffff2e}
 ::-webkit-scrollbar-track{background:transparent}
 @media(max-width:800px){nav{display:none}main{margin:0;padding:18px}}
 `;
 
 export function scoreGauge(score: number | null, grade: string | null = null): string {
   if (score === null) return '';
-  const color = score >= 70 ? '#34d399' : score >= 50 ? '#fbbf24' : '#fb7185';
+  const color = score >= 70 ? '#6ccb5f' : score >= 50 ? '#fce100' : '#ff99a4';
   const circ = 2 * Math.PI * 52;
-  const gid = `g${Math.round(score)}`;
   return `<div class="score"><svg class="donut" width="120" height="120" viewBox="0 0 120 120">
-<defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8b7bff"/><stop offset="100%" stop-color="${color}"/></linearGradient></defs>
 <circle class="bg" cx="60" cy="60" r="52"/>
-<circle class="fg" cx="60" cy="60" r="52" stroke="url(#${gid})" stroke-dasharray="${(score / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 60 60)"/>
-<text x="60" y="58" text-anchor="middle" dominant-baseline="middle" fill="${color}" font-size="30" font-weight="700">${score}</text>
+<circle class="fg" cx="60" cy="60" r="52" stroke="${color}" stroke-dasharray="${(score / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 60 60)"/>
+<text x="60" y="58" text-anchor="middle" dominant-baseline="middle" fill="${color}" font-size="30" font-weight="600">${score}</text>
 ${grade ? `<text x="60" y="84" text-anchor="middle" fill="var(--dim)" font-size="13">${grade}</text>` : ''}
 </svg></div>`;
 }

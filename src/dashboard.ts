@@ -25,48 +25,50 @@ function appHtml(project: string, absPath: string, lang: Lang): string {
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>">
 <style>${DASH_CSS}
 body{display:flex;margin:0}
-aside{position:fixed;inset:0 auto 0 0;width:264px;background:#0d0d16;border-right:1px solid var(--line);padding:22px 16px;overflow:auto;display:flex;flex-direction:column}
-aside .logo{display:flex;align-items:center;gap:9px;color:var(--txt);font-weight:700;font-size:15px;padding:0 8px 6px;word-break:break-all}
-aside .logo::before{content:'◆';display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:linear-gradient(135deg,#8b7bff,#5b4bc4);border-radius:7px;font-size:11px;color:#fff;flex-shrink:0}
-aside .tag{color:var(--dim);font-size:11px;padding:0 8px 18px;border-bottom:1px solid var(--line);margin-bottom:14px}
-aside .grp{font-size:10px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;padding:12px 8px 6px}
-button.act{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:1px solid transparent;color:var(--txt);padding:9px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;transition:all .13s}
-button.act:hover{background:var(--card);border-color:var(--line)}
-button.act.on{background:rgba(139,123,255,.13);border-color:rgba(139,123,255,.4);color:var(--acc2)}
+aside{position:fixed;inset:0 auto 0 0;width:248px;background:#1b1b1b;border-right:1px solid var(--line);padding:20px 10px;overflow:auto;display:flex;flex-direction:column}
+aside .logo{display:flex;align-items:center;gap:9px;color:var(--txt);font-weight:600;font-size:14px;padding:4px 10px 10px;word-break:break-all}
+aside .logo::before{content:'◆';display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#4cc2ff;border-radius:5px;font-size:10px;color:#00395e;flex-shrink:0}
+aside .tag{color:var(--dim);font-size:11px;padding:0 10px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+aside .grp{font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--dim);padding:14px 10px 4px}
+button.act{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:none;color:var(--txt);padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13px;transition:background .1s;position:relative}
+button.act:hover{background:#ffffff0d}
+button.act.on{background:#ffffff12}
+button.act.on::before{content:'';position:absolute;left:-10px;top:20%;bottom:20%;width:3px;border-radius:2px;background:var(--acc)}
 button.act:disabled{opacity:.4;cursor:wait}
-.mini{padding:4px 8px}
+.mini{padding:2px 10px}
 .mini input,.mini select{width:100%;margin-bottom:7px}
-.mini button.act{justify-content:center;background:var(--card);border-color:var(--line)}
-.mini button.act:hover{border-color:var(--acc);color:var(--acc2)}
-#navList a{display:block;color:var(--dim);text-decoration:none;padding:5px 10px;border-radius:7px;font-size:12.5px;transition:all .12s}
-#navList a:hover{background:var(--card);color:var(--txt)}
-aside .foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--dim)}
-main{margin-left:264px;flex:1;min-width:0}
-.top{position:sticky;top:0;z-index:10;background:rgba(10,10,16,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:12px 28px;display:flex;align-items:center;gap:8px}
-.top input[type=text]{flex:0 1 260px;margin-left:auto}
-.top button{background:var(--card);border:1px solid var(--line);color:var(--txt);padding:7px 13px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;transition:all .13s}
-.top button:hover{border-color:var(--acc);color:var(--acc2)}
-.chip{background:var(--card);border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;transition:all .13s}
-.chip:hover{color:var(--txt);border-color:var(--line2)}
-.chip.on{border-color:var(--acc);color:var(--acc2);background:rgba(139,123,255,.1)}
-.wrap{max-width:1060px;padding:26px 32px 80px}
-input,select{background:#0c0c14;border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:9px;font-size:13px;font-family:inherit;transition:border-color .13s}
-input:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(139,123,255,.12)}
+.mini button.act{justify-content:center;background:#ffffff0d;border:1px solid var(--line)}
+.mini button.act:hover{background:#ffffff14}
+#navList a{display:block;color:var(--dim);text-decoration:none;padding:5px 10px;border-radius:6px;font-size:12.5px;transition:background .1s}
+#navList a:hover{background:#ffffff0d;color:var(--txt)}
+aside .foot{margin-top:auto;padding:14px 10px 0;border-top:1px solid var(--line);font-size:11px;color:var(--dim)}
+main{margin-left:248px;flex:1;min-width:0}
+.top{position:sticky;top:0;z-index:10;background:rgba(31,31,31,.85);backdrop-filter:blur(16px) saturate(1.2);border-bottom:1px solid var(--line);padding:10px 28px;display:flex;align-items:center;gap:8px}
+.top input[type=text]{flex:0 1 240px;margin-left:auto}
+.top button,.top .chip{background:#ffffff0d;border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;transition:background .1s;text-decoration:none}
+.top button:hover,.top .chip:hover{background:#ffffff16}
+.top .chip.on{background:rgba(76,194,255,.16);color:var(--acc);border-color:rgba(76,194,255,.35)}
+.wrap{max-width:1040px;padding:24px 32px 80px}
+input,select{background:#ffffff0a;border:1px solid var(--line);color:var(--txt);padding:7px 12px;border-radius:6px;font-size:13px;font-family:inherit;transition:border-color .1s}
+input:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:inset 0 -2px 0 var(--acc)}
+input:hover,select:hover{border-color:var(--line2)}
 #out{min-height:300px}
 .spin{color:var(--dim);padding:60px 0;text-align:center;font-size:14px}
 .spin::after{content:'…';animation:dots 1.2s infinite}
 @keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'…'}}
 .err{color:var(--bad);padding:20px}
 .rhero{display:flex;align-items:center;gap:22px;margin-bottom:20px}
-.rhero h1{font-size:20px;margin:0;letter-spacing:-.02em;background:linear-gradient(90deg,#fff,#b8b0e8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.rhero h1{font-size:20px;margin:0;font-weight:600}
 .rhero .sub{color:var(--dim);font-size:12px}
 .prompthd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .prompthd h2{margin:0}
-.askcard{background:linear-gradient(135deg,rgba(139,123,255,.13),rgba(139,123,255,.04) 60%,transparent);border:1px solid rgba(139,123,255,.28);border-radius:16px;padding:20px 24px;margin-bottom:22px}
-.askcard h2{margin:0 0 12px;font-size:15px;color:var(--acc2)}
-.askcard textarea{width:100%;background:rgba(10,10,16,.7);border:1px solid var(--line);color:var(--txt);padding:11px 14px;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;transition:border-color .13s}
-.askcard textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(139,123,255,.12)}
-.askcard .hint{flex:1}
+.askcard{background:#282828;border:1px solid var(--line);border-radius:8px;padding:20px 24px;margin-bottom:22px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.askcard h2{margin:0 0 10px;font-size:15px;font-weight:600}
+.askcard textarea{width:100%;background:#ffffff0a;border:1px solid var(--line);color:var(--txt);padding:10px 14px;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;transition:border-color .1s}
+.askcard textarea:focus{outline:none;border-color:var(--acc);box-shadow:inset 0 -2px 0 var(--acc)}
+.askcard .hint{flex:1;color:var(--dim);font-size:12px}
+.btn-acc{background:#4cc2ff;color:#00395e;border:1px solid #60cdff}
+.btn-acc:hover{background:#69c9ff}
 pre.big{max-height:60vh}
 .hidden{display:none!important}
 @media(max-width:860px){aside{position:static;width:auto}body{display:block}main{margin:0}.top{flex-wrap:wrap}}
@@ -75,10 +77,10 @@ pre.big{max-height:60vh}
 <div class="logo">${esc(project)}</div>
 <div class="tag">${t('100% local · aucune donnée ne sort', '100% local · nothing leaves your machine')}</div>
 <div class="grp">${t('Analyses', 'Analysis')}</div>
-<button class="act" data-a="audit">🔍 ${t('Audit complet', 'Deep audit')}</button>
-<button class="act" data-a="health">❤️ ${t('Santé', 'Health')}</button>
-<button class="act" data-a="stats">📊 Stats</button>
-<button class="act" data-a="impact">💥 Impact</button>
+<button class="act" data-a="audit">${t('Audit complet', 'Deep audit')}</button>
+<button class="act" data-a="health">${t('Santé du code', 'Code health')}</button>
+<button class="act" data-a="stats">${t('Statistiques', 'Statistics')}</button>
+<button class="act" data-a="impact">${t('Impact d\'un fichier', 'File impact')}</button>
 <div id="impactBox" class="mini hidden"><input type="text" id="ifile" list="fileList" placeholder="src/store.ts" autocomplete="off"><datalist id="fileList"></datalist><button class="act" id="igo">${t('Analyser', 'Analyze')}</button></div>
 <div class="grp">${t('Prompt pour un LLM', 'Prompt for an LLM')}</div>
 <div class="mini"><select id="mode">${PROMPT_MODES.map(m => `<option>${m}</option>`).join('')}</select>
@@ -94,22 +96,22 @@ pre.big{max-height:60vh}
 <main>
 <div class="top">
 <span class="chip on" data-sev="">${t('Tout', 'All')}</span>
-<span class="chip" data-sev="crit">🔴</span>
-<span class="chip" data-sev="high">🟠</span>
-<span class="chip" data-sev="med">🟡</span>
-<a class="chip" href="/?lang=${lang === 'en' ? 'fr' : 'en'}" style="text-decoration:none">${lang === 'en' ? '🇫🇷 FR' : '🇬🇧 EN'}</a>
+<span class="chip" data-sev="crit">${t('Critique', 'Critical')}</span>
+<span class="chip" data-sev="high">${t('Élevée', 'High')}</span>
+<span class="chip" data-sev="med">${t('Moyenne', 'Medium')}</span>
+<a class="chip" href="/?lang=${lang === 'en' ? 'fr' : 'en'}">${lang === 'en' ? 'FR' : 'EN'}</a>
 <button id="viewMd">Markdown</button>
-<button id="dlMd">.md ↓</button>
-<button id="dlHtml">.html ↓</button>
-<button id="copyMd">${t('⧉ Copier', '⧉ Copy')}</button>
+<button id="dlMd">${t('Exporter .md', 'Export .md')}</button>
+<button id="dlHtml">${t('Exporter .html', 'Export .html')}</button>
+<button id="copyMd">${t('Copier', 'Copy')}</button>
 <input type="text" id="search" placeholder="${t('Filtrer les résultats…', 'Filter results…')}">
 </div>
 <div class="wrap">
 <div class="askcard">
-<h2>💬 ${t('Pose une question sur ce projet', 'Ask anything about this project')}</h2>
+<h2>${t('Pose une question sur ce projet', 'Ask anything about this project')}</h2>
 <textarea id="ask" rows="2" placeholder="${t('ex : où est gérée l\'authentification ? que risque un refactor de src/store.ts ?', 'e.g. where is auth handled? what breaks if I refactor src/store.ts?')}"></textarea>
 <div class="row" style="margin-top:10px">
-<button class="act primary" id="askBtn" style="width:auto">${t('✨ Préparer le prompt', '✨ Build the prompt')}</button>
+<button class="act btn-acc" id="askBtn" style="width:auto">${t('Préparer le prompt', 'Build the prompt')}</button>
 <span class="hint" style="margin:0">${t('Le prompt contient le code pertinent — colle-le dans ChatGPT, Claude ou Ollama.', 'The prompt carries the relevant code — paste it into ChatGPT, Claude or Ollama.')}</span>
 </div></div>
 <div id="promptOut" class="hidden"><div class="prompthd"><h2>Prompt</h2><button id="copyBtn" class="act" style="width:auto">${t('Copier', 'Copy')}</button></div><pre id="promptPre" class="big"></pre></div>
@@ -288,7 +290,7 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
         const fileCount = Object.keys(index.files).length;
         const totalTokens = Object.values(index.files).reduce((s, f) => s + f.chunks.reduce((a, c) => a + c.tokens, 0), 0);
         const termCount = Object.keys(index.terms).length;
-        json(res, { body: `<section><h2>📊 Stats</h2><ul><li><strong>Project</strong>: <code>${esc(index.projectPath)}</code></li><li><strong>Files</strong>: ${fileCount}</li><li><strong>Tokens</strong>: ${totalTokens.toLocaleString()}</li><li><strong>Terms</strong>: ${termCount.toLocaleString()}</li><li><strong>Cache</strong>: <code>${esc(index.projectHash)}</code></li></ul></section>` });
+        json(res, { body: `<section><h2>Stats</h2><ul><li><strong>Project</strong>: <code>${esc(index.projectPath)}</code></li><li><strong>Files</strong>: ${fileCount}</li><li><strong>Tokens</strong>: ${totalTokens.toLocaleString()}</li><li><strong>Terms</strong>: ${termCount.toLocaleString()}</li><li><strong>Cache</strong>: <code>${esc(index.projectHash)}</code></li></ul></section>` });
         return;
       }
       if (u.pathname === '/api/prompt') {
