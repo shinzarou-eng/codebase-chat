@@ -12,6 +12,7 @@ import { buildDeterministicReport } from './report.js';
 import { getChangedFiles } from './diff.js';
 import { loadProjectConfig } from './config.js';
 import { disposeTreeSitter } from './treesitter.js';
+import { encode as encodeCl100k } from 'gpt-tokenizer/encoding/cl100k_base';
 
 // Minimal Markdown→ANSI renderer so --call/--no-llm answers read like a real
 // report in the terminal instead of raw `##`/`**`/backticks. Only used when
@@ -151,14 +152,31 @@ async function main() {
 
   if (values.stats) {
     const index = await getIndex(project, m => console.log(m));
-    const fileCount = Object.keys(index.files).length;
-    const totalTokens = Object.values(index.files).reduce((sum, f) => sum + f.chunks.reduce((s, c) => s + c.tokens, 0), 0);
+    const files = Object.values(index.files);
+    const fileCount = files.length;
+    const o200k = files.reduce((sum, f) => sum + f.chunks.reduce((s, c) => s + c.tokens, 0), 0);
     const termCount = Object.keys(index.terms).length;
+    const allText = files.flatMap(f => f.chunks.map(c => c.content)).join('\n');
+    const cl100k = encodeCl100k(allText).length;
+    const fmt = (n: number) => n.toLocaleString('en-US');
+    const est = (mult: number) => `~${fmt(Math.round(cl100k * mult))}`;
     console.log(`Project: ${index.projectPath}`);
     console.log(`Files:   ${fileCount}`);
-    console.log(`Tokens:  ${totalTokens}`);
-    console.log(`Terms:   ${termCount}`);
+    console.log(`Tokens:  ${fmt(o200k)} (o200k)`);
+    console.log(`Terms:   ${fmt(termCount)}`);
     console.log(`Cache:   ${index.projectHash}`);
+    console.log('');
+    console.log('Token count per model family (code-heavy text):');
+    console.log(`  OpenAI GPT-4o/5     o200k         ${fmt(o200k)}  exact`);
+    console.log(`  OpenAI GPT-4 era    cl100k        ${fmt(cl100k)}  exact`);
+    console.log(`  DeepSeek V4         custom BPE    ${est(1.0)}  est. — close to cl100k on code`);
+    console.log(`  Claude Sonnet/Opus  proprietary   ${est(1.2)}  est. — ~15-25% above cl100k on code`);
+    console.log(`  Gemini Flash/Pro    SentencePiece ${est(0.95)}  est. — within ±10% of cl100k`);
+    console.log(`  Llama 3 / Mistral   BPE           ${est(1.05)}  est. — within ±10% of cl100k`);
+    console.log('');
+    console.log('Context-window fit if you sent the whole codebase:');
+    console.log(`  Gemini 1M / DeepSeek V4 1M   ${cl100k < 1_000_000 ? 'fits' : 'exceeds'}   |   Claude 200k / GPT-4o 128k   ${cl100k < 200_000 ? 'fits' : 'exceeds'}`);
+    console.log('  Retrieval keeps each call under --maxTokens (default 60k).');
     exit(0);
   }
 
