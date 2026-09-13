@@ -5,3 +5,4 @@ dist/
 .env
 .mcp
 .playwright-mcp/
+.codebase-chat/history.jsonl

@@ -17,6 +17,8 @@ import { getChangedFiles } from './diff.js';
 import { runCheck, formatCheckMd } from './check.js';
 import { auditFindings } from './findings.js';
 import { writeBaseline } from './baseline.js';
+import { readIgnores, addIgnore, removeIgnore } from './ignores.js';
+import { appendHistory, readHistory } from './history.js';
 
 type Lang = 'fr' | 'en';
 
@@ -145,6 +147,10 @@ a.fref:hover code,a.fref:hover{color:var(--acc)}
 .chip2{background:#ffffff0a;border:1px solid var(--line);color:var(--txt);padding:3px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-family:'Cascadia Code',Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;transition:all .1s}
 .chip2:hover{border-color:var(--acc);color:var(--acc);background:rgba(76,194,255,.08)}
 .hidden{display:none!important}
+.facts{white-space:nowrap;width:1%;text-align:right}
+button.fact,a.fact{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:1px solid var(--line);border-radius:5px;background:#ffffff08;color:var(--dim);cursor:pointer;font-size:13px;margin-left:4px;text-decoration:none;vertical-align:middle;transition:all .1s}
+button.fact:hover,a.fact:hover{border-color:var(--acc);color:var(--acc);background:rgba(76,194,255,.08)}
+li button.fact{margin-left:8px}
 .empty{border:1px dashed var(--line2);border-radius:10px;padding:34px 20px;text-align:center;color:var(--dim);font-size:13px;margin:14px 0}
 ::selection{background:rgba(76,194,255,.28)}
 @media(max-width:860px){aside{position:static;width:auto}body{display:block}main{margin:0}.top{flex-wrap:wrap;padding:8px 14px}.seg{max-width:100%;overflow-x:auto;scrollbar-width:none}.seg::-webkit-scrollbar{display:none}.seg .chip{padding:5px 9px;white-space:nowrap}.searchwrap{flex:1;min-width:150px}.searchwrap input{width:100%;min-width:0}.wrap{padding:18px 18px 70px}}
@@ -237,8 +243,72 @@ async function call(url, st) {
         call('/api/check?x=1' + qp(), { view: 'check' });
       };
     }
+    if (j.checkFiles) enhanceCheck(j);
     linkify(); filter(); spy(); sevCounts();
   } catch (e) { if (my !== seq) return; out.innerHTML = '<div class="err">' + escH(e.message) + '</div>'; }
+}
+// Check view: per-finding actions (open in editor, ignore) + unignore + history.
+// Rows are zipped with the structured ids the API sends — same order as the
+// markdown tables they were rendered from.
+function enhanceCheck(j) {
+  const absUrl = 'vscode://file/' + j.projAbs + '/';
+  const secs = [...out.querySelectorAll('section')];
+  const actBtn = (title, txt) => { const b = document.createElement('button'); b.className = 'fact'; b.type = 'button'; b.title = title; b.textContent = txt; return b; };
+  const reload = () => call('/api/check?x=1' + qp(), { view: 'check' });
+  secs.forEach(s => {
+    const h = s.querySelector('h2');
+    if (!h) return;
+    const m = h.textContent.trim().match(/^\\d+\\.\\s*(.+)$/);
+    if (!m) return;
+    const cf = (j.checkFiles || []).find(c => c.file === m[1].trim());
+    const items = cf ? cf.finds.map(f => ({ id: f.id, file: cf.file, line: f.line }))
+      : /baseline/i.test(m[1]) ? (j.added || []) : null;
+    if (!items || !items.length) return;
+    s.querySelectorAll('table tbody tr').forEach((row, i) => {
+      const f = items[i]; if (!f) return;
+      const td = document.createElement('td');
+      td.className = 'facts';
+      if (f.file) {
+        const a = document.createElement('a');
+        a.className = 'fact'; a.href = absUrl + f.file + (f.line ? ':' + f.line : '');
+        a.title = '${t('Ouvrir dans l\u2019éditeur', 'Open in editor')}'; a.textContent = '↗';
+        td.appendChild(a);
+      }
+      const ig = actBtn('${t('Ignorer ce finding', 'Ignore this finding')}', '⊘');
+      ig.onclick = async () => {
+        const reason = prompt('${t('Raison de l\u2019ignore (consignée dans ignores.json) :', 'Reason for ignoring (recorded in ignores.json):')}', '');
+        if (reason === null) return;
+        await fetch('/api/ignore?id=' + encodeURIComponent(f.id) + '&reason=' + encodeURIComponent(reason) + qp());
+        reload();
+      };
+      td.appendChild(ig);
+      row.appendChild(td);
+    });
+  });
+  // Ignorés/Ignored section → reason + un-ignore button per entry.
+  const igSec = secs.find(s => {
+    const h = s.querySelector('h2');
+    const m = h && h.textContent.trim().match(/^\\d+\\.\\s*(.+)$/);
+    return m && /^(ignorés|ignored)$/i.test(m[1].trim());
+  });
+  if (igSec && j.ignoredIds && j.ignoredIds.length) {
+    igSec.querySelectorAll('li').forEach((li, i) => {
+      const id = j.ignoredIds[i]; if (!id) return;
+      const b = actBtn('${t('Réactiver ce finding', 'Un-ignore this finding')}', '↺');
+      b.onclick = async () => { await fetch('/api/unignore?id=' + encodeURIComponent(id) + qp()); reload(); };
+      li.appendChild(b);
+      const reason = (j.ignores || []).find(x => id === x.id || id.startsWith(x.id + ':'));
+      if (reason) { const sp = document.createElement('span'); sp.className = 'dim-s'; sp.textContent = ' — ' + reason.reason; li.appendChild(sp); }
+    });
+  }
+  if (j.history && j.history.length) {
+    const V = { red: '🔴', yellow: '🟡', green: '🟢' };
+    const sec = document.createElement('section');
+    sec.innerHTML = '<h2 class="coll">${t('Historique', 'History')}</h2><div class="sbody"><ul>'
+      + j.history.map(e => '<li>' + escH(e.ts.slice(0, 16).replace('T', ' ')) + ' — ' + V[e.verdict] + ' score ' + e.score + '/100 · ' + e.changed + ' fichier(s) · +' + e.added + '/−' + e.resolved + ' findings · vs ' + escH(e.base) + '</li>').join('')
+      + '</ul></div>';
+    out.appendChild(sec);
+  }
 }
 function setActive(url) {
   document.querySelectorAll('button.act[data-a]').forEach(b => b.classList.toggle('on', url.includes('/api/' + b.dataset.a)));
@@ -466,12 +536,33 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
       }
       if (u.pathname === '/api/check') {
         const report = await runCheck(target, { base: (u.searchParams.get('base') ?? 'HEAD').trim() || 'HEAD', lang: reqLang });
+        const absT = await findProjectRoot(target).catch(() => target);
+        await appendHistory(absT, { ts: new Date().toISOString(), base: report.base, head: report.head, verdict: report.verdict, score: report.score, changed: report.changedFiles.length, added: report.diff.added.length, resolved: report.diff.resolved.length });
         const md = formatCheckMd(report, reqLang);
         const r = parseReportMd(md, project);
         const V = { red: '🔴', yellow: '🟡', green: '🟢' }[report.verdict];
         json(res, { title: r.title, intro: r.intro, nav: r.nav, body: r.body, md, verdict: report.verdict, hasBaseline: report.hasBaseline,
+          // Structured payload so the client can attach per-finding actions.
+          checkFiles: report.files.map(cf => ({ file: cf.file, finds: cf.findings.map(f => ({ id: f.id, line: f.line })) })),
+          added: report.diff.added.map(f => ({ id: f.id, file: f.file, line: f.line })),
+          ignoredIds: report.ignored.map(f => f.id),
+          ignores: (await readIgnores(absT)).map(i => ({ id: i.id, reason: i.reason })),
+          history: await readHistory(absT),
+          projAbs: absT.split(/[\\/]/).join('/'),
           standalone: reportToHtml(md, { project: target.split(/[\\/]/).pop() || 'project', generated: new Date().toISOString().slice(0, 10) }),
           hero: `<div class="rhero"><div style="font-size:34px;line-height:1">${V}</div><div><h1>${esc(r.title.replace(/^\p{Extended_Pictographic}\s*/u, ''))}</h1><div class="sub">${esc(target)}</div></div></div>` });
+        return;
+      }
+      if (u.pathname === '/api/ignore' || u.pathname === '/api/unignore') {
+        const absT = await findProjectRoot(target).catch(() => target);
+        const id = (u.searchParams.get('id') ?? '').trim();
+        if (!id) { json(res, { error: 'id param required' }, 400); return; }
+        if (u.pathname === '/api/unignore') {
+          json(res, { ok: await removeIgnore(absT, id) });
+        } else {
+          const reason = (u.searchParams.get('reason') ?? '').trim() || (reqLang === 'en' ? 'no reason given' : 'sans justification');
+          json(res, { ok: !!(await addIgnore(absT, id, reason)) });
+        }
         return;
       }
       if (u.pathname === '/api/baseline') {

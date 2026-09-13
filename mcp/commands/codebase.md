@@ -62,7 +62,8 @@ Robustesse :
 ## Mapping des arguments
 
 - `check <ref>` → `{ base: "<ref>" }`
-- `impact <f>` → `{ file: "<f>" }`
+- `ignore <id> [raison]` → `{ id: "<id>", reason: "<raison>" }` · `ignores` → `{ id: "", action: "list" }` · `unignore <id>` → `{ id: "<id>", action: "remove" }`
+- `impact <f>` → `{ file: "<f>" }` (`<f>` = fichier, `fichier#symbole` ou symbole)
 - `search <q>` / `chat <q>` → `{ query: "<q>" }`
 - `explain <x>` → `{ filePath: "<x>" }` si `<x>` ressemble à un chemin, sinon `{ query: "<x>" }`
 - `refactor <f> <q>` → `{ filePath: "<f>", query: "<q>" }`
@@ -85,7 +86,8 @@ Robustesse :
 | `/codebase doctor` | Diagnostic d'installation : version Node, état de l'index, clés LLM (jamais affichées), tree-sitter, baseline, intégrations détectées. À lancer en premier en cas de doute. |
 | `/codebase deep_audit` | Audit complet — 9 sections, ~30 métriques (structure, sécurité, dette, duplication, git…) — 100 % local. |
 | `/codebase health` | Santé : cycles, dead code, duplication, hotspots, priorités triées par sévérité. |
-| `/codebase impact <fichier>` | Rayon d'impact : qui importe le fichier, qui casse s'il change. |
+| `/codebase impact <fichier>` | Rayon d'impact : qui importe le fichier, qui casse s'il change. `fichier#symbole` ou un nom de symbole seul → limité aux fichiers qui utilisent vraiment ce symbole. |
+| `/codebase ignore <id> [raison]` | Silence un finding avec justification (`.codebase-chat/ignores.json`, à commiter). `id` peut être un préfixe : `sec:innerHTML:src/x.ts` couvre tous les innerHTML du fichier. |
 
 ### Comprendre & décider (LLM)
 

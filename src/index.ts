@@ -43,6 +43,10 @@ export { writeBaseline, readBaseline, diffFindings, BASELINE_REL } from './basel
 export type { Baseline } from './baseline.js';
 export { runCheck, formatCheckMd } from './check.js';
 export type { CheckFile, CheckReport } from './check.js';
+export { readIgnores, addIgnore, removeIgnore, splitIgnored, IGNORES_REL } from './ignores.js';
+export type { Ignore } from './ignores.js';
+export { appendHistory, readHistory, HISTORY_REL } from './history.js';
+export type { CheckHistoryEntry } from './history.js';
 export { runDoctor, formatDoctorMd } from './doctor.js';
 export type { DoctorItem, DoctorReport } from './doctor.js';
 export type { AuditData, AuditFinding, Severity, Finding, SmellScan, GitStats } from './report-types.js';

@@ -8,7 +8,7 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, buildDeterministicReport, reportToHtml, runCheck, formatCheckMd, runDoctor, formatDoctorMd } from "dsh-codebase-chat";
+import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, buildDeterministicReport, reportToHtml, runCheck, formatCheckMd, runDoctor, formatDoctorMd, addIgnore, removeIgnore, readIgnores, appendHistory } from "dsh-codebase-chat";
 
 // `dsh-codebase-chat-mcp setup` runs the interactive client-config wizard
 // instead of starting the MCP server.
@@ -170,6 +170,7 @@ const TOOLS = [
   { name: "codebase_impact", description: "Blast-radius analysis: which files transitively depend on a target file — what breaks if it changes. Deterministic, no LLM call.", extra: { file: { type: "string", description: "File to analyze (relative path or name, e.g. src/store.ts)" } }, required: ["file"], deterministic: true },
   { name: "codebase_check", description: "Verify your changes vs a git ref: blast radius, complexity, findings and delta vs the committed baseline (.codebase-chat/baseline.json). Deterministic, no LLM call.", extra: { base: { type: "string", description: "Git ref to diff against (default: HEAD)" } }, deterministic: true },
   { name: "codebase_doctor", description: "Installation & environment diagnostic: node version, index cache, LLM keys presence, tree-sitter, baseline staleness, MCP client integrations. Deterministic, no LLM call.", deterministic: true },
+  { name: "codebase_ignore", description: "Silence a finding with a justification (written to .codebase-chat/ignores.json — commit it). `id` may be a full finding id or a prefix like `sec:innerHTML:src/x.ts` covering every such finding in that file. Use action=list/remove to manage entries.", extra: { id: { type: "string", description: "Finding id or prefix (see codebase_check JSON output)" }, reason: { type: "string" }, action: { type: "string", enum: ["add", "remove", "list"] } }, required: ["id"], deterministic: true },
   { name: "codebase_deep_audit", description: "Full deterministic audit (~30 analyses): git churn & bus factor, churn × complexity risk, dependency integrity (undeclared imports, dead deps, lockfile drift, broken package entries), per-function complexity, secrets & sensitive files, env-var coverage, config & README hygiene — all cited file:line. Returns findings directly — no LLM call. Set ui=true to also receive an interactive HTML dashboard (MCP-UI).", extra: { ui: { type: "boolean", description: "Also return a ui:// resource with an interactive HTML dashboard" } }, deterministic: true },
 ];
 
@@ -308,6 +309,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const project = getProjectPath(args?.projectPath);
       const lang = args?.lang === "en" ? "en" : "fr";
       const report = await runCheck(project, { base: String(args?.base || "HEAD"), lang });
+      const abs = await findProjectRoot(project).catch(() => project);
+      await appendHistory(abs, { ts: new Date().toISOString(), base: report.base, head: report.head, verdict: report.verdict, score: report.score, changed: report.changedFiles.length, added: report.diff.added.length, resolved: report.diff.resolved.length });
       const text = `${formatCheckMd(report, lang)}\n\n<details><summary>JSON</summary>\n\n\`\`\`json\n${JSON.stringify(report, null, 2)}\n\`\`\`\n</details>`;
       return { content: [{ type: "text", text }] };
     }
@@ -315,6 +318,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const project = getProjectPath(args?.projectPath);
       const lang = args?.lang === "en" ? "en" : "fr";
       return { content: [{ type: "text", text: formatDoctorMd(await runDoctor(project, lang), lang) }] };
+    }
+    if (name === "codebase_ignore") {
+      const project = getProjectPath(args?.projectPath);
+      const abs = await findProjectRoot(project).catch(() => project);
+      const id = String(args?.id ?? "").trim();
+      const action = String(args?.action ?? "add");
+      if (action === "list") {
+        const list = await readIgnores(abs);
+        const text = list.length
+          ? list.map((i) => `- \`${i.id}\` — ${i.reason} (${i.createdAt.slice(0, 10)})`).join("\n")
+          : "No ignores.";
+        return { content: [{ type: "text", text }] };
+      }
+      if (!id) return { content: [{ type: "text", text: "Error: `id` is required." }], isError: true };
+      if (action === "remove") {
+        const ok = await removeIgnore(abs, id);
+        return { content: [{ type: "text", text: ok ? `Removed ignore \`${id}\`.` : `No ignore entry \`${id}\`.` }] };
+      }
+      const reason = String(args?.reason ?? "").trim() || "no reason given";
+      const entry = await addIgnore(abs, id, reason);
+      return { content: [{ type: "text", text: entry ? `Ignored \`${id}\` — ${reason} (.codebase-chat/ignores.json, commit it).` : `\`${id}\` is already ignored.` }] };
     }
     const { prompt, projectName, noMatch } = await buildPrompt(name, args);
     // Prompt mode: hand the assembled context+prompt back to the host model.

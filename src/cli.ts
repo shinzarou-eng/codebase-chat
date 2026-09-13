@@ -17,6 +17,8 @@ import { collectAudit } from './report.js';
 import { auditFindings } from './findings.js';
 import { writeBaseline, BASELINE_REL } from './baseline.js';
 import { runCheck, formatCheckMd } from './check.js';
+import { readIgnores, addIgnore, removeIgnore, IGNORES_REL } from './ignores.js';
+import { appendHistory, readHistory } from './history.js';
 import { runDoctor, formatDoctorMd } from './doctor.js';
 import { countTokens } from './tokenizer.js';
 import { matchModelPrice, callCost, fmtCost, CALL_INPUT_TOKENS, CALL_OUTPUT_TOKENS } from './pricing.js';
@@ -97,8 +99,14 @@ Options:
   --strict               With --check: exit 1 when the verdict is red
   --json                 With --check/--doctor: print the report as JSON
   --doctor               Diagnose the install: node, index cache, LLM keys, MCP clients
-  --impact [file]        Blast radius — which files transitively depend on <file>;
-                         bare --impact = every file changed vs HEAD
+  --ignore <id|prefix>   Silence a finding with a reason (--reason "…") — e.g.
+                         sec:innerHTML:src/x.ts covers every such finding there
+  --unignore <id>        Remove an ignore entry
+  --ignores              List silenced findings
+  --history              Show past --check runs (verdict + score over time)
+  --impact [file|sym]    Blast radius — which files transitively depend on <file>;
+                         file#symbol or a bare symbol name scopes to its real
+                         users; bare --impact = every file changed vs HEAD
   -d, --diff <ref>       Scope --ask/--search/--health to files changed vs a git ref
   --prompt <mode>        Print the full LLM prompt (banner + instructions) for a
                          report mode: intelligence, report, audit, tasks, ceo,
@@ -127,8 +135,10 @@ Environment:
 }
 
 async function main() {
-  // Bare `--impact` (no value) → impact of uncommitted changes vs HEAD.
-  const argv = process.argv.slice(2).map(a => (a === '--impact' ? '--impact=' : a));
+  // Bare `--impact` (no following value) → impact of uncommitted changes vs HEAD.
+  const argv0 = process.argv.slice(2);
+  const argv = argv0.map((a, i) =>
+    a === '--impact' && (i === argv0.length - 1 || argv0[i + 1].startsWith('-')) ? '--impact=' : a);
   const { values } = parseArgs({
     args: argv,
     options: {
@@ -150,6 +160,11 @@ async function main() {
       check: { type: 'boolean', default: false },
       baseline: { type: 'boolean', default: false },
       doctor: { type: 'boolean', default: false },
+      ignore: { type: 'string' },
+      unignore: { type: 'string' },
+      reason: { type: 'string' },
+      ignores: { type: 'boolean', default: false },
+      history: { type: 'boolean', default: false },
       strict: { type: 'boolean', default: false },
       json: { type: 'boolean', default: false },
       watch: { type: 'boolean', short: 'w', default: false },
@@ -247,6 +262,61 @@ async function main() {
     exit(0);
   }
 
+  if (values.ignore !== undefined) {
+    const abs = await findProjectRoot(project);
+    const data = await collectAudit(abs);
+    const findings = auditFindings(data, lang);
+    const key = values.ignore;
+    const hits = findings.filter(f => f.id === key || f.id.startsWith(key + ':'));
+    if (!hits.length) {
+      console.error(lang === 'en'
+        ? `No current finding matches "${key}". Ids look like \`rule:file[:sample]\` — see --check --json.`
+        : `Aucun finding actuel ne correspond à "${key}". Les ids ressemblent à \`rule:file[:sample]\` — voir --check --json.`);
+      exit(1);
+    }
+    const reason = (values.reason ?? '').trim() || (lang === 'en' ? 'no reason given' : 'sans justification');
+    await addIgnore(abs, key, reason);
+    console.log(lang === 'en'
+      ? `Ignored ${hits.length} finding(s) matching \`${key}\` — ${IGNORES_REL} (commit it to share the decision).`
+      : `${hits.length} finding(s) ignoré(s) via \`${key}\` — ${IGNORES_REL} (commité, la décision est partagée).`);
+    exit(0);
+  }
+
+  if (values.unignore !== undefined) {
+    const abs = await findProjectRoot(project);
+    const ok = await removeIgnore(abs, values.unignore);
+    console.log(ok
+      ? (lang === 'en' ? `Removed ignore \`${values.unignore}\`.` : `Ignore \`${values.unignore}\` retiré.`)
+      : (lang === 'en' ? `No ignore entry \`${values.unignore}\` in ${IGNORES_REL}.` : `Aucun ignore \`${values.unignore}\` dans ${IGNORES_REL}.`));
+    exit(ok ? 0 : 1);
+  }
+
+  if (values.ignores) {
+    const abs = await findProjectRoot(project);
+    const list = await readIgnores(abs);
+    if (!list.length) {
+      console.log(lang === 'en' ? `No ignores — ${IGNORES_REL} does not exist.` : `Aucun ignore — ${IGNORES_REL} n'existe pas.`);
+    } else {
+      console.log(lang === 'en' ? `${list.length} ignored finding(s):` : `${list.length} finding(s) ignoré(s) :`);
+      for (const i of list) console.log(`  ${i.id}  — ${i.reason}  (${i.createdAt.slice(0, 10)})`);
+    }
+    exit(0);
+  }
+
+  if (values.history) {
+    const abs = await findProjectRoot(project);
+    const entries = await readHistory(abs);
+    if (!entries.length) {
+      console.log(lang === 'en' ? 'No check history yet — run --check.' : 'Pas encore d\u2019historique — lance --check.');
+    } else {
+      const V = { red: '🔴', yellow: '🟡', green: '🟢' };
+      console.log(lang === 'en' ? 'Check history (latest last):' : 'Historique des checks (le plus récent en bas) :');
+      for (const e of entries)
+        console.log(`  ${e.ts.slice(0, 16).replace('T', ' ')}  ${V[e.verdict]}  score ${e.score}/100  · ${e.changed} fichier(s)  +${e.added}/-${e.resolved} findings  vs ${e.base}`);
+    }
+    exit(0);
+  }
+
   if (values.doctor) {
     const report = await runDoctor(project, lang);
     if (values.json) console.log(JSON.stringify(report, null, 2));
@@ -256,6 +326,8 @@ async function main() {
 
   if (values.check) {
     const report = await runCheck(project, { base: values.diff ?? 'HEAD', lang });
+    const abs = await findProjectRoot(project);
+    await appendHistory(abs, { ts: new Date().toISOString(), base: report.base, head: report.head, verdict: report.verdict, score: report.score, changed: report.changedFiles.length, added: report.diff.added.length, resolved: report.diff.resolved.length });
     if (values.json) console.log(JSON.stringify(report, null, 2));
     else console.log(process.stdout.isTTY ? renderAnswerTerminal(formatCheckMd(report, lang)) : formatCheckMd(report, lang));
     exit(values.strict && report.verdict === 'red' ? 1 : 0);

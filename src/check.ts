@@ -8,6 +8,7 @@ import { getChangedFiles } from './diff.js';
 import { collectAudit, hasDedicatedTest } from './report.js';
 import { auditFindings } from './findings.js';
 import { readBaseline, diffFindings } from './baseline.js';
+import { readIgnores, splitIgnored } from './ignores.js';
 import { analyzeImpact, type ImpactReport } from './impact.js';
 import type { AuditFinding, Severity } from './report-types.js';
 
@@ -18,6 +19,8 @@ export interface CheckFile {
   impact?: ImpactReport;
   complexity?: number;
   hasTest: boolean;
+  /** Test files worth running for this change — dedicated spec + importers. */
+  tests: string[];
   findings: AuditFinding[];
 }
 
@@ -31,9 +34,13 @@ export interface CheckReport {
   baselineScore?: number;
   diff: ReturnType<typeof diffFindings>;
   hasBaseline: boolean;
+  /** Silenced findings still present — listed, never counted in the verdict. */
+  ignored: AuditFinding[];
   verdict: 'red' | 'yellow' | 'green';
   reasons: string[];
 }
+
+const isTestFile = (f: string) => /test|spec|__tests__/i.test(f);
 
 const RISK_RANK: Record<ImpactReport['risk'], number> = { high: 2, medium: 1, low: 0 };
 const SEV_RANK: Record<Severity, number> = { 'Critique': 3, 'Élevée': 2, 'Moyenne': 1, 'Faible': 0 };
@@ -47,11 +54,26 @@ export async function runCheck(projectPath: string, opts: { base?: string; lang:
   const changed = scope.ok ? [...scope.files] : [];
   const targets = changed.filter(f => data.graph.codeFiles.includes(f));
 
-  const findings = auditFindings(data, opts.lang);
+  const allFindings = auditFindings(data, opts.lang);
+  const ignores = await readIgnores(abs);
+  const { active: findings, ignored } = splitIgnored(allFindings, ignores);
   const complexityByFile = new Map<string, number>();
   for (const h of data.health.hotspots) {
     complexityByFile.set(h.file, Math.max(complexityByFile.get(h.file) ?? 0, h.score));
   }
+
+  // Test files that directly import a changed file — worth running.
+  const testsByFile = new Map<string, Set<string>>();
+  for (const e of data.graph.edges) {
+    if (!isTestFile(e.from)) continue;
+    let s = testsByFile.get(e.to);
+    if (!s) testsByFile.set(e.to, s = new Set());
+    s.add(e.from);
+  }
+  const dedicated = (f: string) => {
+    const base = basename(f).replace(/\.[^.]+$/, '').toLowerCase();
+    return data.testFiles.filter(t => basename(t).replace(/\.(test|spec)\.[^.]+$/i, '').toLowerCase() === base);
+  };
 
   const files: CheckFile[] = [];
   for (const f of targets) {
@@ -61,6 +83,7 @@ export async function runCheck(projectPath: string, opts: { base?: string; lang:
       impact: r.ok ? r.report : undefined,
       complexity: complexityByFile.get(f),
       hasTest: hasDedicatedTest(data.testBases, f),
+      tests: [...new Set([...dedicated(f), ...(testsByFile.get(f) ?? [])])].sort(),
       findings: findings.filter(x => x.file === f),
     });
   }
@@ -68,12 +91,16 @@ export async function runCheck(projectPath: string, opts: { base?: string; lang:
   files.sort((a, b) => riskOf(b) - riskOf(a) || (b.complexity ?? 0) - (a.complexity ?? 0) || a.file.localeCompare(b.file));
 
   const baseline = await readBaseline(abs);
-  const diff = diffFindings(baseline, findings);
+  // Diff against ALL findings so an ignored-but-still-present finding stays
+  // "unchanged" rather than looking resolved; the verdict ignores them below.
+  const diff = diffFindings(baseline, allFindings);
+  const ignoredIds = new Set(ignored.map(f => f.id));
   // Added findings only matter for the verdict when they belong to a changed
   // file — or are file-less (deps/config findings caused by the change).
-  const relevant = baseline
+  const relevant = (baseline
     ? diff.added.filter(f => !f.file || changed.includes(f.file))
-    : files.flatMap(f => f.findings);
+    : files.flatMap(f => f.findings)
+  ).filter(f => !ignoredIds.has(f.id));
   const maxAddedSev = relevant.reduce((m, f) => Math.max(m, SEV_RANK[f.severity]), -1);
   const maxRisk = files.reduce((m, f) => Math.max(m, riskOf(f)), -1);
   const verdict: CheckReport['verdict'] =
@@ -113,7 +140,7 @@ export async function runCheck(projectPath: string, opts: { base?: string; lang:
     } catch { /* keep baseline head */ }
   }
 
-  return { project: abs, base, head, changedFiles: changed, files, score: data.health.score, baselineScore: baseline?.score, diff, hasBaseline: !!baseline, verdict, reasons };
+  return { project: abs, base, head, changedFiles: changed, files, score: data.health.score, baselineScore: baseline?.score, diff, hasBaseline: !!baseline, ignored, verdict, reasons };
 }
 
 const SEV_ICON: Record<Severity, string> = { Critique: '🔴', 'Élevée': '🟠', Moyenne: '🟡', Faible: '🔵' };
@@ -146,6 +173,7 @@ export function formatCheckMd(r: CheckReport, lang: 'fr' | 'en'): string {
     }
     if (cf.complexity !== undefined) out.push(`- ${en ? 'Complexity' : 'Complexité'} : ${cf.complexity}`);
     out.push(`- ${en ? 'Dedicated test' : 'Test dédié'} : ${cf.hasTest ? (en ? 'yes' : 'oui') : (en ? 'no' : 'non')}`);
+    if (cf.tests.length) out.push(`- ${en ? 'Tests to run' : 'Tests à lancer'} : ${cf.tests.map(t => `\`${t}\``).join(', ')}`);
     out.push('');
     if (cf.findings.length) {
       out.push(`| ${en ? 'Severity' : 'Sévérité'} | ${en ? 'Rule' : 'Règle'} | ${en ? 'Line' : 'Ligne'} | ${en ? 'Finding' : 'Constat'} |`, '|---|---|---|---|');
@@ -162,16 +190,23 @@ export function formatCheckMd(r: CheckReport, lang: 'fr' | 'en'): string {
       ? '_No baseline — run `--baseline` to create one._'
       : '_Aucune baseline — `--baseline` pour en créer une._');
   } else {
-    if (r.diff.added.length) {
+    const ignoredIds = new Set(r.ignored.map(f => f.id));
+    const added = r.diff.added.filter(f => !ignoredIds.has(f.id));
+    if (added.length) {
       out.push('', en ? '**New findings** :' : '**Nouveaux findings** :', '');
       out.push(`| ${en ? 'Severity' : 'Sévérité'} | ${en ? 'Rule' : 'Règle'} | ${en ? 'Line' : 'Ligne'} | ${en ? 'Finding' : 'Constat'} |`, '|---|---|---|---|');
-      for (const f of r.diff.added) out.push(`| ${SEV_ICON[f.severity]} ${f.severity} | \`${f.rule}\` | ${f.line ?? '—'} | ${f.message} |`);
+      for (const f of added) out.push(`| ${SEV_ICON[f.severity]} ${f.severity} | \`${f.rule}\` | ${f.line ?? '—'} | ${f.message} |`);
     }
     if (r.diff.resolved.length) {
       out.push('', en ? '**Resolved** :' : '**Résolus** :', '');
       for (const f of r.diff.resolved) out.push(`- ${SEV_ICON[f.severity]} \`${f.rule}\`${f.file ? ` — \`${f.file}\`` : ''}`);
     }
     out.push('', en ? `_${r.diff.unchanged} unchanged finding(s)._` : `_${r.diff.unchanged} finding(s) inchangé(s)._`);
+  }
+  if (r.ignored.length) {
+    out.push('', `## ${++n}. ${en ? 'Ignored' : 'Ignorés'}`);
+    out.push(en ? '_Silenced with a justification — never counted in the verdict._' : '_Passés sous silence avec justification — jamais comptés dans le verdict._', '');
+    for (const f of r.ignored) out.push(`- ${SEV_ICON[f.severity]} \`${f.rule}\`${f.file ? ` — \`${f.file}\`` : ''}`);
   }
   out.push('', '---');
   out.push(`_${en ? 'Made with passion by shinzarou-eng' : 'Fait avec passion par shinzarou-eng'} — dsh-codebase-chat · ${en ? 'deterministic mode' : 'mode déterministe'}_`);
