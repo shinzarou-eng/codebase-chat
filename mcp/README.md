@@ -24,7 +24,7 @@ This package exposes the same codebase intelligence tools as the DeepSeek Harnes
 - returns the prompt to the **host model** (Cursor, Claude, Windsurf…) — the default when no API key is configured, or with `promptOnly: true`; or
 - calls a DeepSeek / OpenAI-compatible API itself when `DEEPSEEK_API_KEY` or `OPENAI_API_KEY` is set.
 
-Deterministic tools (`codebase_health`, `codebase_impact`, `codebase_deep_audit`) need no model at all — same input, same output, fully offline.
+Deterministic tools (`codebase_health`, `codebase_impact`, `codebase_deep_audit`, `codebase_check`, `codebase_doctor`) need no model at all — same input, same output, fully offline.
 
 In prompt mode your code never leaves your machine at all.
 
@@ -146,6 +146,8 @@ On Windows with a local clone you can also use the absolute path:
 | `codebase_health` | **Deterministic** static analysis — cycles, dead code, duplication, complexity, health score. No LLM needed |
 | `codebase_impact` | **Deterministic** blast-radius analysis — which files transitively depend on a target (`file`, required). No LLM needed |
 | `codebase_deep_audit` | **Deterministic** full audit — git churn & bus factor, churn × complexity risk, dependency integrity, per-function complexity, secrets, env coverage, README/config hygiene. ~30 analyses, all cited `file:line`. No LLM needed. Pass `ui: true` to also get a `ui://` HTML dashboard resource (MCP-UI clients) |
+| `codebase_check` | **Deterministic** change verification — blast radius, complexity and findings on files changed vs `base` (default `HEAD`), diffed against `.codebase-chat/baseline.json`. No LLM needed |
+| `codebase_doctor` | **Deterministic** install diagnostic — node, index cache, LLM key presence, tree-sitter, baseline staleness, MCP client integrations. No LLM needed |
 
 All tools accept:
 

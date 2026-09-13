@@ -8,7 +8,7 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, buildDeterministicReport, reportToHtml } from "dsh-codebase-chat";
+import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, buildDeterministicReport, reportToHtml, runCheck, formatCheckMd, runDoctor, formatDoctorMd } from "dsh-codebase-chat";
 
 // `dsh-codebase-chat-mcp setup` runs the interactive client-config wizard
 // instead of starting the MCP server.
@@ -18,7 +18,7 @@ if (process.argv[2] === "setup") {
   process.exit(0);
 }
 
-const VERSION = "0.9.2";
+const VERSION = "0.10.0";
 
 const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || "";
 const baseUrl = process.env.DEEPSEEK_BASE_URL || process.env.OPENAI_BASE_URL || "https://api.deepseek.com/v1";
@@ -168,6 +168,8 @@ const TOOLS = [
   { name: "codebase_crea", description: "Generate creative ideas, slogans or marketing concepts from the code.", extra: { focus: { type: "string" } } },
   { name: "codebase_health", description: "Deterministic static analysis: circular deps, dead code, duplication, complexity hotspots, health score. Returns findings directly — no LLM call.", deterministic: true },
   { name: "codebase_impact", description: "Blast-radius analysis: which files transitively depend on a target file — what breaks if it changes. Deterministic, no LLM call.", extra: { file: { type: "string", description: "File to analyze (relative path or name, e.g. src/store.ts)" } }, required: ["file"], deterministic: true },
+  { name: "codebase_check", description: "Verify your changes vs a git ref: blast radius, complexity, findings and delta vs the committed baseline (.codebase-chat/baseline.json). Deterministic, no LLM call.", extra: { base: { type: "string", description: "Git ref to diff against (default: HEAD)" } }, deterministic: true },
+  { name: "codebase_doctor", description: "Installation & environment diagnostic: node version, index cache, LLM keys presence, tree-sitter, baseline staleness, MCP client integrations. Deterministic, no LLM call.", deterministic: true },
   { name: "codebase_deep_audit", description: "Full deterministic audit (~30 analyses): git churn & bus factor, churn × complexity risk, dependency integrity (undeclared imports, dead deps, lockfile drift, broken package entries), per-function complexity, secrets & sensitive files, env-var coverage, config & README hygiene — all cited file:line. Returns findings directly — no LLM call. Set ui=true to also receive an interactive HTML dashboard (MCP-UI).", extra: { ui: { type: "boolean", description: "Also return a ui:// resource with an interactive HTML dashboard" } }, deterministic: true },
 ];
 
@@ -227,6 +229,11 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
       text = r.ok
         ? formatImpactReportMd(r.report, lang)
         : (lang === "en" ? "Pass a file name, e.g. `src/store.ts`." : "Passe un nom de fichier, ex. `src/store.ts`.");
+    } else if (tool.name === "codebase_check") {
+      const report = await runCheck(project, { base: String(args.base || "HEAD"), lang });
+      text = formatCheckMd(report, lang);
+    } else if (tool.name === "codebase_doctor") {
+      text = formatDoctorMd(await runDoctor(project, lang), lang);
     }
     return { messages: [{ role: "user", content: { type: "text", text } }] };
   }
@@ -296,6 +303,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       const text = `${formatImpactReportMd(r.report, lang)}\n\n<details><summary>JSON</summary>\n\n\`\`\`json\n${JSON.stringify(r.report, null, 2)}\n\`\`\`\n</details>`;
       return { content: [{ type: "text", text }] };
+    }
+    if (name === "codebase_check") {
+      const project = getProjectPath(args?.projectPath);
+      const lang = args?.lang === "en" ? "en" : "fr";
+      const report = await runCheck(project, { base: String(args?.base || "HEAD"), lang });
+      const text = `${formatCheckMd(report, lang)}\n\n<details><summary>JSON</summary>\n\n\`\`\`json\n${JSON.stringify(report, null, 2)}\n\`\`\`\n</details>`;
+      return { content: [{ type: "text", text }] };
+    }
+    if (name === "codebase_doctor") {
+      const project = getProjectPath(args?.projectPath);
+      const lang = args?.lang === "en" ? "en" : "fr";
+      return { content: [{ type: "text", text: formatDoctorMd(await runDoctor(project, lang), lang) }] };
     }
     const { prompt, projectName, noMatch } = await buildPrompt(name, args);
     // Prompt mode: hand the assembled context+prompt back to the host model.
