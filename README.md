@@ -45,6 +45,23 @@ Other paths — DeepSeek Harness plugin · CLI · from source · manual config: 
   <em>Real MCP session on a real 422-file codebase — <code>codebase_health</code> finds 324 circular deps, <code>codebase_chat</code> answers with <code>[source: file:line]</code> receipts · <a href="docs/assets/demo-power.gif">PR review (--diff + --watch)</a> · <a href="docs/assets/demo.gif">CLI tour</a> · <a href="docs/assets/demo-mcp.gif">MCP stdio</a> · <a href="docs/assets/demo-fr.gif">French mode</a> · <a href="docs/assets/dashboard.png">--ui dashboard</a></em>
 </p>
 
+## Local dashboard — `--ui`
+
+```bash
+npx dsh-codebase-chat --ui    # → http://127.0.0.1:<port> — no LLM, nothing leaves your machine
+```
+
+<p align="center">
+  <img src="docs/assets/dashboard.png" alt="IDE-style local dashboard: editor tabs, command palette, status bar — the deterministic audit as a real app" width="100%">
+</p>
+
+One command turns the audit into a real app:
+
+- **IDE-style UI** — editor tabs, dense panels, blue status bar: a tool, not a webpage. Bilingual FR/EN.
+- **Command palette** — `Ctrl+K` jumps between views, builds a prompt, exports, toggles zen mode.
+- **Zen mode** `z` · view shortcuts `1`–`5` · `/` filters findings by text or severity.
+- Check your diff vs baseline, ignore findings, export `.md`/`.html` — all in clicks.
+
 ## Usage
 
 _What a real session looks like_ —
@@ -316,7 +333,7 @@ Then restart `dsh --profile web`.
 
 | | |
 | --- | --- |
-| **Shipped** | tree-sitter AST (7 languages), deterministic health score + `--no-llm` deep audit, `--ui` local dashboard (Fluent, bilingual, exports), `codebase_check`/`--fix`/`--ignore`/`--doctor` verified workflow + baseline & CI gate, `codebase_deep_audit` MCP tool + `ui://` resource, token/context stats, MCP setup wizard, `.codebase-chat.json`, `--diff` scoping, `--watch` mode |
+| **Shipped** | tree-sitter AST (7 languages), deterministic health score + `--no-llm` deep audit, `--ui` local dashboard (IDE-style, Ctrl+K palette, zen mode, bilingual, exports), `codebase_check`/`--fix`/`--ignore`/`--doctor` verified workflow + baseline & CI gate, `codebase_deep_audit` MCP tool + `ui://` resource, token/context stats, MCP setup wizard, `.codebase-chat.json`, `--diff` scoping, `--watch` mode |
 | **Next** | GitHub Issues export from TASKS.md, prompt language packs (ES/DE/PT) |
 | **Planned** | VS Code extension, HTTP/SSE transport, PR review mode |
 | **Exploring** | multi-repo workspaces, shared team index cache, CI bot |

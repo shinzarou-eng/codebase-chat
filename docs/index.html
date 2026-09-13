@@ -387,7 +387,7 @@
         <div class="relative max-w-6xl mx-auto px-6 pt-24 pb-20 text-center">
           <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/CHANGELOG.md" class="inline-flex items-center gap-2.5 pl-1.5 pr-3.5 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] text-[13px] font-medium text-[#a3a3a3] mb-10 reveal reveal-1 hover:border-white/20 hover:text-white transition">
             <span class="px-2 py-0.5 rounded-full bg-[#6ccb5f]/15 text-[#6ccb5f] text-[11px] font-bold" data-i18n="hero.new">NEW</span>
-            <span data-i18n="hero.badge">v0.28 — --ui dashboard + deterministic --no-llm audit</span>
+            <span data-i18n="hero.badge">v0.29 — IDE-style --ui dashboard + Ctrl+K command palette</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
           </a>
 
@@ -690,7 +690,7 @@
               </div>
               <div>
                 <h3 class="font-semibold text-white mb-2" data-i18n-html="feat.c7t">Local dashboard — <code class="font-mono text-[13px] text-[#4cc2ff]">--ui</code></h3>
-                <p class="text-[13.5px] text-[#a3a3a5] leading-relaxed" data-i18n-html="feat.c7b">One command opens a Fluent web UI: audit, health, stats, impact, ask-a-question, severity filters, exports — all clicks, no terminal. Fully local &amp; bilingual.</p>
+                <p class="text-[13.5px] text-[#a3a3a5] leading-relaxed" data-i18n-html="feat.c7b">One command opens an IDE-style web app — editor tabs, status bar, <kbd>Ctrl+K</kbd> command palette, zen mode, <kbd>1–5</kbd> view shortcuts. Audit, health, stats, impact, ask-a-question, severity filters, exports — all clicks, no terminal. Fully local &amp; bilingual.</p>
               </div>
             </div>
           </div>
@@ -811,6 +811,7 @@
             <button onclick="switchDemo('demo-mcp', this)" class="demo-tab px-4 py-2 rounded-lg text-sm font-medium border border-white/10 text-[#a3a3a3] hover:text-white" data-i18n="demo.tabMcp">MCP server</button>
             <button onclick="switchDemo('demo-fr', this)" class="demo-tab px-4 py-2 rounded-lg text-sm font-medium border border-white/10 text-[#a3a3a3] hover:text-white" data-i18n="demo.tabFr">Mode français</button>
             <button onclick="switchDemo('dashboard', this)" class="demo-tab px-4 py-2 rounded-lg text-sm font-medium border border-white/10 text-[#a3a3a3] hover:text-white" data-i18n="demo.tabDash">Dashboard</button>
+            <button onclick="switchDemo('dashboard-palette', this)" class="demo-tab px-4 py-2 rounded-lg text-sm font-medium border border-white/10 text-[#a3a3a3] hover:text-white" data-i18n="demo.tabPal">⌘K palette</button>
           </div>
           <div class="demo-frame on-scroll">
             <img id="demo-img" src="assets/demo.gif" alt="dsh-codebase-chat demo" class="w-full block" data-i18n-alt="demo.imgAlt">
@@ -821,7 +822,8 @@
             <span data-i18n-html="demo.l4"><strong class="text-[#a3a3a3]">PR review</strong> — real git repo, planted circular dep caught by <code class="font-mono text-[#4cc2ff]">--diff HEAD</code> + live <code class="font-mono text-[#4cc2ff]">--watch</code></span>
             <span data-i18n-html="demo.l2"><strong class="text-[#a3a3a3]">MCP</strong> — real stdio session, 18 tools, no API key</span>
             <span data-i18n-html="demo.l3"><strong class="text-[#a3a3a3]">FR</strong> — symbol fallback + French prompts</span>
-            <span data-i18n-html="demo.l6"><strong class="text-[#a3a3a3]">Dashboard</strong> — <code class="font-mono text-[#4cc2ff]">--ui</code> opens the Fluent web app: audit, health, stats, ask — all clicks, no terminal</span>
+            <span data-i18n-html="demo.l6"><strong class="text-[#a3a3a3]">Dashboard</strong> — <code class="font-mono text-[#4cc2ff]">--ui</code> opens the IDE-style web app: audit, health, stats, ask — all clicks, no terminal</span>
+            <span data-i18n-html="demo.l7"><strong class="text-[#a3a3a3]">Palette</strong> — <code class="font-mono text-[#4cc2ff]">Ctrl+K</code> commands, <code class="font-mono text-[#4cc2ff]">z</code> zen mode, <code class="font-mono text-[#4cc2ff]">1–5</code> view shortcuts</span>
           </div>
         </div>
       </section>
@@ -984,7 +986,7 @@
                 <li class="flex gap-2.5"><span class="text-[#6ccb5f]">✓</span><span data-i18n="rm.n2">Watch mode — hot index while you code</span></li>
                 <li class="flex gap-2.5"><span class="text-[#6ccb5f]">✓</span><span data-i18n-html="rm.n3">Setup wizard + <code class="font-mono text-xs">.codebase-chat.json</code></span></li>
                 <li class="flex gap-2.5"><span class="text-[#6ccb5f]">✓</span><span data-i18n="rm.n4">Diff-aware retrieval on changed files</span></li>
-                <li class="flex gap-2.5"><span class="text-[#6ccb5f]">✓</span><span data-i18n-html="rm.n5">Fluent local dashboard — <code class="font-mono text-xs">--ui</code> + MCP-UI resource</span></li>
+                <li class="flex gap-2.5"><span class="text-[#6ccb5f]">✓</span><span data-i18n-html="rm.n5">IDE-style local dashboard — <code class="font-mono text-xs">--ui</code> + MCP-UI resource</span></li>
                 <li class="flex gap-2.5"><span class="text-[#6ccb5f]">✓</span><span data-i18n-html="rm.n6"><code class="font-mono text-xs">codebase_deep_audit</code> — ~30 deterministic analyses via MCP</span></li>
               </ul>
             </div>
@@ -1145,7 +1147,7 @@
         nav: { features: "Fonctionnalités", pipeline: "Comment ça marche", tools: "Outils", demo: "Démo", install: "Installation", roadmap: "Feuille de route", faq: "FAQ", star: "Star sur GitHub" },
         hero: {
           new: "NOUVEAU",
-          badge: "v0.28 — dashboard --ui + audit déterministe --no-llm",
+          badge: "v0.29 — dashboard --ui style IDE + palette de commandes Ctrl+K",
           title: 'Votre code,<br><span class="gradient-text-anim">entièrement compris.</span>',
           sub: 'Chattez, recherchez, expliquez, refactorez, auditez — et générez des rapports prêts pour le comité. Chaque affirmation s\u2019appuie sur une citation de source, un score de confiance et un niveau de sévérité. <span class="text-white font-normal">Votre code est indexé localement — vous choisissez le modèle. Mode hors-ligne complet inclus.</span>',
           cta1: "Commencer",
@@ -1211,7 +1213,7 @@
           c6t: "Compatible MCP",
           c6b: "Serveur autonome pour Cursor, Claude, Windsurf, Zed & co — prompt-only sans clé, ou rapports déterministes sans aucun modèle.",
           c7t: 'Dashboard local — <code class="font-mono text-[13px] text-[#4cc2ff]">--ui</code>',
-          c7b: "Une commande ouvre une UI web Fluent : audit, santé, stats, impact, questions, filtres de sévérité, exports — tout au clic, sans terminal. 100 % local &amp; bilingue."
+          c7b: "Une commande ouvre une app web style IDE — onglets éditeur, barre de statut, palette de commandes <kbd>Ctrl+K</kbd>, mode zen, raccourcis <kbd>1–5</kbd>. Audit, santé, stats, impact, questions, filtres de sévérité, exports — tout au clic, sans terminal. 100 % local &amp; bilingue."
         },
         pkg: {
           kicker: "Distribution",
@@ -1270,7 +1272,9 @@
           l2: '<strong class="text-[#a3a3a3]">MCP</strong> — vraie session stdio, 18 outils, sans clé API',
           l3: '<strong class="text-[#a3a3a3]">FR</strong> — fallback de symboles + prompts en français',
           tabDash: "Dashboard",
-          l6: '<strong class="text-[#a3a3a3]">Dashboard</strong> — <code class="font-mono text-[#4cc2ff]">--ui</code> ouvre l\u2019app web Fluent : audit, santé, stats, questions — tout au clic, sans terminal',
+          tabPal: "Palette ⌘K",
+          l6: '<strong class="text-[#a3a3a3]">Dashboard</strong> — <code class="font-mono text-[#4cc2ff]">--ui</code> ouvre l\u2019app web style IDE : audit, santé, stats, questions — tout au clic, sans terminal',
+          l7: '<strong class="text-[#a3a3a3]">Palette</strong> — commandes <code class="font-mono text-[#4cc2ff]">Ctrl+K</code>, mode zen <code class="font-mono text-[#4cc2ff]">z</code>, raccourcis <code class="font-mono text-[#4cc2ff]">1–5</code>',
           imgAlt: "démo de dsh-codebase-chat"
         },
         install: {
@@ -1317,7 +1321,7 @@
           n2: "Mode watch — index à chaud pendant que vous codez",
           n3: 'Wizard setup + <code class="font-mono text-xs">.codebase-chat.json</code>',
           n4: "Recherche sensible au diff sur les fichiers modifiés",
-          n5: 'Dashboard local Fluent — <code class="font-mono text-xs">--ui</code> + ressource MCP-UI',
+          n5: 'Dashboard local style IDE — <code class="font-mono text-xs">--ui</code> + ressource MCP-UI',
           n6: '<code class="font-mono text-xs">codebase_deep_audit</code> — ~30 analyses déterministes via MCP',
           p0: "Export GitHub Issues depuis TASKS.md",
           p6: "Packs de prompts — ES, DE, PT",
@@ -1455,7 +1459,7 @@
     })();
 
     function switchDemo(name, btn) {
-      document.getElementById('demo-img').src = 'assets/' + name + (name === 'dashboard' ? '.png' : '.gif');
+      document.getElementById('demo-img').src = 'assets/' + name + (name.startsWith('dashboard') ? '.png' : '.gif');
       document.querySelectorAll('.demo-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     }
