@@ -62,6 +62,11 @@ input:focus,select:focus{outline:none;border-color:var(--acc)}
 .rhero .sub{color:var(--dim);font-size:12px}
 .prompthd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .prompthd h2{margin:0}
+.askcard{background:linear-gradient(135deg,#12233a,#101823);border:1px solid #24405f;border-radius:14px;padding:20px 24px;margin-bottom:20px}
+.askcard h2{margin:0 0 12px;font-size:16px}
+.askcard textarea{width:100%;background:#0d1319;border:1px solid var(--line);color:var(--txt);padding:10px 14px;border-radius:9px;font-size:14px;font-family:inherit;resize:vertical}
+.askcard textarea:focus{outline:none;border-color:var(--acc)}
+.askcard .hint{flex:1}
 pre.big{max-height:60vh}
 .hidden{display:none!important}
 @media(max-width:860px){aside{position:static;width:auto}body{display:block}main{margin:0}.top{flex-wrap:wrap}}
@@ -92,13 +97,21 @@ pre.big{max-height:60vh}
 <span class="chip" data-sev="crit">🔴</span>
 <span class="chip" data-sev="high">🟠</span>
 <span class="chip" data-sev="med">🟡</span>
-<button id="viewMd">${t('Markdown', 'Markdown')}</button>
+<a class="chip" href="/?lang=${lang === 'en' ? 'fr' : 'en'}" style="text-decoration:none">${lang === 'en' ? '🇫🇷 FR' : '🇬🇧 EN'}</a>
+<button id="viewMd">Markdown</button>
 <button id="dlMd">.md ↓</button>
 <button id="dlHtml">.html ↓</button>
 <button id="copyMd">${t('⧉ Copier', '⧉ Copy')}</button>
 <input type="text" id="search" placeholder="${t('Filtrer les résultats…', 'Filter results…')}">
 </div>
 <div class="wrap">
+<div class="askcard">
+<h2>💬 ${t('Pose une question sur ce projet', 'Ask anything about this project')}</h2>
+<textarea id="ask" rows="2" placeholder="${t('ex : où est gérée l\'authentification ? que risque un refactor de src/store.ts ?', 'e.g. where is auth handled? what breaks if I refactor src/store.ts?')}"></textarea>
+<div class="row" style="margin-top:10px">
+<button class="act primary" id="askBtn" style="width:auto">${t('✨ Préparer le prompt', '✨ Build the prompt')}</button>
+<span class="hint" style="margin:0">${t('Le prompt contient le code pertinent — colle-le dans ChatGPT, Claude ou Ollama.', 'The prompt carries the relevant code — paste it into ChatGPT, Claude or Ollama.')}</span>
+</div></div>
 <div id="promptOut" class="hidden"><div class="prompthd"><h2>Prompt</h2><button id="copyBtn" class="act" style="width:auto">${t('Copier', 'Copy')}</button></div><pre id="promptPre" class="big"></pre></div>
 <div id="out"><div class="spin">${t('audit en cours', 'running audit')}</div></div>
 </div>
@@ -106,7 +119,8 @@ pre.big{max-height:60vh}
 <script>
 const out = document.getElementById('out'), navList = document.getElementById('navList'), navGrp = document.getElementById('navGrp');
 let curMd = '', curHtml = '', proj = '${esc(absPath).replace(/'/g, "\\'").replace(/\\/g, '\\\\')}', sevFilter = '', mdView = false;
-const qp = () => proj ? '&project=' + encodeURIComponent(proj) : '';
+const LANG = '${lang}';
+const qp = () => (proj ? '&project=' + encodeURIComponent(proj) : '') + '&lang=' + LANG;
 const loading = () => { out.innerHTML = '<div class="spin">${t('analyse en cours', 'analysing')}</div>'; };
 async function call(url) {
   loading(); setActive(url); mdView = false;
@@ -163,6 +177,18 @@ document.getElementById('gen').onclick = async () => {
   document.getElementById('promptOut').scrollIntoView({ behavior: 'smooth' });
 };
 document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('gen').click(); });
+// Big ask card — same prompt pipeline, mode chat
+document.getElementById('askBtn').onclick = async () => {
+  const q = document.getElementById('ask').value.trim();
+  if (!q) return;
+  document.getElementById('promptPre').textContent = '${t('assemblage du contexte…', 'assembling context…')}';
+  document.getElementById('promptOut').classList.remove('hidden');
+  document.getElementById('promptOut').scrollIntoView({ behavior: 'smooth' });
+  const r = await fetch('/api/prompt?mode=chat&q=' + encodeURIComponent(q) + qp());
+  const j = await r.json();
+  document.getElementById('promptPre').textContent = j.prompt || j.error;
+};
+document.getElementById('ask').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) document.getElementById('askBtn').click(); });
 document.getElementById('pset').onclick = () => {
   const v = document.getElementById('proj').value.trim();
   if (v) { proj = v; filesLoaded = false; call('/api/audit?x=1' + qp()); }
@@ -206,7 +232,7 @@ function spy() {
   }, { rootMargin: '-15% 0px -75% 0px' });
   document.querySelectorAll('#out section[id]').forEach(s => observer.observe(s));
 }
-call('/api/audit?x=1');
+call('/api/audit?x=1' + qp());
 </script></body></html>`;
 }
 
@@ -222,11 +248,12 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
   const server = createServer(async (req, res) => {
     const u = new URL(req.url ?? '/', 'http://x');
     try {
-      if (u.pathname === '/') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(appHtml(project, abs, lang)); return; }
+      const reqLang: Lang = u.searchParams.get('lang') === 'en' ? 'en' : u.searchParams.get('lang') === 'fr' ? 'fr' : lang;
+      if (u.pathname === '/') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(appHtml(project, abs, reqLang)); return; }
 
       const target = (u.searchParams.get('project') ?? '').trim() || projectPath;
       if (u.pathname === '/api/audit') {
-        const md = await buildDeterministicReport(target, lang);
+        const md = await buildDeterministicReport(target, reqLang);
         const r = parseReportMd(md, project);
         json(res, { title: r.title, intro: r.intro, nav: r.nav, body: r.body, md, standalone: reportToHtml(md, { project: target.split(/[\\/]/).pop() || 'project', generated: new Date().toISOString().slice(0, 10) }), hero: `<div class="rhero">${scoreGauge(r.score, r.grade)}<div><h1>${esc(r.title)}</h1><div class="sub">${esc(target)}</div></div></div>` });
         return;
@@ -238,7 +265,7 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
       }
       if (u.pathname === '/api/health') {
         const report = await analyzeProject(await findProjectRoot(target).catch(() => target));
-        const md = formatHealthReportMd(report, lang);
+        const md = formatHealthReportMd(report, reqLang);
         const r = parseReportMd(md, project);
         json(res, { title: r.title, intro: r.intro, nav: r.nav, body: r.body, md });
         return;
@@ -251,7 +278,7 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
           json(res, { error: r.candidates.length ? `Ambiguous — candidates: ${r.candidates.join(', ')}` : `No code file matches "${file}"` });
           return;
         }
-        const md = formatImpactReportMd(r.report, lang);
+        const md = formatImpactReportMd(r.report, reqLang);
         const p = parseReportMd(md, project);
         json(res, { body: p.body || `<p>${p.intro}</p>`, md });
         return;
@@ -268,18 +295,18 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
         const mode = u.searchParams.get('mode') ?? 'intelligence';
         const q = u.searchParams.get('q') ?? '';
         const isFile = /\.[a-z0-9]+$/i.test(q);
-        const result = await buildContext({ project: target, query: q, filePath: isFile ? q : undefined, lang });
+        const result = await buildContext({ project: target, query: q, filePath: isFile ? q : undefined, lang: reqLang });
         let staticSection = '';
         if (new Set(['intelligence', 'report', 'audit', 'tasks', 'ceo']).has(mode)) {
           try {
             const report = await analyzeProject(result.absProject);
-            staticSection = `\n\n== ${lang === 'en' ? 'STATIC ANALYSIS (deterministic)' : 'ANALYSE STATIQUE (déterministe)'} ==\n${formatHealthReportMd(report, lang)}`;
+            staticSection = `\n\n== ${reqLang === 'en' ? 'STATIC ANALYSIS (deterministic)' : 'ANALYSE STATIQUE (déterministe)'} ==\n${formatHealthReportMd(report, reqLang)}`;
           } catch { /* best-effort */ }
         }
         const prompt = buildToolPrompt(`codebase_${mode}`, {
           context: `${result.context}${staticSection}`,
           projectName: basename(result.absProject),
-          lang, query: q, focus: q, filePath: isFile ? q : '', description: q,
+          lang: reqLang, query: q, focus: q, filePath: isFile ? q : '', description: q,
         });
         json(res, { prompt });
         return;
