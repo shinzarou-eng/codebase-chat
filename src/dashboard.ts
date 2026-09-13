@@ -25,54 +25,54 @@ function appHtml(project: string, absPath: string, lang: Lang): string {
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>">
 <style>${DASH_CSS}
 body{display:flex;margin:0}
-aside{position:fixed;inset:0 auto 0 0;width:264px;background:#0d1219;border-right:1px solid var(--line);padding:22px 16px;overflow:auto;display:flex;flex-direction:column}
-aside .logo{color:var(--acc);font-weight:700;font-size:15px;padding:0 8px 6px;word-break:break-all}
+aside{position:fixed;inset:0 auto 0 0;width:264px;background:#0d0d16;border-right:1px solid var(--line);padding:22px 16px;overflow:auto;display:flex;flex-direction:column}
+aside .logo{display:flex;align-items:center;gap:9px;color:var(--txt);font-weight:700;font-size:15px;padding:0 8px 6px;word-break:break-all}
+aside .logo::before{content:'◆';display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:linear-gradient(135deg,#8b7bff,#5b4bc4);border-radius:7px;font-size:11px;color:#fff;flex-shrink:0}
 aside .tag{color:var(--dim);font-size:11px;padding:0 8px 18px;border-bottom:1px solid var(--line);margin-bottom:14px}
 aside .grp{font-size:10px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;padding:12px 8px 6px}
-button.act{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:1px solid transparent;color:var(--txt);padding:9px 12px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600}
+button.act{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:1px solid transparent;color:var(--txt);padding:9px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;transition:all .13s}
 button.act:hover{background:var(--card);border-color:var(--line)}
-button.act.on{background:#14263d;border-color:#2d5a8f;color:#cfe8ff}
+button.act.on{background:rgba(139,123,255,.13);border-color:rgba(139,123,255,.4);color:var(--acc2)}
 button.act:disabled{opacity:.4;cursor:wait}
 .mini{padding:4px 8px}
 .mini input,.mini select{width:100%;margin-bottom:7px}
 .mini button.act{justify-content:center;background:var(--card);border-color:var(--line)}
-.mini button.act:hover{border-color:var(--acc);color:var(--acc)}
-#navList a{display:block;color:var(--dim);text-decoration:none;padding:5px 10px;border-radius:7px;font-size:12.5px}
+.mini button.act:hover{border-color:var(--acc);color:var(--acc2)}
+#navList a{display:block;color:var(--dim);text-decoration:none;padding:5px 10px;border-radius:7px;font-size:12.5px;transition:all .12s}
 #navList a:hover{background:var(--card);color:var(--txt)}
 aside .foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--dim)}
 main{margin-left:264px;flex:1;min-width:0}
-.top{position:sticky;top:0;z-index:10;background:rgba(11,15,20,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:12px 28px;display:flex;align-items:center;gap:8px}
+.top{position:sticky;top:0;z-index:10;background:rgba(10,10,16,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:12px 28px;display:flex;align-items:center;gap:8px}
 .top input[type=text]{flex:0 1 260px;margin-left:auto}
-.top button{background:var(--card);border:1px solid var(--line);color:var(--txt);padding:7px 13px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap}
-.top button:hover{border-color:var(--acc);color:var(--acc)}
-.chip{background:var(--card);border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600}
-.chip:hover{color:var(--txt)}
-.chip.on{border-color:var(--acc);color:var(--acc);background:rgba(110,194,255,.08)}
+.top button{background:var(--card);border:1px solid var(--line);color:var(--txt);padding:7px 13px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;transition:all .13s}
+.top button:hover{border-color:var(--acc);color:var(--acc2)}
+.chip{background:var(--card);border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;transition:all .13s}
+.chip:hover{color:var(--txt);border-color:var(--line2)}
+.chip.on{border-color:var(--acc);color:var(--acc2);background:rgba(139,123,255,.1)}
 .wrap{max-width:1060px;padding:26px 32px 80px}
-input,select{background:#0d1319;border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:8px;font-size:13px;font-family:inherit}
-input:focus,select:focus{outline:none;border-color:var(--acc)}
+input,select{background:#0c0c14;border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:9px;font-size:13px;font-family:inherit;transition:border-color .13s}
+input:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(139,123,255,.12)}
 #out{min-height:300px}
 .spin{color:var(--dim);padding:60px 0;text-align:center;font-size:14px}
 .spin::after{content:'…';animation:dots 1.2s infinite}
 @keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'…'}}
 .err{color:var(--bad);padding:20px}
-#out section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-bottom:18px;box-shadow:0 2px 12px rgba(0,0,0,.25)}
 .rhero{display:flex;align-items:center;gap:22px;margin-bottom:20px}
-.rhero h1{font-size:20px;margin:0}
+.rhero h1{font-size:20px;margin:0;letter-spacing:-.02em;background:linear-gradient(90deg,#fff,#b8b0e8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .rhero .sub{color:var(--dim);font-size:12px}
 .prompthd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .prompthd h2{margin:0}
-.askcard{background:linear-gradient(135deg,#12233a,#101823);border:1px solid #24405f;border-radius:14px;padding:20px 24px;margin-bottom:20px}
-.askcard h2{margin:0 0 12px;font-size:16px}
-.askcard textarea{width:100%;background:#0d1319;border:1px solid var(--line);color:var(--txt);padding:10px 14px;border-radius:9px;font-size:14px;font-family:inherit;resize:vertical}
-.askcard textarea:focus{outline:none;border-color:var(--acc)}
+.askcard{background:linear-gradient(135deg,rgba(139,123,255,.13),rgba(139,123,255,.04) 60%,transparent);border:1px solid rgba(139,123,255,.28);border-radius:16px;padding:20px 24px;margin-bottom:22px}
+.askcard h2{margin:0 0 12px;font-size:15px;color:var(--acc2)}
+.askcard textarea{width:100%;background:rgba(10,10,16,.7);border:1px solid var(--line);color:var(--txt);padding:11px 14px;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;transition:border-color .13s}
+.askcard textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(139,123,255,.12)}
 .askcard .hint{flex:1}
 pre.big{max-height:60vh}
 .hidden{display:none!important}
 @media(max-width:860px){aside{position:static;width:auto}body{display:block}main{margin:0}.top{flex-wrap:wrap}}
 </style></head><body>
 <aside>
-<div class="logo">◆ ${esc(project)}</div>
+<div class="logo">${esc(project)}</div>
 <div class="tag">${t('100% local · aucune donnée ne sort', '100% local · nothing leaves your machine')}</div>
 <div class="grp">${t('Analyses', 'Analysis')}</div>
 <button class="act" data-a="audit">🔍 ${t('Audit complet', 'Deep audit')}</button>
@@ -255,7 +255,7 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
       if (u.pathname === '/api/audit') {
         const md = await buildDeterministicReport(target, reqLang);
         const r = parseReportMd(md, project);
-        json(res, { title: r.title, intro: r.intro, nav: r.nav, body: r.body, md, standalone: reportToHtml(md, { project: target.split(/[\\/]/).pop() || 'project', generated: new Date().toISOString().slice(0, 10) }), hero: `<div class="rhero">${scoreGauge(r.score, r.grade)}<div><h1>${esc(r.title)}</h1><div class="sub">${esc(target)}</div></div></div>` });
+        json(res, { title: r.title, intro: r.intro, nav: r.nav, body: r.body, md, standalone: reportToHtml(md, { project: target.split(/[\\/]/).pop() || 'project', generated: new Date().toISOString().slice(0, 10) }), hero: `<div class="rhero">${scoreGauge(r.score, r.grade)}<div><h1>${esc(r.title.replace(/^\p{Extended_Pictographic}\s*/u, ''))}</h1><div class="sub">${esc(target)}</div></div></div>` });
         return;
       }
       if (u.pathname === '/api/files') {
