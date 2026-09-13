@@ -10,7 +10,7 @@ import { buildContext } from './context.js';
 import { buildToolPrompt } from './prompts.js';
 import { getIndex } from './indexer.js';
 import { findProjectRoot } from './project.js';
-import { parseReportMd, DASH_CSS, scoreGauge } from './ui.js';
+import { parseReportMd, DASH_CSS, scoreGauge, reportToHtml } from './ui.js';
 
 type Lang = 'fr' | 'en';
 
@@ -21,7 +21,9 @@ const PROMPT_MODES = ['intelligence', 'audit', 'report', 'ceo', 'tasks', 'player
 function appHtml(project: string, absPath: string, lang: Lang): string {
   const t = (fr: string, en: string) => (lang === 'en' ? en : fr);
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>◆ ${esc(project)} — codebase dashboard</title><style>${DASH_CSS}
+<title>◆ ${esc(project)} — codebase dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>">
+<style>${DASH_CSS}
 body{display:flex;margin:0}
 aside{position:fixed;inset:0 auto 0 0;width:264px;background:#0d1219;border-right:1px solid var(--line);padding:22px 16px;overflow:auto;display:flex;flex-direction:column}
 aside .logo{color:var(--acc);font-weight:700;font-size:15px;padding:0 8px 6px;word-break:break-all}
@@ -39,10 +41,13 @@ button.act:disabled{opacity:.4;cursor:wait}
 #navList a:hover{background:var(--card);color:var(--txt)}
 aside .foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--dim)}
 main{margin-left:264px;flex:1;min-width:0}
-.top{position:sticky;top:0;z-index:10;background:rgba(11,15,20,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:12px 28px;display:flex;align-items:center;gap:12px}
-.top input{flex:0 1 300px;margin-left:auto}
-.top button{background:var(--card);border:1px solid var(--line);color:var(--txt);padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600}
+.top{position:sticky;top:0;z-index:10;background:rgba(11,15,20,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:12px 28px;display:flex;align-items:center;gap:8px}
+.top input[type=text]{flex:0 1 260px;margin-left:auto}
+.top button{background:var(--card);border:1px solid var(--line);color:var(--txt);padding:7px 13px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap}
 .top button:hover{border-color:var(--acc);color:var(--acc)}
+.chip{background:var(--card);border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600}
+.chip:hover{color:var(--txt)}
+.chip.on{border-color:var(--acc);color:var(--acc);background:rgba(110,194,255,.08)}
 .wrap{max-width:1060px;padding:26px 32px 80px}
 input,select{background:#0d1319;border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:8px;font-size:13px;font-family:inherit}
 input:focus,select:focus{outline:none;border-color:var(--acc)}
@@ -69,7 +74,7 @@ pre.big{max-height:60vh}
 <button class="act" data-a="health">❤️ ${t('Santé', 'Health')}</button>
 <button class="act" data-a="stats">📊 Stats</button>
 <button class="act" data-a="impact">💥 Impact</button>
-<div id="impactBox" class="mini hidden"><input type="text" id="ifile" placeholder="src/store.ts"><button class="act" id="igo">${t('Analyser', 'Analyze')}</button></div>
+<div id="impactBox" class="mini hidden"><input type="text" id="ifile" list="fileList" placeholder="src/store.ts" autocomplete="off"><datalist id="fileList"></datalist><button class="act" id="igo">${t('Analyser', 'Analyze')}</button></div>
 <div class="grp">${t('Prompt pour un LLM', 'Prompt for an LLM')}</div>
 <div class="mini"><select id="mode">${PROMPT_MODES.map(m => `<option>${m}</option>`).join('')}</select>
 <input type="text" id="q" placeholder="${t('question / fichier / focus', 'question / file / focus')}">
@@ -83,7 +88,14 @@ pre.big{max-height:60vh}
 </aside>
 <main>
 <div class="top">
-<button id="copyMd">${t('⧉ Copier le rapport', '⧉ Copy report')}</button>
+<span class="chip on" data-sev="">${t('Tout', 'All')}</span>
+<span class="chip" data-sev="crit">🔴</span>
+<span class="chip" data-sev="high">🟠</span>
+<span class="chip" data-sev="med">🟡</span>
+<button id="viewMd">${t('Markdown', 'Markdown')}</button>
+<button id="dlMd">.md ↓</button>
+<button id="dlHtml">.html ↓</button>
+<button id="copyMd">${t('⧉ Copier', '⧉ Copy')}</button>
 <input type="text" id="search" placeholder="${t('Filtrer les résultats…', 'Filter results…')}">
 </div>
 <div class="wrap">
@@ -93,22 +105,22 @@ pre.big{max-height:60vh}
 </main>
 <script>
 const out = document.getElementById('out'), navList = document.getElementById('navList'), navGrp = document.getElementById('navGrp');
-let curMd = '', proj = '${esc(absPath).replace(/'/g, "\\'").replace(/\\/g, '\\\\')}';
+let curMd = '', curHtml = '', proj = '${esc(absPath).replace(/'/g, "\\'").replace(/\\/g, '\\\\')}', sevFilter = '', mdView = false;
 const qp = () => proj ? '&project=' + encodeURIComponent(proj) : '';
 const loading = () => { out.innerHTML = '<div class="spin">${t('analyse en cours', 'analysing')}</div>'; };
 async function call(url) {
-  loading(); setActive(url);
+  loading(); setActive(url); mdView = false;
   try {
     const r = await fetch(url); const j = await r.json();
     if (j.error) { out.innerHTML = '<div class="err">' + j.error + '</div>'; return; }
-    curMd = j.md || '';
+    curMd = j.md || ''; curHtml = j.standalone || '';
     document.getElementById('promptOut').classList.add('hidden');
     if (j.nav && j.nav.length) {
       navGrp.style.display = 'block';
       navList.innerHTML = j.nav.map(n => '<a href="#' + n.id + '">' + n.title + '</a>').join('');
     } else { navGrp.style.display = 'none'; navList.innerHTML = ''; }
     out.innerHTML = (j.hero || '') + (j.intro || '') + (j.body || j.text || '');
-    filter();
+    filter(); spy();
   } catch (e) { out.innerHTML = '<div class="err">' + e.message + '</div>'; }
 }
 function setActive(url) {
@@ -118,14 +130,30 @@ const impactBox = document.getElementById('impactBox');
 document.querySelectorAll('button.act[data-a]').forEach(b => b.onclick = () => {
   const a = b.dataset.a;
   impactBox.classList.toggle('hidden', a !== 'impact');
+  if (a === 'impact') loadFiles();
   if (a === 'audit') call('/api/audit?x=1' + qp());
   if (a === 'health') call('/api/health?x=1' + qp());
   if (a === 'stats') call('/api/stats?x=1' + qp());
 });
+// Collapsible sections
+out.addEventListener('click', e => {
+  const h = e.target.closest('h2.coll');
+  if (h) h.parentElement.classList.toggle('collapsed');
+});
+// Impact file autocomplete
+let filesLoaded = false;
+async function loadFiles() {
+  if (filesLoaded) return; filesLoaded = true;
+  const r = await fetch('/api/files?x=1' + qp()); const j = await r.json();
+  document.getElementById('fileList').innerHTML = (j.files || []).map(f => '<option value="' + f + '">').join('');
+}
+document.getElementById('ifile').addEventListener('focus', loadFiles);
+document.getElementById('ifile').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('igo').click(); });
 document.getElementById('igo').onclick = () => {
   const f = document.getElementById('ifile').value.trim();
   if (f) call('/api/impact?file=' + encodeURIComponent(f) + qp());
 };
+// Prompt generator
 document.getElementById('gen').onclick = async () => {
   const mode = document.getElementById('mode').value, q = document.getElementById('q').value;
   const r = await fetch('/api/prompt?mode=' + mode + '&q=' + encodeURIComponent(q) + qp());
@@ -134,27 +162,50 @@ document.getElementById('gen').onclick = async () => {
   document.getElementById('promptPre').textContent = j.prompt || j.error;
   document.getElementById('promptOut').scrollIntoView({ behavior: 'smooth' });
 };
+document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('gen').click(); });
 document.getElementById('pset').onclick = () => {
   const v = document.getElementById('proj').value.trim();
-  if (v) { proj = v; call('/api/audit?x=1' + qp()); }
+  if (v) { proj = v; filesLoaded = false; call('/api/audit?x=1' + qp()); }
 };
-document.getElementById('copyBtn').onclick = (e) => {
-  navigator.clipboard.writeText(document.getElementById('promptPre').textContent);
-  e.target.textContent = '${t('Copié ✓', 'Copied ✓')}';
+// Copy / downloads / view
+const flash = (el, txt) => { const old = el.textContent; el.textContent = txt; setTimeout(() => el.textContent = old, 1500); };
+document.getElementById('copyBtn').onclick = e => { navigator.clipboard.writeText(document.getElementById('promptPre').textContent); flash(e.target, '${t('Copié ✓', 'Copied ✓')}'); };
+document.getElementById('copyMd').onclick = e => { if (curMd) { navigator.clipboard.writeText(curMd); flash(e.target, '${t('Copié ✓', 'Copied ✓')}'); } };
+const dl = (name, content, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name; a.click(); };
+document.getElementById('dlMd').onclick = () => { if (curMd) dl('codebase-report.md', curMd, 'text/markdown'); };
+document.getElementById('dlHtml').onclick = () => { if (curHtml) dl('codebase-report.html', curHtml, 'text/html'); };
+document.getElementById('viewMd').onclick = () => {
+  if (!curMd) return; mdView = !mdView;
+  if (mdView) { out.dataset.html = out.innerHTML; out.innerHTML = '<section><pre class="big" style="margin:0">' + curMd.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</pre></section>'; }
+  else { out.innerHTML = out.dataset.html; filter(); }
 };
-document.getElementById('copyMd').onclick = (e) => {
-  if (!curMd) return;
-  navigator.clipboard.writeText(curMd);
-  e.target.textContent = '${t('Copié ✓', 'Copied ✓')}';
-  setTimeout(() => e.target.textContent = '${t('⧉ Copier le rapport', '⧉ Copy report')}', 1500);
-};
+// Filters: severity chips + text
+document.querySelectorAll('.chip[data-sev]').forEach(c => c.onclick = () => {
+  document.querySelectorAll('.chip[data-sev]').forEach(x => x.classList.remove('on'));
+  c.classList.add('on'); sevFilter = c.dataset.sev; filter();
+});
 function filter() {
   const q = document.getElementById('search').value.toLowerCase();
   document.querySelectorAll('#out section').forEach(s => {
-    s.style.display = !q || s.textContent.toLowerCase().includes(q) ? '' : 'none';
+    const okQ = !q || s.textContent.toLowerCase().includes(q);
+    const okS = !sevFilter || s.querySelector('.sev-' + sevFilter);
+    s.style.display = okQ && okS ? '' : 'none';
   });
 }
 document.getElementById('search').oninput = filter;
+// Scroll-spy
+let observer;
+function spy() {
+  if (observer) observer.disconnect();
+  observer = new IntersectionObserver(es => {
+    es.forEach(en => {
+      if (en.isIntersecting) {
+        navList.querySelectorAll('a').forEach(a => a.style.color = a.getAttribute('href') === '#' + en.target.id ? 'var(--acc)' : '');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px' });
+  document.querySelectorAll('#out section[id]').forEach(s => observer.observe(s));
+}
 call('/api/audit?x=1');
 </script></body></html>`;
 }
@@ -177,7 +228,12 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
       if (u.pathname === '/api/audit') {
         const md = await buildDeterministicReport(target, lang);
         const r = parseReportMd(md, project);
-        json(res, { title: r.title, intro: r.intro, nav: r.nav, body: r.body, md, hero: `<div class="rhero">${scoreGauge(r.score, r.grade)}<div><h1>${esc(r.title)}</h1><div class="sub">${esc(target)}</div></div></div>` });
+        json(res, { title: r.title, intro: r.intro, nav: r.nav, body: r.body, md, standalone: reportToHtml(md, { project: target.split(/[\\/]/).pop() || 'project', generated: new Date().toISOString().slice(0, 10) }), hero: `<div class="rhero">${scoreGauge(r.score, r.grade)}<div><h1>${esc(r.title)}</h1><div class="sub">${esc(target)}</div></div></div>` });
+        return;
+      }
+      if (u.pathname === '/api/files') {
+        const index = await getIndex(await findProjectRoot(target).catch(() => target), () => {});
+        json(res, { files: Object.keys(index.files).sort() });
         return;
       }
       if (u.pathname === '/api/health') {

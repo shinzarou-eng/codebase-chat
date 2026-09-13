@@ -118,7 +118,7 @@ export function parseReportMd(md: string, fallbackTitle = 'Report'): ParsedRepor
     intro: severity(sections.filter(s => !s.title).flatMap(s => s.html).join('\n')),
     nav: sections.filter(s => s.title).map(s => ({ id: s.id, title: s.title })),
     body: sections.filter(s => s.title).map(s =>
-      `<section id="${s.id}"><h2>${esc(s.title)}</h2>${severity(s.html.join('\n'))}</section>`).join('\n'),
+      `<section id="${s.id}"><h2 class="coll">${esc(s.title)}</h2><div class="sbody">${severity(s.html.join('\n'))}</div></section>`).join('\n'),
     score: scoreM ? Number(scoreM[1]) : null,
     grade: scoreM?.[2] ?? null,
   };
@@ -140,8 +140,14 @@ header.hero .sub{color:var(--dim);font-size:12px}
 .score .n{font-size:34px;font-weight:700}
 .score .bar{flex:1;height:10px;background:var(--line);border-radius:6px;overflow:hidden}
 .score .bar i{display:block;height:100%;border-radius:6px;transition:width .6s ease}
-section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-bottom:18px;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-bottom:18px;box-shadow:0 2px 12px rgba(0,0,0,.25);transition:border-color .15s}
+section:hover{border-color:#2a3a4d}
 h2{margin:0 0 12px;font-size:16px;color:var(--acc)}
+h2.coll{cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px;margin-bottom:0}
+h2.coll::before{content:'▾';font-size:11px;color:var(--dim);transition:transform .2s}
+section.collapsed h2.coll::before{transform:rotate(-90deg)}
+section.collapsed .sbody{display:none}
+section:not(.collapsed) .sbody{margin-top:12px}
 h3{margin:16px 0 8px;font-size:14px;color:var(--txt)}
 p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}li.sub{color:var(--dim);font-size:13px;margin-left:14px}
 code{font-family:ui-monospace,Consolas,monospace;color:var(--code);background:#1a1425;padding:1px 5px;border-radius:4px;font-size:12.5px}
@@ -162,8 +168,12 @@ a{color:var(--acc)}
 .mb u{display:block;height:100%;background:linear-gradient(90deg,#f87171,#fbbf24,#4ade80);border-radius:5px}
 .mb b{font-size:13px}
 .donut .bg{fill:none;stroke:var(--line);stroke-width:11}
-.donut .fg{fill:none;stroke-width:11;stroke-linecap:round}
+.donut .fg{fill:none;stroke-width:11;stroke-linecap:round;transition:stroke-dasharray 1s ease}
 .score{display:flex;align-items:center;gap:20px;margin:14px 0}
+html{scroll-behavior:smooth}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#243040;border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
 @media(max-width:800px){nav{display:none}main{margin:0;padding:18px}}
 `;
 
