@@ -1,0 +1,182 @@
+{
+  "version": 1,
+  "createdAt": "2026-09-13T11:55:01.265Z",
+  "head": "c433389",
+  "score": 68,
+  "findings": [
+    {
+      "id": "sec:innerHTML:src/dashboard.ts:const loading = () => { out.innerhtml = '<div class=\"skel\"><",
+      "rule": "sec:innerHTML",
+      "severity": "Moyenne",
+      "file": "src/dashboard.ts"
+    },
+    {
+      "id": "sec:innerHTML:src/dashboard.ts:out.innerhtml = '<div class=\"err\">' + esch(j.error) + '</div",
+      "rule": "sec:innerHTML",
+      "severity": "Moyenne",
+      "file": "src/dashboard.ts"
+    },
+    {
+      "id": "sec:innerHTML:src/dashboard.ts:navlist.innerhtml = j.nav.map(n => '<a href=\"#' + esch(n.id)",
+      "rule": "sec:innerHTML",
+      "severity": "Moyenne",
+      "file": "src/dashboard.ts"
+    },
+    {
+      "id": "sec:innerHTML:src/dashboard.ts:} else { navgrp.style.display = 'none'; navlist.innerhtml = ",
+      "rule": "sec:innerHTML",
+      "severity": "Moyenne",
+      "file": "src/dashboard.ts"
+    },
+    {
+      "id": "sec:innerHTML:src/dashboard.ts:out.innerhtml = (j.hero || '') + (j.intro || '') + (j.body |",
+      "rule": "sec:innerHTML",
+      "severity": "Moyenne",
+      "file": "src/dashboard.ts"
+    },
+    {
+      "id": "untested-risk:src/report.ts",
+      "rule": "untested-risk",
+      "severity": "Élevée",
+      "file": "src/report.ts"
+    },
+    {
+      "id": "untested-risk:src/dashboard.ts",
+      "rule": "untested-risk",
+      "severity": "Élevée",
+      "file": "src/dashboard.ts"
+    },
+    {
+      "id": "untested-risk:src/cli.ts",
+      "rule": "untested-risk",
+      "severity": "Élevée",
+      "file": "src/cli.ts"
+    },
+    {
+      "id": "untested-risk:mcp/index.mjs",
+      "rule": "untested-risk",
+      "severity": "Élevée",
+      "file": "mcp/index.mjs"
+    },
+    {
+      "id": "hotspot:src/report.ts:",
+      "rule": "hotspot",
+      "severity": "Élevée",
+      "file": "src/report.ts"
+    },
+    {
+      "id": "hotspot:src/analysis.ts:",
+      "rule": "hotspot",
+      "severity": "Élevée",
+      "file": "src/analysis.ts"
+    },
+    {
+      "id": "hotspot:src/dashboard.ts:",
+      "rule": "hotspot",
+      "severity": "Élevée",
+      "file": "src/dashboard.ts"
+    },
+    {
+      "id": "hotspot:src/cli.ts:",
+      "rule": "hotspot",
+      "severity": "Élevée",
+      "file": "src/cli.ts"
+    },
+    {
+      "id": "hotspot:mcp/index.mjs:",
+      "rule": "hotspot",
+      "severity": "Élevée",
+      "file": "mcp/index.mjs"
+    },
+    {
+      "id": "hotspot:mcp/setup.mjs:",
+      "rule": "hotspot",
+      "severity": "Élevée",
+      "file": "mcp/setup.mjs"
+    },
+    {
+      "id": "hotspot:src/prompts.ts:",
+      "rule": "hotspot",
+      "severity": "Moyenne",
+      "file": "src/prompts.ts"
+    },
+    {
+      "id": "hotspot:src/recommendations.ts:",
+      "rule": "hotspot",
+      "severity": "Moyenne",
+      "file": "src/recommendations.ts"
+    },
+    {
+      "id": "hotspot:src/extractor.ts:",
+      "rule": "hotspot",
+      "severity": "Moyenne",
+      "file": "src/extractor.ts"
+    },
+    {
+      "id": "hotspot:src/indexer.ts:",
+      "rule": "hotspot",
+      "severity": "Moyenne",
+      "file": "src/indexer.ts"
+    },
+    {
+      "id": "hotspot:src/treesitter.ts:",
+      "rule": "hotspot",
+      "severity": "Moyenne",
+      "file": "src/treesitter.ts"
+    },
+    {
+      "id": "hotspot:src/ui.ts:",
+      "rule": "hotspot",
+      "severity": "Moyenne",
+      "file": "src/ui.ts"
+    },
+    {
+      "id": "hotspot:src/check.ts:",
+      "rule": "hotspot",
+      "severity": "Moyenne",
+      "file": "src/check.ts"
+    },
+    {
+      "id": "hotspot:src/impact.ts:",
+      "rule": "hotspot",
+      "severity": "Moyenne",
+      "file": "src/impact.ts"
+    },
+    {
+      "id": "duplicate:scripts/conv_session.mjs:scripts/mcp_session.mjs",
+      "rule": "duplicate",
+      "severity": "Moyenne",
+      "file": "scripts/conv_session.mjs"
+    },
+    {
+      "id": "duplicate:mcp/index.mjs:src/cli.ts",
+      "rule": "duplicate",
+      "severity": "Moyenne",
+      "file": "mcp/index.mjs"
+    },
+    {
+      "id": "duplicate:src/indexer.ts:src/retriever.ts",
+      "rule": "duplicate",
+      "severity": "Moyenne",
+      "file": "src/indexer.ts"
+    },
+    {
+      "id": "unused-export:src/project.ts:TreeOptions",
+      "rule": "unused-export",
+      "severity": "Faible",
+      "file": "src/project.ts"
+    },
+    {
+      "id": "smell:syncIo:src/prompts.ts:const pkg = json.parse(readfilesync(new url('../package.json",
+      "rule": "smell:syncIo",
+      "severity": "Faible",
+      "file": "src/prompts.ts"
+    },
+    {
+      "id": "smell:any:src/report.ts:const walkexports = (e: any): void => {",
+      "rule": "smell:any",
+      "severity": "Faible",
+      "file": "src/report.ts"
+    }
+  ]
+}
