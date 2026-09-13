@@ -37,6 +37,14 @@ export {
   brandSignature,
 } from './prompts.js';
 export type { ToolPromptOptions } from './prompts.js';
-export { buildDeterministicReport } from './report.js';
+export { buildDeterministicReport, collectAudit, renderAuditMd, hasDedicatedTest, scanCode } from './report.js';
+export { auditFindings } from './findings.js';
+export { writeBaseline, readBaseline, diffFindings, BASELINE_REL } from './baseline.js';
+export type { Baseline } from './baseline.js';
+export { runCheck, formatCheckMd } from './check.js';
+export type { CheckFile, CheckReport } from './check.js';
+export { runDoctor, formatDoctorMd } from './doctor.js';
+export type { DoctorItem, DoctorReport } from './doctor.js';
+export type { AuditData, AuditFinding, Severity, Finding, SmellScan, GitStats } from './report-types.js';
 export { reportToHtml } from './ui.js';
 export type * from './types.js';

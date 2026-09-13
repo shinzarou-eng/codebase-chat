@@ -13,6 +13,11 @@ import { getChangedFiles } from './diff.js';
 import { loadProjectConfig } from './config.js';
 import { disposeTreeSitter } from './treesitter.js';
 import { computeStats } from './stats.js';
+import { collectAudit } from './report.js';
+import { auditFindings } from './findings.js';
+import { writeBaseline, BASELINE_REL } from './baseline.js';
+import { runCheck, formatCheckMd } from './check.js';
+import { runDoctor, formatDoctorMd } from './doctor.js';
 import { countTokens } from './tokenizer.js';
 import { matchModelPrice, callCost, fmtCost, CALL_INPUT_TOKENS, CALL_OUTPUT_TOKENS } from './pricing.js';
 
@@ -71,6 +76,9 @@ Usage:
   npx dsh-codebase-chat --project <path> --health
   npx dsh-codebase-chat --project <path> --impact src/store.ts
   npx dsh-codebase-chat --project <path> --health --diff main
+  npx dsh-codebase-chat --project <path> --check [--diff main] [--strict]
+  npx dsh-codebase-chat --project <path> --baseline
+  npx dsh-codebase-chat --project <path> --doctor
   npx dsh-codebase-chat --project <path> --watch
   npx dsh-codebase-chat --project <path> --prompt intelligence
   npx dsh-codebase-chat --project <path> --prompt intelligence --call   # answered via DEEPSEEK_API_KEY
@@ -84,6 +92,11 @@ Options:
   -i, --index            Force re-index the project
   -t, --stats            Print indexing stats
   -H, --health           Deterministic static analysis (cycles, dead code, dupes, complexity)
+  --check                Verify your changes: impact, findings, delta vs baseline
+  --baseline             Write .codebase-chat/baseline.json (findings + score snapshot)
+  --strict               With --check: exit 1 when the verdict is red
+  --json                 With --check/--doctor: print the report as JSON
+  --doctor               Diagnose the install: node, index cache, LLM keys, MCP clients
   --impact [file]        Blast radius — which files transitively depend on <file>;
                          bare --impact = every file changed vs HEAD
   -d, --diff <ref>       Scope --ask/--search/--health to files changed vs a git ref
@@ -134,6 +147,11 @@ async function main() {
       call: { type: 'boolean', default: false },
       'no-llm': { type: 'boolean', default: false },
       ui: { type: 'boolean', default: false },
+      check: { type: 'boolean', default: false },
+      baseline: { type: 'boolean', default: false },
+      doctor: { type: 'boolean', default: false },
+      strict: { type: 'boolean', default: false },
+      json: { type: 'boolean', default: false },
       watch: { type: 'boolean', short: 'w', default: false },
       embed: { type: 'boolean', short: 'e', default: false },
       lang: { type: 'string' },
@@ -216,6 +234,31 @@ async function main() {
     });
     process.on('SIGINT', () => { watcher.close(); exit(0); });
     await new Promise(() => {});
+  }
+
+  if (values.baseline) {
+    const abs = await findProjectRoot(project);
+    const data = await collectAudit(abs);
+    const findings = auditFindings(data, lang);
+    const b = await writeBaseline(abs, data, findings);
+    console.log(lang === 'en'
+      ? `Baseline written: ${BASELINE_REL} — ${b.findings.length} findings, score ${b.score}/100${b.head ? ` (HEAD ${b.head})` : ''}`
+      : `Baseline écrite : ${BASELINE_REL} — ${b.findings.length} findings, score ${b.score}/100${b.head ? ` (HEAD ${b.head})` : ''}`);
+    exit(0);
+  }
+
+  if (values.doctor) {
+    const report = await runDoctor(project, lang);
+    if (values.json) console.log(JSON.stringify(report, null, 2));
+    else console.log(process.stdout.isTTY ? renderAnswerTerminal(formatDoctorMd(report, lang)) : formatDoctorMd(report, lang));
+    exit(report.ok ? 0 : 1);
+  }
+
+  if (values.check) {
+    const report = await runCheck(project, { base: values.diff ?? 'HEAD', lang });
+    if (values.json) console.log(JSON.stringify(report, null, 2));
+    else console.log(process.stdout.isTTY ? renderAnswerTerminal(formatCheckMd(report, lang)) : formatCheckMd(report, lang));
+    exit(values.strict && report.verdict === 'red' ? 1 : 0);
   }
 
   if (values.health) {

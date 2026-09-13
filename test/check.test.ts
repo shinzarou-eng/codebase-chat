@@ -1,0 +1,90 @@
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { mkdtempSync, writeFileSync, rmSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { execFileSync } from 'node:child_process';
+import { collectAudit } from '../src/report';
+import { auditFindings } from '../src/findings';
+import { writeBaseline, readBaseline, diffFindings, BASELINE_REL } from '../src/baseline';
+import { runCheck, formatCheckMd } from '../src/check';
+import type { AuditFinding } from '../src/report-types';
+
+afterEach(() => vi.unstubAllEnvs());
+
+const GIT = (dir: string, args: string[]) =>
+  execFileSync('git', ['-C', dir, ...args], { stdio: 'pipe' });
+
+function makeRepo(): { dir: string; cache: string; cleanup: () => void } {
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-check-'));
+  const cache = mkdtempSync(join(tmpdir(), 'dsh-check-cache-'));
+  vi.stubEnv('CODEBASE_CACHE_DIR', cache);
+  mkdirSync(join(dir, 'src'), { recursive: true });
+  writeFileSync(join(dir, 'src', 'a.ts'), `export const a = 1;\n`);
+  writeFileSync(join(dir, 'src', 'b.ts'), `import { a } from './a';\nexport const b = a + 1;\n`);
+  writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'tmp-check', version: '0.0.1' }));
+  try {
+    GIT(dir, ['init']);
+    GIT(dir, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'add', '-A']);
+    GIT(dir, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-m', 'init']);
+  } catch { /* git unavailable — tests will assert on non-git paths too */ }
+  return { dir, cache, cleanup: () => { rmSync(dir, { recursive: true, force: true }); rmSync(cache, { recursive: true, force: true }); } };
+}
+
+describe('baseline', () => {
+  it('writeBaseline → readBaseline round-trip', async () => {
+    const { dir, cleanup } = makeRepo();
+    try {
+      const data = await collectAudit(dir);
+      const findings = auditFindings(data, 'en');
+      const b = await writeBaseline(dir, data, findings);
+      expect(existsSync(join(dir, BASELINE_REL))).toBe(true);
+      const back = await readBaseline(dir);
+      expect(back?.score).toBe(data.health.score);
+      expect(back?.findings.length).toBe(findings.length);
+      expect(back?.findings[0].id).toBe(findings[0].id);
+    } finally { cleanup(); }
+  });
+
+  it('diffFindings splits added / resolved / unchanged', () => {
+    const mk = (id: string): AuditFinding => ({ id, rule: 'r', severity: 'Faible', message: id });
+    const baseline = { version: 1 as const, createdAt: '', score: 80, findings: [{ id: 'a', rule: 'r', severity: 'Faible' as const }, { id: 'gone', rule: 'r', severity: 'Faible' as const }] };
+    const d = diffFindings(baseline, [mk('a'), mk('new')]);
+    expect(d.added.map(f => f.id)).toEqual(['new']);
+    expect(d.resolved.map(f => f.id)).toEqual(['gone']);
+    expect(d.unchanged).toBe(1);
+  });
+});
+
+describe('runCheck', () => {
+  it('flags a new sec:eval finding on the changed file → red', async () => {
+    const { dir, cleanup } = makeRepo();
+    try {
+      // Baseline first, then introduce eval in a tracked file.
+      const data = await collectAudit(dir);
+      await writeBaseline(dir, data, auditFindings(data, 'en'));
+      writeFileSync(join(dir, 'src', 'b.ts'), `import { a } from './a';\nexport const b = a + 1;\neval('x');\n`);
+      const r = await runCheck(dir, { lang: 'en' });
+      expect(r.files.map(f => f.file)).toContain('src/b.ts');
+      const added = r.diff.added.filter(f => f.rule === 'sec:eval');
+      expect(added.length).toBeGreaterThan(0);
+      expect(r.verdict).toBe('red');
+      const md = formatCheckMd(r, 'en');
+      expect(md).toContain('Verdict');
+      expect(md).toContain('src/b.ts');
+    } finally { cleanup(); }
+  });
+
+  it('green when the changed file adds no finding and baseline is current', async () => {
+    const { dir, cleanup } = makeRepo();
+    try {
+      writeFileSync(join(dir, 'src', 'b.ts'), `import { a } from './a';\nexport const b = a + 1;\n`);
+      const data = await collectAudit(dir);
+      await writeBaseline(dir, data, auditFindings(data, 'en'));
+      writeFileSync(join(dir, 'src', 'b.ts'), `import { a } from './a';\nexport const b = a + 2;\n`);
+      const r = await runCheck(dir, { lang: 'en' });
+      expect(r.hasBaseline).toBe(true);
+      expect(r.diff.added.filter(f => !f.file || r.changedFiles.includes(f.file))).toHaveLength(0);
+      expect(r.verdict).toBe('green');
+    } finally { cleanup(); }
+  });
+});

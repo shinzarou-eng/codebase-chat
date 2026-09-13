@@ -18,7 +18,7 @@ import {
   walkFiles,
 } from './project.js';
 
-const INDEX_VERSION = 5;
+export const INDEX_VERSION = 5;
 
 const STOP_WORDS = new Set([
   'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought', 'used', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'and', 'or', 'but', 'so', 'yet', 'a', 'an', 'this', 'that', 'these', 'those', 'it', 'its', 'he', 'she', 'they', 'them', 'their', 'we', 'us', 'our', 'you', 'your', 'i', 'me', 'my', 'le', 'la', 'les', 'un', 'une', 'des', 'du', 'de', 'et', 'ou', 'que', 'qui', 'quoi', 'dont', 'ce', 'cet', 'cette', 'ces', 'est', 'sont', 'etait', 'etaient', 'avoir', 'etre', 'faire', 'dans', 'pour', 'sur', 'avec', 'par', 'a', 'au', 'aux'
