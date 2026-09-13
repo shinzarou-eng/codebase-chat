@@ -9,6 +9,14 @@ Want to influence priorities? [Open an issue](https://github.com/shinzarou-eng/d
 
 ## ✅ Shipped
 
+### v0.28 — Local dashboard, deep audit & token stats
+
+- `--ui` — Fluent web dashboard on localhost: audit, health, stats, impact, ask-a-question, severity filters, FR/EN toggle, `.md`/`.html` export, project switching — all clicks, no terminal
+- `codebase_deep_audit` — deterministic MCP tool running ~30 analyses: git churn & bus factor, churn × complexity risk, dependency integrity, per-function complexity, secrets, env coverage, README/config hygiene — all cited `file:line`, no LLM needed. `ui: true` returns a `ui://` HTML dashboard resource for MCP-UI clients
+- `--prompt intelligence --no-llm` — the same deep audit from the CLI: zero model, zero key, zero network
+- Rich `--stats` — exact `o200k`/`cl100k` token counts, per-model-family estimates, context-window fit, top files, extension distribution (shared engine `src/stats.ts` powering CLI + dashboard)
+- Embedded local LLM mode removed — replaced by honest deterministic analysis and prompt piping
+
 ### v0.23.0 — Diff-aware retrieval & watch mode
 
 - `--diff <ref>` scopes `--ask`/`--search`/`--health` (and the `diff` argument on every MCP tool) to files changed vs a git ref — committed, staged, unstaged and untracked
@@ -39,7 +47,7 @@ Want to influence priorities? [Open an issue](https://github.com/shinzarou-eng/d
 
 - Symbol-level indexer (Babel AST + regex fallback) with disk cache
 - Local multilingual embeddings (`Xenova/paraphrase-multilingual-MiniLM-L12-v2`)
-- 12 MCP tools, 16+ slash commands, Codebase Pro panel in DeepSeek Harness
+- 14 MCP tools, 16+ slash commands, Codebase Pro panel in DeepSeek Harness
 - Deterministic static analysis (`codebase_health` / `--health`): circular dependencies, dead code, duplication, complexity hotspots, health score
 - Bilingual prompts (FR/EN), evidence format `[source]`/`[Confidence]`/`[Severity]`
 - npm publication of both packages, GitHub Pages site, CLI binary
@@ -58,7 +66,6 @@ Things actively being worked on or fully specced.
 - **VS Code extension** — sidebar panel, inline "Explain this", CodeLens citations
 - **HTTP/SSE transport** for the MCP server (remote teams, web clients)
 - **PR review mode** — post a cited review summary on a pull request via GitHub API
-- **Report export** — intelligence/audit/report output as standalone HTML or PDF
 - **Interactive diff viewer** in the Codebase Pro panel (accept/reject per hunk)
 - **JetBrains plugin** — depends on demand; MCP already covers it indirectly
 

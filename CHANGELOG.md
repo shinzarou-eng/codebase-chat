@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — local dashboard & token stats
+
+**New**
+
+- `--ui` — launches a Fluent web dashboard on `127.0.0.1`: run audit / health / stats / impact, ask a question and copy the built prompt, switch projects, filter by severity or text, collapse sections, export `.md`/`.html` — all clicks, no terminal, fully local, FR/EN.
+- `codebase_deep_audit` (mcp 0.9.1) — deterministic MCP tool running the full ~30-analysis audit; `ui: true` also returns a `ui://` HTML dashboard resource for MCP-UI clients.
+- Rich `--stats` — exact `o200k`/`cl100k` token counts, per-model-family estimates (DeepSeek, Claude, Gemini, Llama), context-window fit, top files by tokens, extension distribution. Shared `src/stats.ts` engine powers both CLI and dashboard.
+
 ## 0.28.0 / mcp 0.9.0 — `--no-llm` report, ultra edition
 
 **New**
