@@ -88,3 +88,41 @@ describe("recommendations", () => {
     expect(recos.some(r => r.text.includes("Découper `big.ts`"))).toBe(true);
   });
 });
+
+describe("scanCode comment filtering", () => {
+  const SMELLS: [string, RegExp][] = [
+    ["todo", /\b(?:TODO|FIXME|HACK)\b/],
+    ["any", /:\s*any\b/],
+  ];
+  const smellsOpts = { skipStrings: true, skipCommentsExcept: new Set(["todo"]) };
+
+  it("ignores the word 'any' inside comments (stale-finding regression)", () => {
+    const fileTexts = new Map([["src/analysis.ts", [
+      "// Same-file use: any line other than the export declaration itself.",
+      "* Code path: any caller gets the same object.",
+      "/* any exported symbol is recorded */",
+      "const x: number = 1;",
+    ].join("\n")]]);
+    const scan = scanCode(fileTexts, SMELLS, 3, smellsOpts);
+    expect(scan.any).toBeUndefined();
+  });
+
+  it("still reports real ': any' annotations in code", () => {
+    const fileTexts = new Map([["src/a.ts", "function f(x: any): any { return x; }\n"]]);
+    const scan = scanCode(fileTexts, SMELLS, 3, smellsOpts);
+    expect(scan.any).toHaveLength(1);
+    expect(scan.any[0]).toMatchObject({ file: "src/a.ts", line: 1 });
+  });
+
+  it("still reports TODO/FIXME inside comments", () => {
+    const fileTexts = new Map([["src/a.ts", "// TODO: tighten this type\nconst y = 1;\n"]]);
+    const scan = scanCode(fileTexts, SMELLS, 3, smellsOpts);
+    expect(scan.todo).toHaveLength(1);
+  });
+
+  it("skipComments ignores every comment, including TODO", () => {
+    const fileTexts = new Map([["src/a.ts", "// TODO: exec(cmd) is risky\nconst y = 1;\n"]]);
+    const scan = scanCode(fileTexts, SMELLS, 3, { skipComments: true });
+    expect(scan.todo).toBeUndefined();
+  });
+});

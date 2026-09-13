@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "createdAt": "2026-09-13T11:55:01.265Z",
-  "head": "c433389",
-  "score": 68,
+  "createdAt": "2026-09-13T19:04:21.176Z",
+  "head": "f05694f",
+  "score": 70,
   "findings": [
     {
       "id": "sec:innerHTML:src/dashboard.ts:const loading = () => { out.innerhtml = '<div class=\"skel\"><",
@@ -35,12 +35,6 @@
       "file": "src/dashboard.ts"
     },
     {
-      "id": "untested-risk:src/report.ts",
-      "rule": "untested-risk",
-      "severity": "Élevée",
-      "file": "src/report.ts"
-    },
-    {
       "id": "untested-risk:src/dashboard.ts",
       "rule": "untested-risk",
       "severity": "Élevée",
@@ -57,12 +51,6 @@
       "rule": "untested-risk",
       "severity": "Élevée",
       "file": "mcp/index.mjs"
-    },
-    {
-      "id": "hotspot:src/report.ts:",
-      "rule": "hotspot",
-      "severity": "Élevée",
-      "file": "src/report.ts"
     },
     {
       "id": "hotspot:src/analysis.ts:",
@@ -89,6 +77,18 @@
       "file": "mcp/index.mjs"
     },
     {
+      "id": "hotspot:src/report-collect.ts:",
+      "rule": "hotspot",
+      "severity": "Élevée",
+      "file": "src/report-collect.ts"
+    },
+    {
+      "id": "hotspot:src/report-render.ts:",
+      "rule": "hotspot",
+      "severity": "Élevée",
+      "file": "src/report-render.ts"
+    },
+    {
       "id": "hotspot:mcp/setup.mjs:",
       "rule": "hotspot",
       "severity": "Élevée",
@@ -99,6 +99,12 @@
       "rule": "hotspot",
       "severity": "Moyenne",
       "file": "src/prompts.ts"
+    },
+    {
+      "id": "hotspot:src/impact.ts:",
+      "rule": "hotspot",
+      "severity": "Moyenne",
+      "file": "src/impact.ts"
     },
     {
       "id": "hotspot:src/recommendations.ts:",
@@ -113,10 +119,22 @@
       "file": "src/extractor.ts"
     },
     {
+      "id": "hotspot:src/check.ts:",
+      "rule": "hotspot",
+      "severity": "Moyenne",
+      "file": "src/check.ts"
+    },
+    {
       "id": "hotspot:src/indexer.ts:",
       "rule": "hotspot",
       "severity": "Moyenne",
       "file": "src/indexer.ts"
+    },
+    {
+      "id": "hotspot:src/report-deps.ts:",
+      "rule": "hotspot",
+      "severity": "Moyenne",
+      "file": "src/report-deps.ts"
     },
     {
       "id": "hotspot:src/treesitter.ts:",
@@ -129,18 +147,6 @@
       "rule": "hotspot",
       "severity": "Moyenne",
       "file": "src/ui.ts"
-    },
-    {
-      "id": "hotspot:src/check.ts:",
-      "rule": "hotspot",
-      "severity": "Moyenne",
-      "file": "src/check.ts"
-    },
-    {
-      "id": "hotspot:src/impact.ts:",
-      "rule": "hotspot",
-      "severity": "Moyenne",
-      "file": "src/impact.ts"
     },
     {
       "id": "duplicate:scripts/conv_session.mjs:scripts/mcp_session.mjs",
@@ -161,22 +167,10 @@
       "file": "src/indexer.ts"
     },
     {
-      "id": "unused-export:src/project.ts:TreeOptions",
-      "rule": "unused-export",
-      "severity": "Faible",
-      "file": "src/project.ts"
-    },
-    {
       "id": "smell:syncIo:src/prompts.ts:const pkg = json.parse(readfilesync(new url('../package.json",
       "rule": "smell:syncIo",
       "severity": "Faible",
       "file": "src/prompts.ts"
-    },
-    {
-      "id": "smell:any:src/report.ts:const walkexports = (e: any): void => {",
-      "rule": "smell:any",
-      "severity": "Faible",
-      "file": "src/report.ts"
     }
   ]
 }
