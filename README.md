@@ -42,7 +42,7 @@ Other paths — DeepSeek Harness plugin · CLI · from source · manual config: 
 
 <p align="center">
   <img src="docs/assets/demo-conv.gif" alt="dsh-codebase-chat real MCP session on a 422-file codebase" width="840"><br>
-  <em>Real MCP session on a real 422-file codebase — <code>codebase_health</code> finds 324 circular deps, <code>codebase_chat</code> answers with <code>[source: file:line]</code> receipts · <a href="docs/assets/demo-power.gif">PR review (--diff + --watch)</a> · <a href="docs/assets/demo.gif">CLI tour</a> · <a href="docs/assets/demo-mcp.gif">MCP stdio</a> · <a href="docs/assets/demo-fr.gif">French mode</a></em>
+  <em>Real MCP session on a real 422-file codebase — <code>codebase_health</code> finds 324 circular deps, <code>codebase_chat</code> answers with <code>[source: file:line]</code> receipts · <a href="docs/assets/demo-power.gif">PR review (--diff + --watch)</a> · <a href="docs/assets/demo.gif">CLI tour</a> · <a href="docs/assets/demo-mcp.gif">MCP stdio</a> · <a href="docs/assets/demo-fr.gif">French mode</a> · <a href="docs/assets/dashboard.png">--ui dashboard</a></em>
 </p>
 
 ## Usage
@@ -117,7 +117,7 @@ Every answer from `codebase_chat` arrives with `[source: file:line]` receipts yo
 
 `/codebase-apply` writes safely — **dry-run** · **`.dsh-backups/`** before overwrite · **protected paths** · never outside the project.
 
-## The 13 tools
+## The 14 tools
 
 | Understand | Decide | Act | Explore |
 | --- | --- | --- | --- |
@@ -125,7 +125,9 @@ Every answer from `codebase_chat` arrives with `[source: file:line]` receipts yo
 | `codebase_search` | `codebase_audit` | `codebase_tasks` | `codebase_crea` |
 | `codebase_explain` | `codebase_report` | | |
 | `codebase_health` | `codebase_ceo` | | |
-| `codebase_impact` | | | |
+| `codebase_impact` | `codebase_deep_audit` | | |
+
+Three tools run **fully deterministic — no model, no key, works offline**: `codebase_health`, `codebase_impact`, and `codebase_deep_audit` (~30 analyses: git churn, bus factor, secrets, deps, per-function complexity).
 
 Same engine, three surfaces: **MCP tools** in your IDE, **slash commands** in DeepSeek Harness, **CLI flags** anywhere. Every tool takes `lang` (`fr`/`en`), `embed`, `promptOnly`, `maxTokens`.
 
@@ -304,9 +306,9 @@ Then restart `dsh --profile web`.
 
 | | |
 | --- | --- |
-| **Shipped** | tree-sitter AST (7 languages), deterministic health score + `--no-llm` report, MCP setup wizard, `.codebase-chat.json`, `--diff` scoping, `--watch` mode |
+| **Shipped** | tree-sitter AST (7 languages), deterministic health score + `--no-llm` deep audit, `--ui` local dashboard (Fluent, bilingual, exports), `codebase_deep_audit` MCP tool + `ui://` resource, token/context stats, MCP setup wizard, `.codebase-chat.json`, `--diff` scoping, `--watch` mode |
 | **Next** | GitHub Issues export from TASKS.md, prompt language packs (ES/DE/PT) |
-| **Planned** | VS Code extension, HTTP/SSE transport, PR review mode, report export |
+| **Planned** | VS Code extension, HTTP/SSE transport, PR review mode |
 | **Exploring** | multi-repo workspaces, shared team index cache, CI bot |
 
 <sub>Full detail: <a href="ROADMAP.md">ROADMAP.md</a></sub>
