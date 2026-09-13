@@ -122,16 +122,21 @@ input:hover,select:hover{border-color:var(--line2)}
 .skel i{display:block;height:14px;border-radius:6px;background:linear-gradient(90deg,#ffffff06 25%,#ffffff0e 50%,#ffffff06 75%);background-size:400% 100%;animation:shim 1.3s infinite;margin:14px 0}
 .skel i:first-child{height:22px;width:42%}
 @keyframes shim{0%{background-position:100% 0}100%{background-position:0 0}}
-.rhero{display:flex;align-items:center;gap:22px;margin-bottom:20px}
-.rhero h1{font-size:20px;margin:0;font-weight:600;letter-spacing:-.02em;color:var(--txt)}
-.rhero .sub{color:var(--dim);font-size:12.5px}
+.rhero{display:flex;align-items:center;gap:24px;margin-bottom:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 28px;box-shadow:0 1px 2px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.025)}
+.rhero .score{margin:0}
+.rhero h1{font-size:21px;margin:0 0 3px;font-weight:650;letter-spacing:-.02em;color:var(--txt)}
+.rhero .sub{color:var(--dim);font-size:12px;font-family:'Cascadia Code',Consolas,monospace}
+.vmk{width:66px;height:66px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0;border:3px solid var(--line)}
+.vmk[data-v=red]{border-color:var(--bad)}
+.vmk[data-v=yellow]{border-color:var(--warn)}
+.vmk[data-v=green]{border-color:var(--ok)}
 .prompthd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .prompthd h2{margin:0}
-.askcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin-bottom:26px}
-.askhd{display:flex;align-items:center;gap:9px;color:var(--dim);margin-bottom:12px}
-.askhd h2{margin:0;font-size:14px;font-weight:600;color:var(--txt);letter-spacing:-.005em}
-.askrow{display:flex;gap:10px;align-items:flex-end}
-.askcard textarea{flex:1;background:#12151a;border:1px solid var(--line);color:var(--txt);padding:10px 14px;border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;min-height:42px;transition:border-color .1s}
+.askcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:26px}
+.askrow{display:flex;gap:10px;align-items:center}
+.askrow .aicon{display:flex;color:var(--dim);flex-shrink:0;padding-left:4px}
+.askcard:focus-within{border-color:var(--line2)}
+.askcard textarea{flex:1;background:#12151a;border:1px solid var(--line);color:var(--txt);padding:10px 14px;border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;min-height:40px;transition:border-color .1s}
 .askcard textarea:focus{outline:none;border-color:var(--line2)}
 .askcard .hint{color:#5c6470;font-size:11.5px;margin-top:10px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .askcard kbd{background:rgba(255,255,255,.05);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 6px;font-size:10.5px;font-family:inherit;color:var(--dim)}
@@ -139,7 +144,12 @@ input:hover,select:hover{border-color:var(--line2)}
 .btn-acc:hover{background:#6b77e0}
 .btn-acc:active{background:#5560c8}
 .btn-acc svg{color:#fff!important}
-pre.big{max-height:60vh}
+#promptOut{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin-bottom:20px}
+pre.big{max-height:60vh;margin:0}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+.askcard,.rhero,.ibar,#promptOut{animation:rise .35s ease both}
+#out section{animation:rise .35s ease both}
+#out section:nth-child(2){animation-delay:.05s}#out section:nth-child(3){animation-delay:.1s}#out section:nth-child(4){animation-delay:.15s}#out section:nth-child(5){animation-delay:.2s}#out section:nth-child(n+6){animation-delay:.25s}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:6px 0 8px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;position:relative}
 .kpi .kv{font-size:22px;font-weight:600;line-height:1.2;font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--txt)}
@@ -193,9 +203,9 @@ li button.fact{margin-left:8px}
 <main>
 <div class="wrap">
 <div class="askcard">
-<div class="askhd">${IC.chat}<h2>${t('Pose une question sur ce projet', 'Ask anything about this project')}</h2></div>
 <div class="askrow">
-<textarea id="ask" rows="1" placeholder="${t('ex : où est gérée l\'authentification ? que risque un refactor de src/store.ts ?', 'e.g. where is auth handled? what breaks if I refactor src/store.ts?')}" aria-label="${t('Question sur le code', 'Question about the code')}"></textarea>
+<span class="aicon">${IC.chat}</span>
+<textarea id="ask" rows="1" placeholder="${t('Pose une question sur ce projet — ex : où est gérée l\'authentification ?', 'Ask anything about this project — e.g. where is auth handled?')}" aria-label="${t('Question sur le code', 'Question about the code')}"></textarea>
 <select id="mode" aria-label="${t('Mode du prompt', 'Prompt mode')}">${PROMPT_MODES.map(m => `<option${m === 'chat' ? ' selected' : ''}>${m}</option>`).join('')}</select>
 <button class="btn-acc" id="askBtn">${IC.wand}${t('Préparer le prompt', 'Build prompt')}</button>
 </div>
@@ -544,7 +554,7 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
           history: await readHistory(absT),
           projAbs: absT.split(/[\\/]/).join('/'),
           standalone: reportToHtml(md, { project: target.split(/[\\/]/).pop() || 'project', generated: new Date().toISOString().slice(0, 10) }),
-          hero: `<div class="rhero"><div style="font-size:34px;line-height:1">${V}</div><div><h1>${esc(r.title.replace(/^\p{Extended_Pictographic}\s*/u, ''))}</h1><div class="sub">${esc(target)}</div></div></div>` });
+          hero: `<div class="rhero"><div class="vmk" data-v="${report.verdict}">${V}</div><div><h1>${esc(r.title.replace(/^\p{Extended_Pictographic}\s*/u, ''))}</h1><div class="sub">${esc(target)}</div></div></div>` });
         return;
       }
       if (u.pathname === '/api/ignore' || u.pathname === '/api/unignore') {
