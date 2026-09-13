@@ -70,4 +70,6 @@ export interface ContextResult {
   tokenCount: number;
   /** Project-relative files in scope when `diff` was requested */
   diffFiles?: string[];
+  /** True when a searchQuery matched no code chunk — context holds the tree only */
+  noMatch?: boolean;
 }

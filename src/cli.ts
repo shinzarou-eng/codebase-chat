@@ -317,6 +317,9 @@ async function main() {
       embed: values.embed,
       diff: values.diff,
     });
+    if (result.noMatch) console.error(lang === 'en'
+      ? `No code chunk matches "${values.search}" — context holds the file tree only.`
+      : `Aucun fragment ne correspond à « ${values.search} » — le contexte ne contient que l'arborescence.`);
     // Same parity as the MCP server: report modes get the deterministic
     // static analysis appended to the retrieved context.
     let staticSection = '';
@@ -406,6 +409,9 @@ async function main() {
       embed: values.embed,
       diff: values.diff,
     });
+    if (result.noMatch) console.error(lang === 'en'
+      ? `No code chunk matches "${values.search}" — context holds the file tree only.`
+      : `Aucun fragment ne correspond à « ${values.search} » — le contexte ne contient que l'arborescence.`);
     console.log(result.context);
     console.log(`\n--- Stats ---`);
     console.log(`Project: ${result.absProject}`);

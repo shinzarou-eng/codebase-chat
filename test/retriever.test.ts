@@ -88,6 +88,27 @@ describe('retriever', () => {
     expect(top.name).toBe('login');
   });
 
+  it('returns no chunks for a query with no matches (no fallback)', async () => {
+    const index = createMockIndex();
+    const scored = await scoreChunks(index, 'zzzxqvnotpresent', false);
+    expect(scored.length).toBe(0);
+  });
+
+  it('returns every chunk with the fallback enabled', async () => {
+    const index = createMockIndex();
+    const total = Object.values(index.files).reduce((n, f) => n + f.chunks.length, 0);
+    const scored = await scoreChunks(index, 'zzzxqvnotpresent', false, { fallback: true });
+    expect(scored.length).toBe(total);
+  });
+
+  it('minScoreRatio drops chunks far below the top score', () => {
+    const index = createMockIndex();
+    const mk = (score: number) => ({ ...index.files['src/auth.ts'].chunks[0], score });
+    const { chunks } = selectChunks([mk(100), mk(5)], 10000, Infinity, { minScoreRatio: 0.1 });
+    expect(chunks.length).toBe(1);
+    expect(chunks[0].score).toBe(100);
+  });
+
   it('respects a token budget', async () => {
     const index = createMockIndex();
     const scored = await scoreChunks(index, 'login token', false);

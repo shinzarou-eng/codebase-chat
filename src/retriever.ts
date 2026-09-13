@@ -64,7 +64,7 @@ function lexicalScore(index: CodeIndex, query: string): Map<string, number> {
  * Score all chunks against a query using the inverted index and, when available,
  * local sentence embeddings.
  */
-export async function scoreChunks(index: CodeIndex, query: string, embed = false): Promise<ScoredChunk[]> {
+export async function scoreChunks(index: CodeIndex, query: string, embed = false, opts: { fallback?: boolean } = {}): Promise<ScoredChunk[]> {
   const lexScores = lexicalScore(index, query);
 
   // gather all chunks once
@@ -93,11 +93,12 @@ export async function scoreChunks(index: CodeIndex, query: string, embed = false
       const sim = cosineSimilarity(queryEmbedding, chunk.embedding);
       // semantic score is in [0, 1], scale it so it competes with lexical scores
       score += sim * 50;
-    } else if (score === 0 && !hasEmbeddings) {
-      // when no query terms matched and no embeddings, still return a fallback
+    } else if (score === 0 && !hasEmbeddings && opts.fallback) {
+      // generic queries (audit/intelligence) still get the whole codebase as context
       score = 0.1;
     }
 
+    if (score <= 0) continue;
     scored.push({ ...chunk, score });
   }
 
@@ -107,11 +108,14 @@ export async function scoreChunks(index: CodeIndex, query: string, embed = false
 /**
  * Select chunks to fit within a token budget, keeping the most relevant first.
  */
-export function selectChunks(scored: ScoredChunk[], maxTokens: number, maxChunkTokens = Infinity): { chunks: CodeChunk[]; tokens: number } {
+export function selectChunks(scored: ScoredChunk[], maxTokens: number, maxChunkTokens = Infinity, opts: { minScoreRatio?: number } = {}): { chunks: CodeChunk[]; tokens: number } {
   const result: CodeChunk[] = [];
   const covered = new Map<string, [number, number][]>();
+  const top = scored[0]?.score ?? 0;
+  const minScore = top > 0 && opts.minScoreRatio ? top * opts.minScoreRatio : 0;
   let used = 0;
   for (const chunk of scored) {
+    if (minScore > 0 && chunk.score < minScore) continue;
     if (chunk.tokens > maxChunkTokens) continue;
     if (used + chunk.tokens > maxTokens) continue;
     // Skip chunks fully covered by an already-selected chunk of the same file

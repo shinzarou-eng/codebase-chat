@@ -19,6 +19,7 @@ interface Labels {
   answerIn: string;
   diffScope: (base: string, n: number) => string;
   diffUnavailable: (base: string) => string;
+  noMatch: (q: string) => string;
 }
 
 function getLabels(lang: 'en' | 'fr'): Labels {
@@ -32,6 +33,7 @@ function getLabels(lang: 'en' | 'fr'): Labels {
         answerIn: 'Answer in English.',
         diffScope: (base, n) => `Scope: ${n} file(s) changed vs ${base}`,
         diffUnavailable: base => `Scope: diff vs ${base} unavailable (not a git repo?) — full project`,
+        noMatch: q => `No code chunk matches "${q}" — context holds the file tree only.`,
       }
     : {
         project: 'Projet',
@@ -42,6 +44,7 @@ function getLabels(lang: 'en' | 'fr'): Labels {
         answerIn: 'Réponds obligatoirement en français.',
         diffScope: (base, n) => `Périmètre : ${n} fichier(s) modifié(s) vs ${base}`,
         diffUnavailable: base => `Périmètre : diff vs ${base} indisponible (pas un repo git ?) — projet complet`,
+        noMatch: q => `Aucun fragment ne correspond à « ${q} » — le contexte ne contient que l'arborescence.`,
       };
 }
 
@@ -111,6 +114,7 @@ export async function buildContext(options: ContextOptions): Promise<ContextResu
   const focus = filePath ?? searchQuery ?? query;
 
   let selectedChunks: CodeChunk[] = [];
+  let noMatch = false;
 
   const bodyLimit = maxTokens - HEAD_BUDGET_TOKENS;
   const maxChunkTokens = Math.floor(bodyLimit / 2);
@@ -131,16 +135,17 @@ export async function buildContext(options: ContextOptions): Promise<ContextResu
     } else {
       // Not a file path — treat it as a symbol/term and search instead of failing.
       const scored = await scoreChunks(scopedIndex, filePath, embed);
-      const { chunks } = selectChunks(scored, bodyLimit, maxChunkTokens);
+      const { chunks } = selectChunks(scored, bodyLimit, maxChunkTokens, { minScoreRatio: 0.1 });
       if (chunks.length === 0) throw new Error(`File not found: ${filePath}`);
       selectedChunks = chunks;
     }
   } else if (searchQuery) {
     const scored = await scoreChunks(scopedIndex, searchQuery, embed);
-    const { chunks } = selectChunks(scored, bodyLimit, maxChunkTokens);
+    const { chunks } = selectChunks(scored, bodyLimit, maxChunkTokens, { minScoreRatio: 0.1 });
     selectedChunks = chunks;
+    noMatch = chunks.length === 0;
   } else {
-    const scored = await scoreChunks(scopedIndex, query, embed);
+    const scored = await scoreChunks(scopedIndex, query, embed, { fallback: true });
     const { chunks } = selectChunks(scored, bodyLimit, maxChunkTokens);
     selectedChunks = chunks;
   }
@@ -150,7 +155,7 @@ export async function buildContext(options: ContextOptions): Promise<ContextResu
     ? `== ${labels.constraints} ==\n${constraints.map(c => `- ${c}`).join('\n')}`
     : `== ${labels.constraints} ==\n${labels.noConstraints}`;
 
-  const head = `${labels.project} : ${absProject}\n${labels.focus} : ${focus}\n${scopeLine}${constraintsText}\n\n== ${labels.tree} ==\n${index.tree}\n`;
+  const head = `${labels.project} : ${absProject}\n${labels.focus} : ${focus}\n${scopeLine}${noMatch && searchQuery ? `${labels.noMatch(searchQuery)}\n` : ''}${constraintsText}\n\n== ${labels.tree} ==\n${index.tree}\n`;
   const headTokens = countTokens(head);
 
   const body = selectedChunks.map(c => formatChunk(c)).join('\n\n');
@@ -169,5 +174,6 @@ export async function buildContext(options: ContextOptions): Promise<ContextResu
     chunks: selectedChunks,
     tokenCount,
     diffFiles,
+    noMatch: noMatch || undefined,
   };
 }

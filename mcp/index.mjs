@@ -103,7 +103,7 @@ async function buildPrompt(name, args) {
   const base = getOptions(name, args);
   const maxTokens = Math.min(Math.max(Number(args.maxTokens) || 60000, 1000), 200000);
 
-  const { context, absProject } = await buildContext({
+  const { context, absProject, noMatch } = await buildContext({
     ...base,
     lang,
     maxTokens,
@@ -134,7 +134,7 @@ async function buildPrompt(name, args) {
     description: base.query || "",
   });
 
-  return { prompt: final, projectName };
+  return { prompt: final, projectName, noMatch };
 }
 
 const server = new Server(
@@ -297,7 +297,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const text = `${formatImpactReportMd(r.report, lang)}\n\n<details><summary>JSON</summary>\n\n\`\`\`json\n${JSON.stringify(r.report, null, 2)}\n\`\`\`\n</details>`;
       return { content: [{ type: "text", text }] };
     }
-    const { prompt, projectName } = await buildPrompt(name, args);
+    const { prompt, projectName, noMatch } = await buildPrompt(name, args);
     // Prompt mode: hand the assembled context+prompt back to the host model.
     // Default when no API key is configured, or when promptOnly is requested.
     const wantsPrompt = args?.promptOnly === true || !apiKey;
@@ -305,7 +305,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const header = apiKey
         ? ""
         : `> **dsh-codebase-chat** · \`${projectName}\` · prompt-only mode (no API key) — the context below is for the host model to answer.\n\n---\n\n`;
-      return { content: [{ type: "text", text: `${header}${prompt}` }] };
+      const note = noMatch
+        ? (args?.lang === "en"
+          ? `> No code chunk matches "${args?.query ?? ""}" — the context below holds the file tree only.\n\n`
+          : `> Aucun fragment ne correspond à « ${args?.query ?? ""} » — le contexte ci-dessous ne contient que l'arborescence.\n\n`)
+        : "";
+      return { content: [{ type: "text", text: `${header}${note}${prompt}` }] };
     }
     const content = await callLlm(prompt, args.lang);
     return { content: [{ type: "text", text: content }] };
