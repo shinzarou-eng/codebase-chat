@@ -53,12 +53,13 @@
       --amber: #fce100;
       --cyan: #4cc2ff;
     }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
     body {
       font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
     .font-mono { font-family: 'Cascadia Code', 'JetBrains Mono', Consolas, ui-monospace, monospace; }
 
@@ -1204,7 +1205,7 @@
           c5t: "Refactor & application",
           c5b: "Refactors prêts pour la production, appliqués avec sauvegarde, dry-run, vérification et rollback.",
           c6t: "Compatible MCP",
-          c6b: "Serveur autonome pour Cursor, Claude, Windsurf, Zed &amp; co — prompt-only sans clé, ou rapports déterministes sans aucun modèle.",
+          c6b: "Serveur autonome pour Cursor, Claude, Windsurf, Zed & co — prompt-only sans clé, ou rapports déterministes sans aucun modèle.",
           c7t: 'Dashboard local — <code class="font-mono text-[13px] text-[#4cc2ff]">--ui</code>',
           c7b: "Une commande ouvre une UI web Fluent : audit, santé, stats, impact, questions, filtres de sévérité, exports — tout au clic, sans terminal. 100 % local &amp; bilingue."
         },
