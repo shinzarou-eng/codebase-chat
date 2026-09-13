@@ -70,19 +70,22 @@ button.act:hover .it svg{color:var(--txt)}
 button.act.on{background:#ffffff0d;color:#fff}
 button.act.on .it svg{color:var(--acc2)}
 button.act:disabled{opacity:.4;cursor:wait}
-.mini{padding:2px 9px 6px 12px}
-.mini input,.mini select{width:100%;margin-bottom:7px}
-.mini button.act{justify-content:center;background:#ffffff08;border:1px solid var(--line);font-weight:500}
-.mini button.act:hover{background:#ffffff0e;border-color:var(--line2)}
-.mini button.act svg{color:var(--dim)}
+.ibar{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 22px;margin-bottom:20px}
+.ibar .lbl{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.ibar .irow{display:flex;gap:8px}
+.ibar input{flex:1;min-width:0;font-family:'Cascadia Code',Consolas,monospace;font-size:12.5px}
+.ibar button.go{flex-shrink:0;width:auto;padding:7px 16px;justify-content:center}
+.ibar .chips{padding:10px 0 0}
 #navList a{display:block;color:var(--dim);text-decoration:none;padding:4px 9px 4px 13px;border-radius:6px;font-size:12.5px;transition:all .1s;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-left:2px solid transparent}
 #navList a:hover{background:#ffffff07;color:var(--txt)}
 #navList a.cur{color:var(--txt);border-left-color:var(--acc);background:#ffffff08}
-aside .foot{margin-top:auto;padding:14px 9px 0;border-top:1px solid var(--line);font-size:10.5px;color:#4c4c55;line-height:1.6}
+aside .foot{margin-top:auto;padding:14px 9px 0;border-top:1px solid var(--line);font-size:10.5px;color:#4c4c55;line-height:1.6;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+aside .foot a.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:6px;color:var(--dim);padding:4px 8px;font-size:11px;text-decoration:none;transition:all .1s}
+aside .foot a.chip:hover{border-color:var(--line2);color:var(--txt)}
 aside .foot code{font-size:10px;padding:1px 5px;background:transparent;color:#6b6b74}
 /* ---------- topbar ---------- */
 main{margin-left:250px;flex:1;min-width:0}
-.top{position:sticky;top:0;z-index:20;background:rgba(10,10,10,.8);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);padding:8px 26px;display:flex;align-items:center;gap:8px}
+.top{position:sticky;top:0;z-index:20;background:rgba(10,10,10,.8);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);padding:8px 26px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:8px}
 .seg{display:flex;background:#141417;border:1px solid var(--line);border-radius:8px;padding:2px;gap:1px}
 .seg .chip{border:none;background:transparent;color:var(--dim);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;transition:all .1s;user-select:none}
 .seg .chip:hover{color:var(--txt)}
@@ -92,9 +95,14 @@ main{margin-left:250px;flex:1;min-width:0}
 .top button,.top a.chip{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--line);color:var(--dim);padding:6px 11px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap;transition:all .1s;text-decoration:none}
 .top button:hover,.top a.chip:hover{border-color:var(--line2);color:var(--txt)}
 .top .spacer{flex:1}
+.projwrap{display:flex;align-items:center;gap:7px;background:#141417;border:1px solid var(--line);border-radius:7px;padding:0 4px 0 10px;color:var(--dim);transition:border-color .1s}
+.projwrap:focus-within{border-color:var(--line2)}
+.projwrap input{background:transparent;border:none;padding:7px 0;width:135px;font-family:'Cascadia Code',Consolas,monospace;font-size:11.5px}
+.projwrap input:focus{outline:none;box-shadow:none}
+.projwrap button{padding:5px 6px}
 .searchwrap{display:flex;align-items:center;gap:7px;background:#141417;border:1px solid var(--line);border-radius:7px;padding:0 11px;color:var(--dim);transition:border-color .1s}
 .searchwrap:focus-within{border-color:var(--line2)}
-.searchwrap input{background:transparent;border:none;padding:7px 0;width:180px}
+.searchwrap input{background:transparent;border:none;padding:7px 0;width:130px}
 .searchwrap input:focus{outline:none;box-shadow:none}
 .wrap{max-width:1080px;padding:28px 34px 90px;margin:0 auto}
 input,select{background:#141417;border:1px solid var(--line);color:var(--txt);padding:7px 12px;border-radius:7px;font-size:13px;font-family:inherit;transition:border-color .1s}
@@ -144,7 +152,7 @@ button.fact:hover,a.fact:hover{border-color:var(--line2);color:var(--txt)}
 li button.fact{margin-left:8px}
 .empty{border:1px dashed var(--line);border-radius:10px;padding:34px 20px;text-align:center;color:var(--dim);font-size:13px;margin:14px 0}
 ::selection{background:rgba(124,124,244,.3)}
-@media(max-width:860px){aside{position:static;width:auto}body{display:block}main{margin:0}.top{flex-wrap:wrap;padding:8px 14px}.seg{max-width:100%;overflow-x:auto;scrollbar-width:none}.seg::-webkit-scrollbar{display:none}.seg .chip{padding:5px 9px;white-space:nowrap}.searchwrap{flex:1;min-width:150px}.searchwrap input{width:100%;min-width:0}.wrap{padding:18px 18px 70px}}
+@media(max-width:860px){aside{position:static;width:auto}body{display:block}main{margin:0}.top{flex-wrap:wrap;padding:8px 14px}.seg{max-width:100%;overflow-x:auto;scrollbar-width:none;order:2}.seg::-webkit-scrollbar{display:none}.seg .chip{padding:5px 9px;white-space:nowrap}.searchwrap{flex:1;min-width:140px}.searchwrap input{width:100%;min-width:0}.projwrap{flex:1 1 100%;min-width:0}.projwrap input{width:100%;min-width:0;flex:1}.askrow{flex-direction:column;align-items:stretch}.askrow select{width:100%}.btn-acc{justify-content:center}.wrap{padding:18px 18px 70px}}
 </style></head><body>
 <aside>
 <div class="brand"><div class="mk">◆</div><div><div class="nm" title="${esc(absPath)}">${esc(project)}</div><div class="lc">${IC.lock} ${t('analyse locale — aucun envoi automatique', 'local analysis — no automatic upload')}</div></div></div>
@@ -154,20 +162,13 @@ li button.fact{margin-left:8px}
 <button class="act" data-a="health"><span class="it g">${IC.health}</span>${t('Santé du code', 'Code health')}</button>
 <button class="act" data-a="stats"><span class="it p">${IC.stats}</span>${t('Statistiques', 'Statistics')}</button>
 <button class="act" data-a="impact"><span class="it o">${IC.impact}</span>${t('Impact d\'un fichier', 'File impact')}</button>
-<div id="impactBox" class="mini hidden"><input type="text" id="ifile" list="fileList" placeholder="src/store.ts" autocomplete="off" aria-label="${t('Fichier à analyser', 'File to analyse')}"><datalist id="fileList"></datalist><button class="act" id="igo">${IC.play}${t('Analyser', 'Analyze')}</button><div class="chips" id="chgChips"></div></div>
-<div class="grp">${t('Prompt pour un LLM', 'Prompt for an LLM')}</div>
-<div class="mini"><select id="mode" aria-label="${t('Mode du prompt', 'Prompt mode')}">${PROMPT_MODES.map(m => `<option>${m}</option>`).join('')}</select>
-<input type="text" id="q" placeholder="${t('question / fichier / focus', 'question / file / focus')}" aria-label="${t('Question ou focus', 'Question or focus')}">
-<button class="act" id="gen">${IC.wand}${t('Générer le prompt', 'Generate prompt')}</button></div>
-<div class="grp">${t('Projet', 'Project')}</div>
-<div class="mini"><input type="text" id="proj" value="${esc(absPath)}" placeholder="C:\\path\\to\\project" aria-label="${t('Chemin du projet', 'Project path')}">
-<button class="act" id="pset">${IC.folder}${t('Analyser ce projet', 'Analyze this project')}</button></div>
 <div class="grp" id="navGrp" style="display:none">${t('Sections', 'Sections')}</div>
 <div id="navList"></div>
-<div class="foot">dsh-codebase-chat<br><code>npx dsh-codebase-chat --ui</code></div>
+<div class="foot"><span>dsh-codebase-chat<br><code>npx dsh-codebase-chat --ui</code></span><a class="chip" href="/?lang=${lang === 'en' ? 'fr' : 'en'}" title="${t('Passer en anglais', 'Switch to French')}">${IC.globe}${lang === 'en' ? 'FR' : 'EN'}</a></div>
 </aside>
 <main>
 <div class="top">
+<div class="projwrap">${IC.folder}<input type="text" id="proj" value="${esc(absPath)}" placeholder="C:\\path\\to\\project" aria-label="${t('Chemin du projet', 'Project path')}"><button id="pset" title="${t('Analyser ce projet', 'Analyze this project')}" aria-label="${t('Analyser ce projet', 'Analyze this project')}">${IC.play}</button></div>
 <div class="seg">
 <span class="chip on" data-sev="">${t('Tout', 'All')}<i class="cnt"></i></span>
 <span class="chip" data-sev="crit">${t('Critique', 'Critical')}<i class="cnt"></i></span>
@@ -176,21 +177,22 @@ li button.fact{margin-left:8px}
 </div>
 <div class="spacer"></div>
 <div class="searchwrap">${IC.search}<input type="text" id="search" placeholder="${t('Filtrer les résultats…', 'Filter results…')}" aria-label="${t('Filtrer les résultats', 'Filter results')}"></div>
-<button id="viewMd" title="Markdown">${IC.file}Markdown</button>
-<button id="copyMd" title="${t('Copier le rapport', 'Copy report')}">${IC.copy}${t('Copier', 'Copy')}</button>
-<button id="dlMd" title="${t('Télécharger en Markdown', 'Download as Markdown')}">${IC.download}.md</button>
-<button id="dlHtml" title="${t('Télécharger en HTML', 'Download as HTML')}">${IC.download}.html</button>
-<a class="chip" href="/?lang=${lang === 'en' ? 'fr' : 'en'}" title="${t('Passer en anglais', 'Switch to French')}">${IC.globe}${lang === 'en' ? 'FR' : 'EN'}</a>
+<button id="viewMd" title="Markdown">${IC.file}</button>
+<button id="copyMd" title="${t('Copier le rapport', 'Copy report')}">${IC.copy}</button>
+<button id="dlMd" title="${t('Télécharger en Markdown', 'Download as Markdown')}">${IC.download}<span style="font-size:10px">md</span></button>
+<button id="dlHtml" title="${t('Télécharger en HTML', 'Download as HTML')}">${IC.download}<span style="font-size:10px">html</span></button>
 </div>
 <div class="wrap">
 <div class="askcard">
 <div class="askhd">${IC.chat}<h2>${t('Pose une question sur ce projet', 'Ask anything about this project')}</h2></div>
 <div class="askrow">
 <textarea id="ask" rows="1" placeholder="${t('ex : où est gérée l\'authentification ? que risque un refactor de src/store.ts ?', 'e.g. where is auth handled? what breaks if I refactor src/store.ts?')}" aria-label="${t('Question sur le code', 'Question about the code')}"></textarea>
+<select id="mode" aria-label="${t('Mode du prompt', 'Prompt mode')}">${PROMPT_MODES.map(m => `<option${m === 'chat' ? ' selected' : ''}>${m}</option>`).join('')}</select>
 <button class="btn-acc" id="askBtn">${IC.wand}${t('Préparer le prompt', 'Build prompt')}</button>
 </div>
 <div class="hint">${t('Le prompt contient le code pertinent — colle-le dans ChatGPT, Claude ou Ollama.', 'The prompt carries the relevant code — paste it into ChatGPT, Claude or Ollama.')} <kbd>Ctrl</kbd>+<kbd>K</kbd> ${t('pour écrire', 'to focus')} · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> ${t('pour générer', 'to build')}</div>
 </div>
+<div id="impactBar" class="ibar hidden"><span class="lbl">${IC.impact} ${t('Fichier à analyser', 'File to analyse')}</span><div class="irow"><input type="text" id="ifile" list="fileList" placeholder="src/store.ts" autocomplete="off"><datalist id="fileList"></datalist><button class="act go" id="igo">${IC.play}${t('Analyser', 'Analyze')}</button></div><div class="chips" id="chgChips"></div></div>
 <div id="promptOut" class="hidden"><div class="prompthd"><h2>Prompt</h2><button id="copyBtn" class="act" style="width:auto">${IC.copy}${t('Copier', 'Copy')}</button></div><pre id="promptPre" class="big"></pre></div>
 <div id="out"><div class="skel"><i></i><i></i><i></i><i></i></div></div>
 </div>
@@ -304,12 +306,12 @@ function enhanceCheck(j) {
 function setActive(url) {
   document.querySelectorAll('button.act[data-a]').forEach(b => b.classList.toggle('on', url.includes('/api/' + b.dataset.a)));
 }
-const impactBox = document.getElementById('impactBox');
+const impactBox = document.getElementById('impactBar');
 const runImpact = (f, push = true) => call('/api/impact?file=' + encodeURIComponent(f) + qp(), push ? { view: 'impact', file: f } : undefined);
 document.querySelectorAll('button.act[data-a]').forEach(b => b.onclick = () => {
   const a = b.dataset.a;
   impactBox.classList.toggle('hidden', a !== 'impact');
-  if (a === 'impact') { loadFiles(); loadChanged(); }
+  if (a === 'impact') { loadFiles(); loadChanged(); setActive('/api/impact'); }
   if (a === 'check') call('/api/check?x=1' + qp(), { view: 'check' });
   if (a === 'audit') call('/api/audit?x=1' + qp(), { view: 'audit' });
   if (a === 'health') call('/api/health?x=1' + qp(), { view: 'health' });
@@ -366,24 +368,15 @@ document.getElementById('igo').onclick = () => {
   const f = document.getElementById('ifile').value.trim();
   if (f) runImpact(f);
 };
-// Prompt generator
-document.getElementById('gen').onclick = async () => {
-  const mode = document.getElementById('mode').value, q = document.getElementById('q').value;
-  const r = await fetch('/api/prompt?mode=' + mode + '&q=' + encodeURIComponent(q) + qp());
-  const j = await r.json();
-  document.getElementById('promptOut').classList.remove('hidden');
-  document.getElementById('promptPre').textContent = j.prompt || j.error;
-  document.getElementById('promptOut').scrollIntoView({ behavior: 'smooth' });
-};
-document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('gen').click(); });
-// Big ask card — same prompt pipeline, mode chat
+// Ask card — the single prompt builder (mode select lives inside it)
 document.getElementById('askBtn').onclick = async () => {
   const q = document.getElementById('ask').value.trim();
   if (!q) return;
+  const mode = document.getElementById('mode').value;
   document.getElementById('promptPre').textContent = '${t('assemblage du contexte…', 'assembling context…')}';
   document.getElementById('promptOut').classList.remove('hidden');
   document.getElementById('promptOut').scrollIntoView({ behavior: 'smooth' });
-  const r = await fetch('/api/prompt?mode=chat&q=' + encodeURIComponent(q) + qp());
+  const r = await fetch('/api/prompt?mode=' + mode + '&q=' + encodeURIComponent(q) + qp());
   const j = await r.json();
   document.getElementById('promptPre').textContent = j.prompt || j.error;
 };
@@ -416,7 +409,7 @@ document.getElementById('pset').onclick = () => {
   if (v) { setProj(v); call('/api/audit?x=1' + qp(), { view: 'audit' }); }
 };
 // Copy / downloads / view
-const flash = (el, txt) => { const old = el.textContent; el.textContent = txt; setTimeout(() => el.textContent = old, 1500); };
+const flash = (el, txt) => { const old = el.innerHTML; el.textContent = txt; setTimeout(() => { el.innerHTML = old; }, 1500); };
 document.getElementById('copyBtn').onclick = e => { navigator.clipboard.writeText(document.getElementById('promptPre').textContent); flash(e.target, '${t('Copié ✓', 'Copied ✓')}'); };
 document.getElementById('copyMd').onclick = e => { if (curMd) { navigator.clipboard.writeText(curMd); flash(e.target, '${t('Copié ✓', 'Copied ✓')}'); } };
 const dl = (name, content, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name; a.click(); };
@@ -493,7 +486,7 @@ function route() {
   const v = p.get('view') || 'audit', f = (p.get('file') || '').trim();
   impactBox.classList.toggle('hidden', v !== 'impact');
   if (v === 'impact') {
-    loadFiles(); loadChanged();
+    loadFiles(); loadChanged(); setActive('/api/impact');
     if (f) { runImpact(f, false); return; }
   }
   call('/api/' + (['health', 'stats', 'check'].includes(v) ? v : 'audit') + '?x=1' + qp());
