@@ -138,7 +138,7 @@ Same thing from an IDE: `/codebase check [ref]` and `/codebase doctor` (MCP tool
 | `codebase_impact` | `codebase_deep_audit` | | |
 | `codebase_check` | `codebase_doctor` | | |
 
-Five tools run **fully deterministic — no model, no key, works offline**: `codebase_health`, `codebase_impact`, `codebase_check` (changes vs a git ref, diffed vs `.codebase-chat/baseline.json`), `codebase_doctor` (install diagnostic), and `codebase_deep_audit` (~30 analyses: git churn, bus factor, secrets, deps, per-function complexity).
+Five tools run **fully deterministic — no model, no key, works offline**: `codebase_health`, `codebase_impact`, `codebase_check` (changes vs a git ref, diffed vs `.codebase-chat/baseline.json`), `codebase_doctor` (install diagnostic), and `codebase_deep_audit` (9 sections, ~30 metrics: git churn, bus factor, secrets, deps, per-function complexity).
 
 Same engine, three surfaces: **MCP tools** in your IDE, **slash commands** in DeepSeek Harness, **CLI flags** anywhere. Every tool takes `lang` (`fr`/`en`), `embed`, `promptOnly`, `maxTokens`.
 

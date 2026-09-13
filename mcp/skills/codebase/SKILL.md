@@ -61,7 +61,7 @@ Robustesse :
 |---|---|
 | `/codebase check [ref]` | Fichiers modifiés vs `ref` (défaut `HEAD`) : risque d'impact, complexité, test dédié, findings par fichier, **delta vs baseline** (nouveaux/résolus/inchangés). Verdict 🟢/🟡/🔴. |
 | `/codebase doctor` | Diagnostic d'installation : version Node, état de l'index, clés LLM (jamais affichées), tree-sitter, baseline, intégrations détectées. À lancer en premier en cas de doute. |
-| `/codebase deep_audit` | Audit complet ~30 analyses (structure, sécurité, dette, duplication, git…) — 100 % local. |
+| `/codebase deep_audit` | Audit complet — 9 sections, ~30 métriques (structure, sécurité, dette, duplication, git…) — 100 % local. |
 | `/codebase health` | Santé : cycles, dead code, duplication, hotspots, priorités triées par sévérité. |
 | `/codebase impact <fichier>` | Rayon d'impact : qui importe le fichier, qui casse s'il change. |
 
