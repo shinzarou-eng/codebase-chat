@@ -412,7 +412,7 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
           `<tr><td>${esc(w.model)}</td><td>${fmt(w.window)}</td><td><span class="sev ${w.fits ? 'sev-ok' : 'sev-crit'}">${w.fits ? tt('tient', 'fits') : tt('dépasse', 'exceeds')}</span></td><td><div class="fitbar"><i style="width:${Math.min(w.usedPct, 100)}%"></i></div><span class="dim-s">${w.usedPct}%</span></td></tr>`).join('');
         const costRows = s.costs.map(c =>
           `<tr><td>${esc(c.label)}</td><td>${c.free ? 'local' : `$${c.priceIn}/$${c.priceOut}`}</td><td>${c.free ? `<span class="sev sev-ok">${tt('gratuit', 'free')}</span>` : `~${fmtCost(c.estCost)}`}</td><td class="dim-s">${esc(c.context ?? '')}</td></tr>`).join('');
-        const fileRows = s.topFiles.map(f => `<tr><td><code>${esc(f.path)}</code></td><td>${fmt(f.tokens)}</td></tr>`).join('');
+        const fileRows = s.topFiles.map(f => `<tr><td><a class="fref" data-f="${esc(f.path)}" href="#"><code>${esc(f.path)}</code></a></td><td>${fmt(f.tokens)}</td></tr>`).join('');
         const extRows = s.topExts.map(e => `<tr><td><code>${esc(e.ext)}</code></td><td>${e.count}</td></tr>`).join('');
         const body = `<section id="stats"><h2>${tt('Statistiques du projet', 'Project statistics')}</h2>
 <div class="kpis">${kpi(String(s.files), tt('fichiers indexés', 'indexed files'))}${kpi(String(s.chunks), 'chunks')}${kpi(fmt(s.terms), tt('termes dans l\'index', 'index terms'))}${kpi(mb, tt('taille totale', 'total size'))}${kpi(fmt(s.o200k), 'tokens o200k')}${kpi(fmt(s.cl100k), 'tokens cl100k')}</div>
@@ -425,7 +425,7 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
 <h3>${tt('Coût estimé par appel (--call)', 'Estimated cost per call (--call)')}</h3>
 <p class="dim-s">${tt(`Chaque appel envoie ≈${fmt(CALL_INPUT_TOKENS)} tokens d'entrée (budget retrieval) + ≤${fmt(CALL_OUTPUT_TOKENS)} tokens de sortie. Tarifs catalogue sept. 2026 — le cache, le batch et les prix d'intro changent la facture réelle.`, `Each call sends ≈${fmt(CALL_INPUT_TOKENS)} input tokens (retrieval budget) + ≤${fmt(CALL_OUTPUT_TOKENS)} output tokens. Sept 2026 list prices — caching, batch and intro tiers change the real bill.`)}</p>
 <table><tr><th>${tt('Modèle', 'Model')}</th><th>${tt('Prix $/M (in/out)', 'Price $/M (in/out)')}</th><th>${tt('Coût/appel', 'Cost/call')}</th><th>${tt('Contexte', 'Context')}</th></tr>${costRows}</table>
-<h3>${tt('Fichiers les plus lourds (tokens)', 'Heaviest files (tokens)')}</h3>
+<h3>${tt('Fichiers les plus lourds — cliquer pour l\u2019impact', 'Heaviest files — click for impact')}</h3>
 <table><tr><th>${tt('Fichier', 'File')}</th><th>Tokens</th></tr>${fileRows}</table>
 <h3>${tt('Fichiers par extension', 'Files by extension')}</h3>
 <table><tr><th>Ext</th><th>${tt('Fichiers', 'Files')}</th></tr>${extRows}</table>
