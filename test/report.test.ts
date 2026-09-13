@@ -137,6 +137,19 @@ describe('renderAuditMd', () => {
       expect(renderAuditMd(d1, 'fr')).toBe(renderAuditMd(d2, 'fr'));
     } finally { cleanup(); }
   });
+
+  it('memoizes repeat calls by file signature — and refreshes on any edit', async () => {
+    const { dir, cleanup } = makeRepo();
+    try {
+      const d1 = await collectAudit(dir);
+      const d2 = await collectAudit(dir);
+      expect(d2).toBe(d1); // same signature → same cached object, no re-read
+      writeFileSync(join(dir, 'src', 'e.ts'), `export const fresh = 42;\n`);
+      const d3 = await collectAudit(dir);
+      expect(d3).not.toBe(d1);
+      expect(Object.keys(d3.index.files)).toContain('src/e.ts');
+    } finally { cleanup(); }
+  });
 });
 
 describe('known traps', () => {

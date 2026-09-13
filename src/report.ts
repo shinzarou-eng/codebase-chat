@@ -6,7 +6,8 @@ import { basename, extname, join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { getIndex } from './indexer.js';
-import { analyzeProject, collectImportGraph, formatHealthReportMd, insideString, isSkippablePath, isTestPath, lineStartsInString, looksLikeEntry } from './analysis.js';
+import { findProjectRoot, resolveProjectPath } from './project.js';
+import { analyzeGraph, collectImportGraph, formatHealthReportMd, insideString, isSkippablePath, isTestPath, lineStartsInString, looksLikeEntry, projectSignature } from './analysis.js';
 import { recommendations } from './recommendations.js';
 import type { Reco } from './recommendations.js';
 
@@ -458,13 +459,23 @@ export function hasDedicatedTest(testBases: Set<string>, file: string): boolean 
   return testBases.has(basename(file).replace(/\.[^.]+$/, '').toLowerCase());
 }
 
+// Repeat calls from long-lived processes (MCP server, dashboard, DSH plugin)
+// memoize on the file-set signature — same files ⇒ same audit. The 10s TTL
+// covers what stats can't see (a new git commit, a regenerated file).
+const AUDIT_TTL_MS = 10_000;
+const auditCache = new Map<string, { sig: string; at: number; data: AuditData }>();
+
 /** All deterministic audit computations — no rendering, no language. */
 export async function collectAudit(projectPath: string): Promise<AuditData> {
-  const [index, graph, health] = await Promise.all([
-    getIndex(projectPath),
-    collectImportGraph(projectPath),
-    analyzeProject(projectPath),
+  const abs = await findProjectRoot(resolveProjectPath(projectPath));
+  const sig = await projectSignature(abs);
+  const hit = auditCache.get(abs);
+  if (hit && hit.sig === sig && Date.now() - hit.at < AUDIT_TTL_MS) return hit.data;
+  const [index, graph] = await Promise.all([
+    getIndex(abs),
+    collectImportGraph(abs),
   ]);
+  const health = await analyzeGraph(graph);
   const name = basename(health.projectPath);
 
   let pkg: Record<string, any> = {};
@@ -552,7 +563,9 @@ export async function collectAudit(projectPath: string): Promise<AuditData> {
         .sort((a, b) => b[1] - a[1]).slice(0, 8)
     : [];
 
-  return { index, graph, health, name, pkg, langs, deps, devDeps, scripts, symbols, hubs, entryPoints, leaves, testFiles, srcFiles, testRatio, largest, docs, smells, sec, secTotals, hasTests, git, infra, env, deadDeps, missing, lockDrift, fnComplex, dupNames, asyncNoAwait, maxDepth, cfg, longFns, brokenEntries, deepRel, shape, readme, commitQ, typedFiles, typedPct, staleHubs, sensitive, docCov, docPct, riskFiles, untestedRisk, testBases, topChurn };
+  const data = { index, graph, health, name, pkg, langs, deps, devDeps, scripts, symbols, hubs, entryPoints, leaves, testFiles, srcFiles, testRatio, largest, docs, smells, sec, secTotals, hasTests, git, infra, env, deadDeps, missing, lockDrift, fnComplex, dupNames, asyncNoAwait, maxDepth, cfg, longFns, brokenEntries, deepRel, shape, readme, commitQ, typedFiles, typedPct, staleHubs, sensitive, docCov, docPct, riskFiles, untestedRisk, testBases, topChurn };
+  auditCache.set(graph.abs, { sig, at: Date.now(), data });
+  return data;
 }
 
 export function renderAuditMd(data: AuditData, lang: 'fr' | 'en' = 'fr'): string {

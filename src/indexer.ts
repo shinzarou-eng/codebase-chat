@@ -108,6 +108,15 @@ export async function buildIndex(projectPath: string, progress?: (message: strin
   const startDir = absProject;
   const previous = await loadIndex(absProject);
   const previousFiles = previous?.projectPath === absProject ? previous.files : {};
+
+  // Chunks that survive a file edit keep their content → reuse their measured
+  // tokens and (expensive) embeddings instead of recomputing both.
+  const prevByContent = new Map<string, { tokens: number; embedding?: number[] }>();
+  for (const f of Object.values(previousFiles)) {
+    for (const c of f.chunks) {
+      prevByContent.set(c.content, { tokens: c.tokens, embedding: c.embedding });
+    }
+  }
   const files: Record<string, IndexedFile> = {};
   let totalTokens = 0;
   let reused = 0;
@@ -136,11 +145,15 @@ export async function buildIndex(projectPath: string, progress?: (message: strin
     const ext = relPath.slice(relPath.lastIndexOf('.')).toLowerCase();
     await ensureTreeSitterForExt(ext);
 
-    const chunks = extractChunks(relPath, text).map(chunk => ({
-      ...chunk,
-      // recompute tokens to be safe
-      tokens: countTokens(chunk.content),
-    }));
+    const chunks = extractChunks(relPath, text).map(chunk => {
+      const prev = prevByContent.get(chunk.content);
+      return {
+        ...chunk,
+        // unchanged chunk → reuse tokens (and embedding) measured before
+        tokens: prev?.tokens ?? countTokens(chunk.content),
+        ...(prev?.embedding ? { embedding: prev.embedding } : {}),
+      };
+    });
 
     totalTokens += chunks.reduce((sum, c) => sum + c.tokens, 0);
 
@@ -176,21 +189,17 @@ export async function getIndex(projectPath: string, progress?: (message: string)
   const absProject = await findProjectRoot(resolved);
   const existing = force ? null : await loadIndex(resolved);
   if (existing && existing.projectPath === absProject) {
-    // Fast freshness check: mtime + size only, no file reads.
+    // Fast freshness check: mtime + size only, no file reads — parallel stats.
     let stale = false;
-    for (const file of Object.values(existing.files)) {
-      const fullPath = join(absProject, file.relPath);
+    await Promise.all(Object.values(existing.files).map(async file => {
+      if (stale) return;
       try {
-        const fstats = await stat(fullPath);
-        if (fstats.mtimeMs !== file.mtimeMs || fstats.size !== file.size) {
-          stale = true;
-          break;
-        }
+        const fstats = await stat(join(absProject, file.relPath));
+        if (fstats.mtimeMs !== file.mtimeMs || fstats.size !== file.size) stale = true;
       } catch {
         stale = true;
-        break;
       }
-    }
+    }));
     if (!stale) {
       // Same walk as buildIndex: catch files added or deleted since indexing.
       const walk = await getWalkOptions(absProject);

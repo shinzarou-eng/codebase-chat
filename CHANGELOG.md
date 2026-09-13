@@ -16,6 +16,13 @@
 - New deterministic tools: `codebase_check`, `codebase_doctor`, `codebase_deep_audit`, `codebase_ignore`.
 - `collectCodebaseContext` delegates to the shared `buildContext` engine (symbol-chunk retrieval + real token budget) when `dist/` is built — same context quality as CLI/MCP; the byte-walker stays as the unbuilt-checkout fallback.
 
+**Performance**
+
+- `collectAudit` and `analyzeProject` are memoized per process on a stat-only file signature (10s TTL) — repeat MCP/dashboard/plugin calls go from ~400ms to ~7ms.
+- `collectAudit` no longer walks+reads the project twice (analyzeProject re-ran the import-graph collection internally).
+- `collectImportGraph` reads files in parallel; `getIndex` freshness stats run in parallel.
+- `buildIndex` reuses token counts and embeddings for chunks whose content survived a file edit (was: whole file re-tokenized).
+
 ## Unreleased — local dashboard & token stats
 
 **New**

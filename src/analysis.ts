@@ -1,5 +1,6 @@
 import { basename, extname, join, relative, sep, posix as posixPath } from 'node:path';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { findProjectRoot, getWalkOptions, resolveProjectPath, safeReadText, walkFiles } from './project.js';
 
 export const CODE_EXTS = new Set(['.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx']);
@@ -240,14 +241,20 @@ export async function collectImportGraph(projectPath: string): Promise<ImportGra
   const codeFiles: string[] = [];
   const walk = await getWalkOptions(abs);
 
+  const candidates: string[] = [];
   for await (const full of walkFiles(abs, walk.skipDirs, walk.skipFiles, walk.ignoreGlobs)) {
     const rel = relative(abs, full).split(sep).join('/');
     const ext = extname(rel).toLowerCase();
     if (!CODE_EXTS.has(ext) || SKIP_EXTS.has(ext) || rel.includes('.min.')) continue;
-    const text = await safeReadText(full);
+    candidates.push(rel);
+  }
+  // Reads are I/O-bound — run them in parallel, order preserved.
+  const texts = await Promise.all(candidates.map(rel => safeReadText(join(abs, rel))));
+  for (let i = 0; i < candidates.length; i++) {
+    const text = texts[i];
     if (!text) continue;
-    codeFiles.push(rel);
-    fileTexts.set(rel, text);
+    codeFiles.push(candidates[i]);
+    fileTexts.set(candidates[i], text);
   }
 
   const known = new Set(codeFiles);
@@ -262,8 +269,42 @@ export async function collectImportGraph(projectPath: string): Promise<ImportGra
   return { abs, codeFiles, fileTexts, edges, inDegree };
 }
 
+/** Content signature of the walked file set — stats only, zero file reads.
+ *  Used to memoize analyses: same signature ⇒ same files ⇒ same result. */
+export async function projectSignature(abs: string): Promise<string> {
+  const walk = await getWalkOptions(abs);
+  const parts: string[] = [];
+  for await (const full of walkFiles(abs, walk.skipDirs, walk.skipFiles, walk.ignoreGlobs)) {
+    try {
+      const s = await stat(full);
+      parts.push(`${relative(abs, full).split(sep).join('/')}|${s.mtimeMs}|${s.size}`);
+    } catch { /* vanished mid-walk */ }
+  }
+  parts.sort();
+  return createHash('sha1').update(parts.join('\n')).digest('hex');
+}
+
 export async function analyzeProject(projectPath: string, opts: AnalyzeOptions = {}): Promise<HealthReport> {
-  const { abs, codeFiles, fileTexts, edges, inDegree } = await collectImportGraph(projectPath);
+  // Scoped runs (--diff) are rarer and cheaper — skip the memo.
+  if (opts.files) {
+    return analyzeGraph(await collectImportGraph(projectPath), opts);
+  }
+  const abs = await findProjectRoot(resolveProjectPath(projectPath));
+  const sig = await projectSignature(abs);
+  const hit = healthCache.get(abs);
+  if (hit && hit.sig === sig && Date.now() - hit.at < ANALYSIS_TTL_MS) return hit.report;
+  const report = await analyzeGraph(await collectImportGraph(projectPath), opts);
+  healthCache.set(abs, { sig, at: Date.now(), report });
+  return report;
+}
+
+const ANALYSIS_TTL_MS = 10_000;
+const healthCache = new Map<string, { sig: string; at: number; report: HealthReport }>();
+
+/** The analysis itself, on an already-collected import graph. Exported so
+ *  callers that need the graph too (collectAudit) don't walk the tree twice. */
+export async function analyzeGraph(graph: ImportGraph, opts: AnalyzeOptions = {}): Promise<HealthReport> {
+  const { abs, codeFiles, fileTexts, edges, inDegree } = graph;
   const scope = opts.files;
   const scopedFiles = scope ? codeFiles.filter(f => scope.has(f)) : codeFiles;
 
@@ -290,9 +331,8 @@ export async function analyzeProject(projectPath: string, opts: AnalyzeOptions =
     idsPerLineByFile.set(file, text.split('\n').map(l => new Set(l.match(IDENT_RE) ?? [])));
   }
   const unusedExports: UnusedExport[] = [];
-  const TEST_FILE = /(^|\/)(tests?|__tests__|fixtures?)(\/|$)|\.(test|spec)\.[cm]?[jt]sx?$/i;
   for (const rel of scopedFiles) {
-    if (TEST_FILE.test(rel)) continue; // test files export fixtures — executed, not imported
+    if (isTestPath(rel)) continue; // test files export fixtures — executed, not imported
     const ownLines = idsPerLineByFile.get(rel)!;
     const text = fileTexts.get(rel)!;
     const textLines = text.split('\n');
