@@ -34,6 +34,7 @@
     "index.mjs",
     "setup.mjs",
     "commands/",
+    "skills/",
     "README.md",
     "package.json"
   ],
