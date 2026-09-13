@@ -55,7 +55,7 @@ const SEC_PATS: [string, RegExp][] = [
 
 export function scanCode(
   fileTexts: Map<string, string>, pats: [string, RegExp][], perFileCap = 3,
-  opts: { skipComments?: boolean; skipStrings?: boolean } = {},
+  opts: { skipComments?: boolean; skipStrings?: boolean; totals?: Record<string, number> } = {},
 ): SmellScan {
   const out: SmellScan = {};
   for (const [file, text] of fileTexts) {
@@ -68,7 +68,7 @@ export function scanCode(
     for (const [key, re] of pats) {
       if (isCli && (key === 'console' || key === 'syncIo')) continue;
       let found = 0;
-      for (let i = 0; i < lines.length && found < perFileCap; i++) {
+      for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         // Comments mentioning `shell: true` or `eval(` are not sinks.
         if (opts.skipComments && (/^\/\//.test(line) || /^\* /.test(line) || /^\/\*/.test(line))) continue;
@@ -78,6 +78,8 @@ export function scanCode(
         const m = re.exec(lines[i]);
         if (!m) continue;
         if (opts.skipStrings && (startsInStr[i] || insideString(lines[i], m.index))) continue;
+        if (opts.totals) opts.totals[key] = (opts.totals[key] ?? 0) + 1;
+        if (found >= perFileCap) continue;
         (out[key] ??= []).push({ file, line: i + 1, sample: line.slice(0, 90) });
         found++;
       }
@@ -99,7 +101,7 @@ async function gitActivity(abs: string): Promise<GitStats | null> {
     const { stdout } = await run('git', [
       '-C', abs, 'log', '--numstat', '--format=@@@%an|%ad|%s', '--date=short', '-n', '400',
     ], { maxBuffer: 32 * 1024 * 1024 });
-    const stats: GitStats = { commits: 0, authors: new Map(), lastDate: '', churn: new Map(), fileAuthors: new Map(), months: new Map(), sensitiveTracked: [], fileLastCommit: new Map(), subjects: [], commitSizes: [] };
+    const stats: GitStats = { commits: 0, authors: new Map(), lastDate: '', churn: new Map(), fileCommits: new Map(), fileAuthors: new Map(), months: new Map(), sensitiveTracked: [], fileLastCommit: new Map(), subjects: [], commitSizes: [] };
     let author = '';
     let date = '';
     let curFiles = 0, curLines = 0;
@@ -125,6 +127,7 @@ async function gitActivity(abs: string): Promise<GitStats | null> {
       curFiles++;
       curLines += delta;
       stats.churn.set(file, (stats.churn.get(file) ?? 0) + delta);
+      stats.fileCommits.set(file, (stats.fileCommits.get(file) ?? 0) + 1);
       if (!stats.fileLastCommit.has(file) && date) stats.fileLastCommit.set(file, date);
       if (author) (stats.fileAuthors.get(file) ?? stats.fileAuthors.set(file, new Set()).get(file)!).add(author);
     }
@@ -250,13 +253,19 @@ function codeShape(fileTexts: Map<string, string>) {
   for (const [file, text] of fileTexts) {
     if (/test|spec|__tests__|\.d\.ts$/i.test(file)) continue;
     let maxDepth = 0, inBlock = false;
-    for (const line of text.split('\n')) {
+    // Lines inside template literals (help text, HTML, embedded SQL…) are not
+    // code — their indentation must not count toward nesting depth.
+    const startsInStr = lineStartsInString(text);
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       const t = line.trim();
       if (!t) continue;
       codeLines++;
       if (inBlock) { commentLines++; if (t.includes('*/')) inBlock = false; continue; }
       if (t.startsWith('//') || t.startsWith('*')) { commentLines++; continue; }
       if (t.startsWith('/*')) { commentLines++; if (!t.includes('*/')) inBlock = true; continue; }
+      if (startsInStr[i]) continue;
       const indent = line.match(/^[\t ]*/)![0];
       const depth = indent.replace(/\t/g, '    ').length / 4;
       if (depth > maxDepth) maxDepth = depth;
@@ -484,7 +493,8 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   const docs = ['readme.md', 'license', 'license.md', 'changelog.md', 'contributing.md', 'security.md', 'agents.md']
     .filter(d => indexPaths.has(d));
   const smells = scanCode(graph.fileTexts, SMELL_PATS, 3, { skipStrings: true });
-  const sec = scanCode(graph.fileTexts, SEC_PATS, 5, { skipComments: true });
+  const secTotals: Record<string, number> = {};
+  const sec = scanCode(graph.fileTexts, SEC_PATS, 5, { skipComments: true, totals: secTotals });
   const hasTests = testFiles.length > 0;
   const git = await gitActivity(health.projectPath);
   const infra = detectInfra(indexPaths);
@@ -527,7 +537,7 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   const riskFiles = git
     ? [...git.churn.entries()]
         .filter(([f]) => complexityByFile.has(f))
-        .map(([file, churn]) => ({ file, churn, score: complexityByFile.get(file)! }))
+        .map(([file, churn]) => ({ file, churn, commits: git.fileCommits.get(file) ?? 0, score: complexityByFile.get(file)! }))
         .sort((a, b) => b.churn * b.score - a.churn * a.score)
         .slice(0, 5)
     : [];
@@ -607,7 +617,7 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   out.push(`**${bar(health.score)} ${health.score}/100 (${health.grade})** — ${t.verdict(health.grade)}`);
   out.push('');
   out.push(`- ${health.analyzedFiles} ${en ? 'code files' : 'fichiers de code'} · ${symbols} ${t.syms} · ${health.importEdges} ${en ? 'local imports' : 'imports locaux'} · ${leaves} ${t.leaves}`);
-  out.push(`- ${testFiles.length} ${en ? 'test files' : 'fichiers de test'} (${testRatio}% ${t.tests}) · ${countHits(smells)} ${en ? 'smell hits' : 'smells détectés'} · ${countHits(sec)} ${en ? 'security signals' : 'signaux sécurité'}`);
+  out.push(`- ${testFiles.length} ${en ? 'test files' : 'fichiers de test'} (${testRatio}% ${t.tests}) · ${countHits(smells)} ${en ? 'smell hits' : 'smells détectés'} · ${Object.values(secTotals).reduce((a, b) => a + b, 0)} ${en ? 'security signals' : 'signaux sécurité'}`);
   out.push(`- ${docCov.documented}/${docCov.total} ${en ? 'exports documented' : 'exports documentés'} (${docPct}% ${t.docCov})`);
   if (git) out.push(`- ${git.commits} ${t.gitCommits} · ${git.authors.size} ${en ? 'author(s)' : 'auteur(s)'} · ${t.gitLast} : ${git.lastDate}`);
   out.push('');
@@ -757,7 +767,7 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   out.push(`## ${secN++}. ${t.reco}`, '');
   out.push(`| ${t.sev} | ${t.action} |`, '|---|---|');
   const SEV_ICON: Record<Reco['severity'], string> = { Critique: '🔴', 'Élevée': '🟠', Moyenne: '🟡', Faible: '🔵' };
-  for (const r of recommendations(health, hasTests, smells, sec, git, infra, riskFiles, { sensitive, envUndoc: env.undocumented, deadDeps, tsStrict: cfg.tsStrict, untestedRisk: untestedRisk.map(r => r.file), brokenEntries, deepRel: deepRel.length, deepNest: shape.deepNest.map(d => d.file), commitConv: commitQ?.conventionalPct ?? null, missingDeps: missing, lockDrift }, lang)) out.push(`| ${SEV_ICON[r.severity]} ${r.severity} | ${r.text} |`);
+  for (const r of recommendations(health, hasTests, smells, sec, git, infra, riskFiles, { sensitive, envUndoc: env.undocumented, deadDeps, tsStrict: cfg.tsStrict, untestedRisk: untestedRisk.map(r => r.file), brokenEntries, deepRel: deepRel.length, deepNest: shape.deepNest.map(d => d.file), commitConv: commitQ?.conventionalPct ?? null, missingDeps: missing, lockDrift, secTotals }, lang)) out.push(`| ${SEV_ICON[r.severity]} ${r.severity} | ${r.text} |`);
   out.push('');
   out.push('---');
   out.push(`_${en ? 'Made with passion by shinzarou-eng' : 'Fait avec passion par shinzarou-eng'} — dsh-codebase-chat · ${en ? 'deterministic mode' : 'mode déterministe'}_`);

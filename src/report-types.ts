@@ -10,6 +10,8 @@ export interface GitStats {
   lastDate: string;
   /** file -> total added+deleted lines across history */
   churn: Map<string, number>;
+  /** file -> commit count touching it */
+  fileCommits: Map<string, number>;
   /** file -> distinct authors */
   fileAuthors: Map<string, Set<string>>;
   /** YYYY-MM -> commit count (activity timeline) */

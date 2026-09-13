@@ -2,7 +2,7 @@
 // every finding already collected by report.ts scanners. Extracted so it can be
 // unit-tested without running the whole audit.
 import type { HealthReport } from './analysis.js';
-import type { GitStats, SmellScan } from './report-types.js';
+import type { Finding, GitStats, SmellScan } from './report-types.js';
 
 export interface Reco { severity: 'Critique' | 'Élevée' | 'Moyenne' | 'Faible'; text: string; }
 
@@ -10,9 +10,11 @@ export interface RecoExtras {
   sensitive: string[]; envUndoc: string[]; deadDeps: string[]; tsStrict: boolean | null;
   untestedRisk: string[]; brokenEntries: string[]; deepRel: number; deepNest: string[];
   commitConv: number | null; missingDeps: string[]; lockDrift: string[];
+  /** True hit counts per sink kind (uncapped) — samples in `sec` are per-file capped */
+  secTotals?: Record<string, number>;
 }
 
-export function recommendations(r: HealthReport, hasTests: boolean, smells: SmellScan, sec: SmellScan, git: GitStats | null, infra: string[], riskFiles: { file: string; churn: number; score: number }[], extras: RecoExtras, lang: 'fr' | 'en'): Reco[] {
+export function recommendations(r: HealthReport, hasTests: boolean, smells: SmellScan, sec: SmellScan, git: GitStats | null, infra: string[], riskFiles: { file: string; churn: number; commits?: number; score: number }[], extras: RecoExtras, lang: 'fr' | 'en'): Reco[] {
   const en = lang === 'en';
   const out: Reco[] = [];
   if (extras.missingDeps.length) out.push({
@@ -40,20 +42,35 @@ export function recommendations(r: HealthReport, hasTests: boolean, smells: Smel
       : `${sec.secret.length} secret${sec.secret.length > 1 ? 's' : ''} potentiellement codé${sec.secret.length > 1 ? 's' : ''} en dur — ex. \`${sec.secret[0].file}:${sec.secret[0].line}\`. Déplacer en variables d'env, révoquer si déjà commité.`,
   });
   if (sec.eval?.length || sec.exec?.length || sec.innerHTML?.length) {
-    const f = [...(sec.eval ?? []), ...(sec.exec ?? []), ...(sec.innerHTML ?? [])][0];
+    const detected = [['eval', sec.eval], ['exec', sec.exec], ['innerHTML', sec.innerHTML]]
+      .filter(([, v]) => (v as Finding[] | undefined)?.length) as [string, Finding[]][];
+    const kinds = detected.map(([k]) => k).join('/');
+    const all = detected.flatMap(([, v]) => v);
+    const f = all[0];
+    const onlyMarkup = !sec.eval?.length && !sec.exec?.length;
+    const n = extras.secTotals
+      ? detected.reduce((s, [k]) => s + (extras.secTotals![k] ?? 0), 0)
+      : all.length;
+    const fileCount = new Set(all.map(x => x.file)).size;
+    out.push({
+      // innerHTML alone is a review item, not an alarm — eval/exec can execute
+      // injected code directly, innerHTML needs an unescaped injection surface.
+      severity: onlyMarkup ? 'Moyenne' : 'Élevée',
+      text: en
+        ? `${n} ${kinds} sink${n > 1 ? 's' : ''} across ${fileCount} file${fileCount > 1 ? 's' : ''} — e.g. \`${f.file}:${f.line}\`. ${onlyMarkup ? 'Verify every interpolated value is escaped.' : 'Audit each call site.'}`
+        : `${n} sink${n > 1 ? 's' : ''} ${kinds} dans ${fileCount} fichier${fileCount > 1 ? 's' : ''} — ex. \`${f.file}:${f.line}\`. ${onlyMarkup ? 'Vérifier que chaque valeur interpolée est échappée.' : 'Auditer chaque site d\'appel.'}`,
+    });
+  }
+  if (riskFiles.length) {
+    const top = riskFiles[0];
+    const commitInfo = top.commits ? (en ? ` across ${top.commits} commits` : ` sur ${top.commits} commits`) : '';
     out.push({
       severity: 'Élevée',
       text: en
-        ? `Dangerous sinks detected (eval/exec/innerHTML) — e.g. \`${f.file}:${f.line}\`. Audit each call site.`
-        : `Sinks dangereux détectés (eval/exec/innerHTML) — ex. \`${f.file}:${f.line}\`. Auditer chaque site d'appel.`,
+        ? `\`${top.file}\` changes constantly AND is complex (${top.churn} lines churned${commitInfo}, complexity ${top.score})${extras.untestedRisk.includes(top.file) ? ' and has no dedicated test' : ''} — the classic defect magnet. Split it into focused modules and cover it with tests before touching it.`
+        : `\`${top.file}\` est remanié souvent ET est complexe (${top.churn} lignes modifiées${commitInfo}, complexité ${top.score})${extras.untestedRisk.includes(top.file) ? ' et n’a pas de test dédié' : ''} — l'aimant à bugs classique. Le découper en modules ciblés et le couvrir de tests avant d'y toucher.`,
     });
   }
-  if (riskFiles.length) out.push({
-    severity: 'Élevée',
-    text: en
-      ? `\`${riskFiles[0].file}\` changes constantly AND is complex (churn ${riskFiles[0].churn}, complexity ${riskFiles[0].score})${extras.untestedRisk.includes(riskFiles[0].file) ? ' and has no dedicated test' : ''} — the classic defect magnet. Cover it with tests before touching it.`
-      : `\`${riskFiles[0].file}\` change sans cesse ET est complexe (churn ${riskFiles[0].churn}, complexité ${riskFiles[0].score})${extras.untestedRisk.includes(riskFiles[0].file) ? ' et n’a pas de test dédié' : ''} — l'aimant à bugs classique. Couvrir de tests avant d'y toucher.`,
-  });
   if (extras.envUndoc.length) out.push({
     severity: 'Moyenne',
     text: en
@@ -97,11 +114,17 @@ export function recommendations(r: HealthReport, hasTests: boolean, smells: Smel
   if (git && git.fileAuthors.size) {
     const soloHubs = riskFiles.filter(f => (git.fileAuthors.get(f.file)?.size ?? 0) <= 1);
     const solo = [...git.fileAuthors.entries()].filter(([, a]) => a.size === 1).length;
+    const loneAuthor = git.authors.size <= 1;
     if (soloHubs.length || (git.churn.size && solo / git.fileAuthors.size > 0.7)) out.push({
-      severity: 'Moyenne',
-      text: en
-        ? `Bus factor: ${solo} file${solo > 1 ? 's' : ''} touched by a single author${soloHubs.length ? `, including hot \`${soloHubs[0].file}\`` : ''} — spread knowledge via reviews/pairing.`
-        : `Bus factor : ${solo} fichier${solo > 1 ? 's' : ''} touché${solo > 1 ? 's' : ''} par un seul auteur${soloHubs.length ? `, dont le chaud \`${soloHubs[0].file}\`` : ''} — diffuser la connaissance via reviews/pairing.`,
+      // One author total: "spread knowledge" is impossible — document instead.
+      severity: loneAuthor ? 'Faible' : 'Moyenne',
+      text: loneAuthor
+        ? (en
+          ? `Solo project: all ${solo} file${solo > 1 ? 's' : ''} known by one author${soloHubs.length ? ` — document the hot zones (e.g. \`${soloHubs[0].file}\`)` : ' — document the hot zones'} so a future contributor (or you in 6 months) can pick them up.`
+          : `Projet solo : les ${solo} fichier${solo > 1 ? 's' : ''} ne sont connus que d’un auteur${soloHubs.length ? ` — documenter les zones chaudes (ex. \`${soloHubs[0].file}\`)` : ' — documenter les zones chaudes'} pour le futur contributeur (ou toi dans 6 mois).`)
+        : (en
+          ? `Bus factor: ${solo} file${solo > 1 ? 's' : ''} touched by a single author${soloHubs.length ? `, including hot \`${soloHubs[0].file}\`` : ''} — spread knowledge via reviews/pairing.`
+          : `Bus factor : ${solo} fichier${solo > 1 ? 's' : ''} touché${solo > 1 ? 's' : ''} par un seul auteur${soloHubs.length ? `, dont le chaud \`${soloHubs[0].file}\`` : ''} — diffuser la connaissance via reviews/pairing.`),
     });
   }
   if (!infra.some(i => i.startsWith('CI'))) out.push({
@@ -114,12 +137,15 @@ export function recommendations(r: HealthReport, hasTests: boolean, smells: Smel
       ? `Break ${r.cycles.length} circular dependenc${r.cycles.length > 1 ? 'ies' : 'y'} — e.g. \`${r.cycles[0].path[0]}\` ↔ \`${r.cycles[0].path[1] ?? r.cycles[0].path[0]}\`. Extract the shared contract into a leaf module.`
       : `Casser ${r.cycles.length} dépendance${r.cycles.length > 1 ? 's' : ''} circulaire${r.cycles.length > 1 ? 's' : ''} — ex. \`${r.cycles[0].path[0]}\` ↔ \`${r.cycles[0].path[1] ?? r.cycles[0].path[0]}\`. Extraire le contrat partagé dans un module feuille.`,
   });
-  for (const h of r.hotspots.slice(0, 3)) out.push({
-    severity: 'Élevée',
-    text: en
-      ? `Split \`${h.file}\` (complexity ${h.score}) — extract independent blocks into focused modules.`
-      : `Découper \`${h.file}\` (complexité ${h.score}) — extraire les blocs indépendants dans des modules ciblés.`,
-  });
+  for (const h of r.hotspots.slice(0, 3)) {
+    if (riskFiles[0]?.file === h.file) continue; // already covered by the churn × complexity reco
+    out.push({
+      severity: 'Élevée',
+      text: en
+        ? `Split \`${h.file}\` (complexity ${h.score}) — extract independent blocks into focused modules.`
+        : `Découper \`${h.file}\` (complexité ${h.score}) — extraire les blocs indépendants dans des modules ciblés.`,
+    });
+  }
   if (r.duplicates.length) out.push({
     severity: 'Moyenne',
     text: en
