@@ -6,7 +6,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt } from "dsh-codebase-chat";
+import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, buildDeterministicReport } from "dsh-codebase-chat";
 
 // `dsh-codebase-chat-mcp setup` runs the interactive client-config wizard
 // instead of starting the MCP server.
@@ -16,7 +16,7 @@ if (process.argv[2] === "setup") {
   process.exit(0);
 }
 
-const VERSION = "0.8.3";
+const VERSION = "0.9.1";
 
 const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || "";
 const baseUrl = process.env.DEEPSEEK_BASE_URL || process.env.OPENAI_BASE_URL || "https://api.deepseek.com/v1";
@@ -166,6 +166,7 @@ const TOOLS = [
   { name: "codebase_crea", description: "Generate creative ideas, slogans or marketing concepts from the code.", extra: { focus: { type: "string" } } },
   { name: "codebase_health", description: "Deterministic static analysis: circular deps, dead code, duplication, complexity hotspots, health score. Returns findings directly — no LLM call.", deterministic: true },
   { name: "codebase_impact", description: "Blast-radius analysis: which files transitively depend on a target file — what breaks if it changes. Deterministic, no LLM call.", extra: { file: { type: "string", description: "File to analyze (relative path or name, e.g. src/store.ts)" } }, required: ["file"], deterministic: true },
+  { name: "codebase_deep_audit", description: "Full deterministic audit (~30 analyses): git churn & bus factor, churn × complexity risk, dependency integrity (undeclared imports, dead deps, lockfile drift, broken package entries), per-function complexity, secrets & sensitive files, env-var coverage, config & README hygiene — all cited file:line. Returns findings directly — no LLM call.", deterministic: true },
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -209,6 +210,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       const report = await analyzeProject(project, scope);
       const text = `${scopeNote}${formatHealthReportMd(report, lang)}\n\n<details><summary>JSON</summary>\n\n\`\`\`json\n${JSON.stringify(report, null, 2)}\n\`\`\`\n</details>`;
+      return { content: [{ type: "text", text }] };
+    }
+    if (name === "codebase_deep_audit") {
+      const project = getProjectPath(args?.projectPath);
+      const lang = args?.lang === "en" ? "en" : "fr";
+      const text = await buildDeterministicReport(project, lang);
       return { content: [{ type: "text", text }] };
     }
     if (name === "codebase_impact") {
