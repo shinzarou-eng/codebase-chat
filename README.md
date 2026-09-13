@@ -97,6 +97,17 @@ $ npx dsh-codebase-chat --project . --ask "how is the index cached?"
 `codebase_health` runs fully offline — deterministic, no LLM, same input → same score.
 Every answer from `codebase_chat` arrives with `[source: file:line]` receipts you can verify in seconds.
 
+## Verify your changes
+
+```console
+$ npx dsh-codebase-chat --baseline        # snapshot findings + score to .codebase-chat/baseline.json (commit it)
+$ npx dsh-codebase-chat --check           # impact + findings on files changed vs HEAD, diffed vs the baseline
+$ npx dsh-codebase-chat --check --strict  # exit 1 on a red verdict — drop into CI
+$ npx dsh-codebase-chat --doctor          # diagnose the install: node, index cache, keys, MCP clients
+```
+
+Same thing from an IDE: `/codebase check [ref]` and `/codebase doctor` (MCP tools `codebase_check` / `codebase_doctor`).
+
 ## Why it wins
 
 | | Paste into a chat | Hosted assistant | **dsh-codebase-chat** |
@@ -116,7 +127,7 @@ Every answer from `codebase_chat` arrives with `[source: file:line]` receipts yo
 
 `/codebase-apply` writes safely — **dry-run** · **`.dsh-backups/`** before overwrite · **protected paths** · never outside the project.
 
-## The 14 tools
+## The 16 tools
 
 | Understand | Decide | Act | Explore |
 | --- | --- | --- | --- |
@@ -125,8 +136,9 @@ Every answer from `codebase_chat` arrives with `[source: file:line]` receipts yo
 | `codebase_explain` | `codebase_report` | | |
 | `codebase_health` | `codebase_ceo` | | |
 | `codebase_impact` | `codebase_deep_audit` | | |
+| `codebase_check` | `codebase_doctor` | | |
 
-Three tools run **fully deterministic — no model, no key, works offline**: `codebase_health`, `codebase_impact`, and `codebase_deep_audit` (~30 analyses: git churn, bus factor, secrets, deps, per-function complexity).
+Five tools run **fully deterministic — no model, no key, works offline**: `codebase_health`, `codebase_impact`, `codebase_check` (changes vs a git ref, diffed vs `.codebase-chat/baseline.json`), `codebase_doctor` (install diagnostic), and `codebase_deep_audit` (~30 analyses: git churn, bus factor, secrets, deps, per-function complexity).
 
 Same engine, three surfaces: **MCP tools** in your IDE, **slash commands** in DeepSeek Harness, **CLI flags** anywhere. Every tool takes `lang` (`fr`/`en`), `embed`, `promptOnly`, `maxTokens`.
 
