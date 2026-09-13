@@ -20,6 +20,25 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 
 const PROMPT_MODES = ['intelligence', 'audit', 'report', 'ceo', 'tasks', 'player', 'crea', 'chat', 'search', 'explain', 'refactor', 'git', 'build'];
 
+// Inline SVG icons — Lucide-style strokes, inherit currentColor.
+const ic = (p: string, size = 15) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const IC = {
+  audit: ic('<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>'),
+  health: ic('<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>'),
+  stats: ic('<line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/>'),
+  impact: ic('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>'),
+  wand: ic('<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>'),
+  folder: ic('<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>'),
+  search: ic('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'),
+  download: ic('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>'),
+  copy: ic('<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>'),
+  file: ic('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/>'),
+  globe: ic('<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>'),
+  lock: ic('<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>', 11),
+  chat: ic('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>', 16),
+  play: ic('<polygon points="7 4 20 12 7 20 7 4"/>'),
+};
+
 function appHtml(project: string, absPath: string, lang: Lang): string {
   const t = (fr: string, en: string) => (lang === 'en' ? en : fr);
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -27,50 +46,71 @@ function appHtml(project: string, absPath: string, lang: Lang): string {
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>">
 <style>${DASH_CSS}
 body{display:flex;margin:0}
-aside{position:fixed;inset:0 auto 0 0;width:248px;background:#1b1b1b;border-right:1px solid var(--line);padding:20px 10px;overflow:auto;display:flex;flex-direction:column}
-aside .logo{display:flex;align-items:center;gap:9px;color:var(--txt);font-weight:600;font-size:14px;padding:4px 10px 10px;word-break:break-all}
-aside .logo::before{content:'◆';display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#4cc2ff;border-radius:5px;font-size:10px;color:#00395e;flex-shrink:0}
-aside .tag{color:var(--dim);font-size:11px;padding:0 10px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
-aside .grp{font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--dim);padding:14px 10px 4px}
-button.act{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:none;color:var(--txt);padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13px;transition:background .1s;position:relative}
-button.act:hover{background:#ffffff0d}
-button.act.on{background:#ffffff12}
-button.act.on::before{content:'';position:absolute;left:-10px;top:20%;bottom:20%;width:3px;border-radius:2px;background:var(--acc)}
+/* ---------- sidebar ---------- */
+aside{position:fixed;inset:0 auto 0 0;width:252px;background:#1c1c1c;border-right:1px solid var(--line);padding:16px 12px;overflow:auto;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 8px 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.brand .mk{width:27px;height:27px;border-radius:7px;background:linear-gradient(135deg,#4cc2ff,#1e8fd4);display:flex;align-items:center;justify-content:center;color:#00395e;font-weight:700;font-size:12px;flex-shrink:0;box-shadow:0 0 14px rgba(76,194,255,.25)}
+.brand .nm{font-weight:600;font-size:13.5px;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px}
+.brand .lc{font-size:10.5px;color:var(--ok);display:flex;align-items:center;gap:4px;margin-top:1px}
+.grp{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#6e6e6e;padding:15px 9px 5px}
+button.act{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:none;color:#d4d4d4;padding:7px 9px;border-radius:6px;cursor:pointer;font-size:13px;transition:background .08s,color .08s;position:relative}
+button.act svg{flex-shrink:0;color:var(--dim)}
+button.act:hover{background:#ffffff0c;color:#fff}
+button.act.on{background:rgba(76,194,255,.10);color:#fff}
+button.act.on svg{color:var(--acc)}
+button.act.on::before{content:'';position:absolute;left:-12px;top:16%;bottom:16%;width:3px;border-radius:2px;background:var(--acc)}
 button.act:disabled{opacity:.4;cursor:wait}
-.mini{padding:2px 10px}
+.mini{padding:2px 9px 4px}
 .mini input,.mini select{width:100%;margin-bottom:7px}
-.mini button.act{justify-content:center;background:#ffffff0d;border:1px solid var(--line)}
-.mini button.act:hover{background:#ffffff14}
-#navList a{display:block;color:var(--dim);text-decoration:none;padding:5px 10px;border-radius:6px;font-size:12.5px;transition:background .1s}
-#navList a:hover{background:#ffffff0d;color:var(--txt)}
-aside .foot{margin-top:auto;padding:14px 10px 0;border-top:1px solid var(--line);font-size:11px;color:var(--dim)}
-main{margin-left:248px;flex:1;min-width:0}
-.top{position:sticky;top:0;z-index:10;background:rgba(31,31,31,.85);backdrop-filter:blur(16px) saturate(1.2);border-bottom:1px solid var(--line);padding:10px 28px;display:flex;align-items:center;gap:8px}
-.top input[type=text]{flex:0 1 240px;margin-left:auto}
-.top button,.top .chip{background:#ffffff0d;border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;transition:background .1s;text-decoration:none}
-.top button:hover,.top .chip:hover{background:#ffffff16}
-.top .chip.on{background:rgba(76,194,255,.16);color:var(--acc);border-color:rgba(76,194,255,.35)}
-.wrap{max-width:1040px;padding:24px 32px 80px}
+.mini button.act{justify-content:center;background:#ffffff0c;border:1px solid var(--line)}
+.mini button.act:hover{background:#ffffff16}
+.mini button.act svg{color:var(--acc)}
+#navList a{display:block;color:var(--dim);text-decoration:none;padding:5px 9px;border-radius:6px;font-size:12.5px;transition:background .1s;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#navList a:hover{background:#ffffff0c;color:var(--txt)}
+aside .foot{margin-top:auto;padding:14px 9px 0;border-top:1px solid var(--line);font-size:10.5px;color:#6e6e6e;line-height:1.5}
+aside .foot code{font-size:10px;padding:1px 5px}
+/* ---------- topbar ---------- */
+main{margin-left:252px;flex:1;min-width:0}
+.top{position:sticky;top:0;z-index:20;background:rgba(31,31,31,.78);backdrop-filter:blur(16px) saturate(1.3);border-bottom:1px solid var(--line);padding:9px 26px;display:flex;align-items:center;gap:8px}
+.seg{display:flex;background:#ffffff09;border:1px solid var(--line);border-radius:8px;padding:2px;gap:1px}
+.seg .chip{border:none;background:transparent;color:var(--dim);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:all .1s}
+.seg .chip:hover{color:var(--txt)}
+.seg .chip.on{background:rgba(76,194,255,.16);color:var(--acc)}
+.top button,.top a.chip{display:inline-flex;align-items:center;gap:6px;background:#ffffff09;border:1px solid var(--line);color:var(--txt);padding:6px 11px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;transition:all .1s;text-decoration:none}
+.top button svg{color:var(--dim)}
+.top button:hover,.top a.chip:hover{background:#ffffff15;border-color:var(--line2)}
+.top button:hover svg{color:var(--txt)}
+.top .spacer{flex:1}
+.searchwrap{display:flex;align-items:center;gap:7px;background:#ffffff09;border:1px solid var(--line);border-radius:7px;padding:0 11px;color:var(--dim);transition:border-color .1s}
+.searchwrap:focus-within{border-color:var(--acc);box-shadow:inset 0 -2px 0 var(--acc)}
+.searchwrap input{background:transparent;border:none;padding:7px 0;width:190px}
+.searchwrap input:focus{outline:none;box-shadow:none}
+.wrap{max-width:1060px;padding:26px 34px 90px}
 input,select{background:#ffffff0a;border:1px solid var(--line);color:var(--txt);padding:7px 12px;border-radius:6px;font-size:13px;font-family:inherit;transition:border-color .1s}
 input:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:inset 0 -2px 0 var(--acc)}
 input:hover,select:hover{border-color:var(--line2)}
 #out{min-height:300px}
-.spin{color:var(--dim);padding:60px 0;text-align:center;font-size:14px}
-.spin::after{content:'…';animation:dots 1.2s infinite}
-@keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'…'}}
 .err{color:var(--bad);padding:20px}
+.skel{padding:8px 0}
+.skel i{display:block;height:14px;border-radius:6px;background:linear-gradient(90deg,#ffffff08 25%,#ffffff14 50%,#ffffff08 75%);background-size:400% 100%;animation:shim 1.3s infinite;margin:14px 0}
+.skel i:first-child{height:22px;width:42%}
+@keyframes shim{0%{background-position:100% 0}100%{background-position:0 0}}
 .rhero{display:flex;align-items:center;gap:22px;margin-bottom:20px}
 .rhero h1{font-size:20px;margin:0;font-weight:600}
 .rhero .sub{color:var(--dim);font-size:12px}
 .prompthd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .prompthd h2{margin:0}
-.askcard{background:#282828;border:1px solid var(--line);border-radius:8px;padding:20px 24px;margin-bottom:22px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
-.askcard h2{margin:0 0 10px;font-size:15px;font-weight:600}
-.askcard textarea{width:100%;background:#ffffff0a;border:1px solid var(--line);color:var(--txt);padding:10px 14px;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;transition:border-color .1s}
+.askcard{background:#282828;border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin-bottom:24px;box-shadow:0 2px 10px rgba(0,0,0,.22)}
+.askhd{display:flex;align-items:center;gap:8px;color:var(--acc);margin-bottom:11px}
+.askhd h2{margin:0;font-size:14px;font-weight:600;color:var(--txt)}
+.askrow{display:flex;gap:10px;align-items:flex-end}
+.askcard textarea{flex:1;background:#ffffff08;border:1px solid var(--line);color:var(--txt);padding:9px 13px;border-radius:7px;font-size:13.5px;font-family:inherit;resize:vertical;min-height:40px;transition:border-color .1s}
 .askcard textarea:focus{outline:none;border-color:var(--acc);box-shadow:inset 0 -2px 0 var(--acc)}
-.askcard .hint{flex:1;color:var(--dim);font-size:12px}
-.btn-acc{background:#4cc2ff;color:#00395e;border:1px solid #60cdff}
+.askcard .hint{color:var(--dim);font-size:11.5px;margin-top:8px}
+.askcard kbd{background:#ffffff10;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;font-size:10.5px;font-family:inherit}
+.btn-acc{display:inline-flex;align-items:center;gap:7px;background:#4cc2ff;color:#00395e!important;border:1px solid #60cdff;border-radius:7px;padding:9px 16px;font-weight:600;font-size:13px;cursor:pointer;transition:background .1s;white-space:nowrap}
 .btn-acc:hover{background:#69c9ff}
+.btn-acc svg{color:#00395e!important}
 pre.big{max-height:60vh}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:6px 0 8px}
 .kpi{background:#232323;border:1px solid var(--line);border-radius:8px;padding:12px 14px}
@@ -80,51 +120,54 @@ pre.big{max-height:60vh}
 .fitbar{display:inline-block;width:90px;height:6px;background:#ffffff14;border-radius:3px;overflow:hidden;vertical-align:middle;margin-right:8px}
 .fitbar i{display:block;height:100%;background:var(--acc);border-radius:3px}
 .hidden{display:none!important}
-@media(max-width:860px){aside{position:static;width:auto}body{display:block}main{margin:0}.top{flex-wrap:wrap}}
+@media(max-width:860px){aside{position:static;width:auto}body{display:block}main{margin:0}.top{flex-wrap:wrap}.searchwrap input{width:120px}}
 </style></head><body>
 <aside>
-<div class="logo">${esc(project)}</div>
-<div class="tag">${t('100% local · aucune donnée ne sort', '100% local · nothing leaves your machine')}</div>
+<div class="brand"><div class="mk">◆</div><div><div class="nm" title="${esc(absPath)}">${esc(project)}</div><div class="lc">${IC.lock} ${t('100% local — rien ne sort', '100% local — nothing leaves')}</div></div></div>
 <div class="grp">${t('Analyses', 'Analysis')}</div>
-<button class="act" data-a="audit">${t('Audit complet', 'Deep audit')}</button>
-<button class="act" data-a="health">${t('Santé du code', 'Code health')}</button>
-<button class="act" data-a="stats">${t('Statistiques', 'Statistics')}</button>
-<button class="act" data-a="impact">${t('Impact d\'un fichier', 'File impact')}</button>
-<div id="impactBox" class="mini hidden"><input type="text" id="ifile" list="fileList" placeholder="src/store.ts" autocomplete="off"><datalist id="fileList"></datalist><button class="act" id="igo">${t('Analyser', 'Analyze')}</button></div>
+<button class="act" data-a="audit">${IC.audit}${t('Audit complet', 'Deep audit')}</button>
+<button class="act" data-a="health">${IC.health}${t('Santé du code', 'Code health')}</button>
+<button class="act" data-a="stats">${IC.stats}${t('Statistiques', 'Statistics')}</button>
+<button class="act" data-a="impact">${IC.impact}${t('Impact d\'un fichier', 'File impact')}</button>
+<div id="impactBox" class="mini hidden"><input type="text" id="ifile" list="fileList" placeholder="src/store.ts" autocomplete="off"><datalist id="fileList"></datalist><button class="act" id="igo">${IC.play}${t('Analyser', 'Analyze')}</button></div>
 <div class="grp">${t('Prompt pour un LLM', 'Prompt for an LLM')}</div>
 <div class="mini"><select id="mode">${PROMPT_MODES.map(m => `<option>${m}</option>`).join('')}</select>
 <input type="text" id="q" placeholder="${t('question / fichier / focus', 'question / file / focus')}">
-<button class="act" id="gen">${t('Générer le prompt', 'Generate prompt')}</button></div>
+<button class="act" id="gen">${IC.wand}${t('Générer le prompt', 'Generate prompt')}</button></div>
 <div class="grp">${t('Projet', 'Project')}</div>
 <div class="mini"><input type="text" id="proj" value="${esc(absPath)}" placeholder="C:\\path\\to\\project">
-<button class="act" id="pset">${t('Analyser ce projet', 'Analyze this project')}</button></div>
+<button class="act" id="pset">${IC.folder}${t('Analyser ce projet', 'Analyze this project')}</button></div>
 <div class="grp" id="navGrp" style="display:none">${t('Sections', 'Sections')}</div>
 <div id="navList"></div>
-<div class="foot">dsh-codebase-chat<br>npx dsh-codebase-chat --ui</div>
+<div class="foot">dsh-codebase-chat<br><code>npx dsh-codebase-chat --ui</code></div>
 </aside>
 <main>
 <div class="top">
+<div class="seg">
 <span class="chip on" data-sev="">${t('Tout', 'All')}</span>
 <span class="chip" data-sev="crit">${t('Critique', 'Critical')}</span>
 <span class="chip" data-sev="high">${t('Élevée', 'High')}</span>
 <span class="chip" data-sev="med">${t('Moyenne', 'Medium')}</span>
-<a class="chip" href="/?lang=${lang === 'en' ? 'fr' : 'en'}">${lang === 'en' ? 'FR' : 'EN'}</a>
-<button id="viewMd">Markdown</button>
-<button id="dlMd">${t('Exporter .md', 'Export .md')}</button>
-<button id="dlHtml">${t('Exporter .html', 'Export .html')}</button>
-<button id="copyMd">${t('Copier', 'Copy')}</button>
-<input type="text" id="search" placeholder="${t('Filtrer les résultats…', 'Filter results…')}">
+</div>
+<div class="spacer"></div>
+<div class="searchwrap">${IC.search}<input type="text" id="search" placeholder="${t('Filtrer les résultats…', 'Filter results…')}"></div>
+<button id="viewMd" title="Markdown">${IC.file}Markdown</button>
+<button id="copyMd" title="${t('Copier le rapport', 'Copy report')}">${IC.copy}${t('Copier', 'Copy')}</button>
+<button id="dlMd" title="${t('Télécharger en Markdown', 'Download as Markdown')}">${IC.download}.md</button>
+<button id="dlHtml" title="${t('Télécharger en HTML', 'Download as HTML')}">${IC.download}.html</button>
+<a class="chip" href="/?lang=${lang === 'en' ? 'fr' : 'en'}" title="${t('Passer en anglais', 'Switch to French')}">${IC.globe}${lang === 'en' ? 'FR' : 'EN'}</a>
 </div>
 <div class="wrap">
 <div class="askcard">
-<h2>${t('Pose une question sur ce projet', 'Ask anything about this project')}</h2>
-<textarea id="ask" rows="2" placeholder="${t('ex : où est gérée l\'authentification ? que risque un refactor de src/store.ts ?', 'e.g. where is auth handled? what breaks if I refactor src/store.ts?')}"></textarea>
-<div class="row" style="margin-top:10px">
-<button class="act btn-acc" id="askBtn" style="width:auto">${t('Préparer le prompt', 'Build the prompt')}</button>
-<span class="hint" style="margin:0">${t('Le prompt contient le code pertinent — colle-le dans ChatGPT, Claude ou Ollama.', 'The prompt carries the relevant code — paste it into ChatGPT, Claude or Ollama.')}</span>
-</div></div>
-<div id="promptOut" class="hidden"><div class="prompthd"><h2>Prompt</h2><button id="copyBtn" class="act" style="width:auto">${t('Copier', 'Copy')}</button></div><pre id="promptPre" class="big"></pre></div>
-<div id="out"><div class="spin">${t('audit en cours', 'running audit')}</div></div>
+<div class="askhd">${IC.chat}<h2>${t('Pose une question sur ce projet', 'Ask anything about this project')}</h2></div>
+<div class="askrow">
+<textarea id="ask" rows="1" placeholder="${t('ex : où est gérée l\'authentification ? que risque un refactor de src/store.ts ?', 'e.g. where is auth handled? what breaks if I refactor src/store.ts?')}"></textarea>
+<button class="btn-acc" id="askBtn">${IC.wand}${t('Préparer le prompt', 'Build prompt')}</button>
+</div>
+<div class="hint">${t('Le prompt contient le code pertinent — colle-le dans ChatGPT, Claude ou Ollama.', 'The prompt carries the relevant code — paste it into ChatGPT, Claude or Ollama.')} <kbd>Ctrl</kbd>+<kbd>Enter</kbd></div>
+</div>
+<div id="promptOut" class="hidden"><div class="prompthd"><h2>Prompt</h2><button id="copyBtn" class="act" style="width:auto">${IC.copy}${t('Copier', 'Copy')}</button></div><pre id="promptPre" class="big"></pre></div>
+<div id="out"><div class="skel"><i></i><i></i><i></i><i></i></div></div>
 </div>
 </main>
 <script>
@@ -133,7 +176,7 @@ let curMd = '', curHtml = '', proj = '${esc(absPath).replace(/'/g, "\\'").replac
 const LANG = '${lang}';
 const qp = () => (proj ? '&project=' + encodeURIComponent(proj) : '') + '&lang=' + LANG;
 const escH = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const loading = () => { out.innerHTML = '<div class="spin">${t('analyse en cours', 'analysing')}</div>'; };
+const loading = () => { out.innerHTML = '<div class="skel"><i></i><i></i><i></i><i></i></div><div class="spin" style="padding-top:6px;font-size:12px">${t('analyse en cours', 'analysing')}…</div>'; };
 async function call(url) {
   loading(); setActive(url); mdView = false;
   try {
