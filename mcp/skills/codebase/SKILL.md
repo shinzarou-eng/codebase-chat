@@ -9,6 +9,7 @@ Les outils sont les tools MCP du serveur `dsh-codebase-chat` (`codebase_*`). App
 
 Règles :
 - `/codebase` sans argument → affiche le menu ci-dessous tel quel et demande lequel lancer. Ne rien exécuter.
+- Premier mot = `help` | `aide` | `?` | `--help` → affiche l'aide complète en fin de fichier, telle quelle. Ne rien exécuter.
 - Premier mot = outil ou alias → appelle le tool correspondant avec le mapping.
 - Outil inconnu → affiche le menu.
 
@@ -40,3 +41,70 @@ Règles :
 - `intelligence | report | audit | tasks | ceo | player | crea [focus]` → `{ focus: "<focus>" }`
 - `health` / `deep_audit` / `doctor` → `{}`
 - Options reconnues partout : `lang=en|fr`, `diff=<ref>`, `maxTokens=<n>`, `promptOnly=true|false`.
+
+## /codebase help — aide complète
+
+`/codebase` est le point d'entrée des 16 outils du serveur MCP **dsh-codebase-chat** : analyse statique locale, indexation et rapports. Deux familles :
+
+- **Déterministe** — analyse du code réel, aucune clé API, résultats reproductibles et audités.
+- **LLM** — construit un prompt contextualisé sur ton projet (mode `promptOnly`) ou appelle un modèle si une clé est configurée.
+
+### Vérifier & diagnostiquer (déterministe)
+
+| Commande | Explication |
+|---|---|
+| `/codebase check [ref]` | Fichiers modifiés vs `ref` (défaut `HEAD`) : risque d'impact, complexité, test dédié, findings par fichier, **delta vs baseline** (nouveaux/résolus/inchangés). Verdict 🟢/🟡/🔴. |
+| `/codebase doctor` | Diagnostic d'installation : version Node, état de l'index, clés LLM (jamais affichées), tree-sitter, baseline, intégrations détectées. À lancer en premier en cas de doute. |
+| `/codebase deep_audit` | Audit complet ~30 analyses (structure, sécurité, dette, duplication, git…) — 100 % local. |
+| `/codebase health` | Santé : cycles, dead code, duplication, hotspots, priorités triées par sévérité. |
+| `/codebase impact <fichier>` | Rayon d'impact : qui importe le fichier, qui casse s'il change. |
+
+### Comprendre & décider (LLM)
+
+| Commande | Explication |
+|---|---|
+| `intelligence [focus]` | Audit pro : architecture, dette, opportunités. `focus` ex. `securite`, `perf`. |
+| `report` | Rapport board : SWOT, scorecards, roadmap 90 jours. |
+| `audit [focus]` | Non-conformités + dette, avec fixes concrets. |
+| `tasks` | TASKS.md priorisé, organisé en sprints. |
+| `ceo` | Brief exécutif 1 page (non-technique). |
+| `player` | Analyse UX / parcours utilisateur. |
+| `crea [focus]` | Idées créatives / marketing dérivées du code. |
+| `refactor <fichier> [objectif]` | Proposition de refactor contextualisée. |
+| `chat <question>` | Q/R libre sur le code. |
+
+### Chercher
+
+| Commande | Explication |
+|---|---|
+| `search <requête>` | Recherche fichiers/symboles pertinents. Aucun résultat → message explicite, pas de contexte de remplissage. |
+| `explain <fichier\|symbole>` | Explique un fichier (chemin) ou un symbole/concept (texte libre). |
+
+### Workflow quotidien
+
+```
+node dist/cli.js --baseline        # une fois : fige la référence (à commiter)
+/codebase check                    # après chaque modification
+node dist/cli.js --check --strict  # en CI : exit 1 si verdict rouge
+```
+
+### Options (ajoutables à toute commande)
+
+- `lang=en|fr` — langue de sortie
+- `diff=<ref>` — analyse limitée à un diff git
+- `maxTokens=<n>` — budget de contexte
+- `promptOnly=true|false` — génère le prompt sans appeler d'API
+
+### Alias du premier mot
+
+`check` = `verifier` `vérifier` `changes` `changements` · `doctor` = `diag` `diagnostic` · `deep_audit` = `comprendre` `understand` · `health` = `priorites` `priorités` · `help` = `aide` `?`
+
+### Exemples
+
+```
+/codebase check HEAD~3
+/codebase impact src/report.ts
+/codebase explain src/indexer.ts
+/codebase search buildIndex
+/codebase intelligence securite lang=fr
+```
