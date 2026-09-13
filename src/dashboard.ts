@@ -3,7 +3,7 @@
 
 import { createServer, type Server } from 'node:http';
 import { basename, extname } from 'node:path';
-import { buildDeterministicReport } from './report.js';
+import { buildDeterministicReport, collectAudit } from './report.js';
 import { analyzeProject, formatHealthReportMd, CODE_EXTS, SKIP_EXTS } from './analysis.js';
 import { analyzeImpact, formatImpactReportMd } from './impact.js';
 import { buildContext } from './context.js';
@@ -14,6 +14,9 @@ import { parseReportMd, DASH_CSS, scoreGauge, reportToHtml } from './ui.js';
 import { computeStats } from './stats.js';
 import { fmtCost, CALL_INPUT_TOKENS, CALL_OUTPUT_TOKENS } from './pricing.js';
 import { getChangedFiles } from './diff.js';
+import { runCheck, formatCheckMd } from './check.js';
+import { auditFindings } from './findings.js';
+import { writeBaseline } from './baseline.js';
 
 type Lang = 'fr' | 'en';
 
@@ -28,6 +31,7 @@ const IC = {
   health: ic('<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>'),
   stats: ic('<line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/>'),
   impact: ic('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>'),
+  check: ic('<circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/>'),
   wand: ic('<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>'),
   folder: ic('<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>'),
   search: ic('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'),
@@ -148,6 +152,7 @@ a.fref:hover code,a.fref:hover{color:var(--acc)}
 <aside>
 <div class="brand"><div class="mk">◆</div><div><div class="nm" title="${esc(absPath)}">${esc(project)}</div><div class="lc">${IC.lock} ${t('analyse locale — aucun envoi automatique', 'local analysis — no automatic upload')}</div></div></div>
 <div class="grp">${t('Analyses', 'Analysis')}</div>
+<button class="act" data-a="check"><span class="it g">${IC.check}</span>${t('Mes changements', 'My changes')}</button>
 <button class="act" data-a="audit"><span class="it b">${IC.audit}</span>${t('Audit complet', 'Deep audit')}</button>
 <button class="act" data-a="health"><span class="it g">${IC.health}</span>${t('Santé du code', 'Code health')}</button>
 <button class="act" data-a="stats"><span class="it p">${IC.stats}</span>${t('Statistiques', 'Statistics')}</button>
@@ -221,6 +226,17 @@ async function call(url, st) {
       navList.innerHTML = j.nav.map(n => '<a href="#' + escH(n.id) + '">' + escH(n.title) + '</a>').join('');
     } else { navGrp.style.display = 'none'; navList.innerHTML = ''; }
     out.innerHTML = (j.hero || '') + (j.intro || '') + (j.body || j.text || '');
+    if (j.hasBaseline === false && j.verdict) {
+      const box = document.createElement('div');
+      box.className = 'empty';
+      box.innerHTML = '${t('Aucune baseline —', 'No baseline —')} <button class="act" id="mkBase" style="width:auto;display:inline-flex">${t('Créer la baseline', 'Create baseline')}</button>';
+      out.insertBefore(box, out.firstChild);
+      box.querySelector('#mkBase').onclick = async () => {
+        box.querySelector('#mkBase').disabled = true;
+        await fetch('/api/baseline?x=1' + qp());
+        call('/api/check?x=1' + qp(), { view: 'check' });
+      };
+    }
     linkify(); filter(); spy(); sevCounts();
   } catch (e) { if (my !== seq) return; out.innerHTML = '<div class="err">' + escH(e.message) + '</div>'; }
 }
@@ -233,6 +249,7 @@ document.querySelectorAll('button.act[data-a]').forEach(b => b.onclick = () => {
   const a = b.dataset.a;
   impactBox.classList.toggle('hidden', a !== 'impact');
   if (a === 'impact') { loadFiles(); loadChanged(); }
+  if (a === 'check') call('/api/check?x=1' + qp(), { view: 'check' });
   if (a === 'audit') call('/api/audit?x=1' + qp(), { view: 'audit' });
   if (a === 'health') call('/api/health?x=1' + qp(), { view: 'health' });
   if (a === 'stats') call('/api/stats?x=1' + qp(), { view: 'stats' });
@@ -418,7 +435,7 @@ function route() {
     loadFiles(); loadChanged();
     if (f) { runImpact(f, false); return; }
   }
-  call('/api/' + (v === 'health' || v === 'stats' ? v : 'audit') + '?x=1' + qp());
+  call('/api/' + (['health', 'stats', 'check'].includes(v) ? v : 'audit') + '?x=1' + qp());
 }
 window.onpopstate = route;
 route();
@@ -445,6 +462,23 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
         const md = await buildDeterministicReport(target, reqLang);
         const r = parseReportMd(md, project);
         json(res, { title: r.title, intro: r.intro, nav: r.nav, body: r.body, md, standalone: reportToHtml(md, { project: target.split(/[\\/]/).pop() || 'project', generated: new Date().toISOString().slice(0, 10) }), hero: `<div class="rhero">${scoreGauge(r.score, r.grade)}<div><h1>${esc(r.title.replace(/^\p{Extended_Pictographic}\s*/u, ''))}</h1><div class="sub">${esc(target)}</div></div></div>` });
+        return;
+      }
+      if (u.pathname === '/api/check') {
+        const report = await runCheck(target, { base: (u.searchParams.get('base') ?? 'HEAD').trim() || 'HEAD', lang: reqLang });
+        const md = formatCheckMd(report, reqLang);
+        const r = parseReportMd(md, project);
+        const V = { red: '🔴', yellow: '🟡', green: '🟢' }[report.verdict];
+        json(res, { title: r.title, intro: r.intro, nav: r.nav, body: r.body, md, verdict: report.verdict, hasBaseline: report.hasBaseline,
+          standalone: reportToHtml(md, { project: target.split(/[\\/]/).pop() || 'project', generated: new Date().toISOString().slice(0, 10) }),
+          hero: `<div class="rhero"><div style="font-size:34px;line-height:1">${V}</div><div><h1>${esc(r.title.replace(/^\p{Extended_Pictographic}\s*/u, ''))}</h1><div class="sub">${esc(target)}</div></div></div>` });
+        return;
+      }
+      if (u.pathname === '/api/baseline') {
+        const absT = await findProjectRoot(target).catch(() => target);
+        const data = await collectAudit(absT);
+        const b = await writeBaseline(absT, data, auditFindings(data, reqLang));
+        json(res, { ok: true, findings: b.findings.length, score: b.score, head: b.head });
         return;
       }
       if (u.pathname === '/api/files') {
