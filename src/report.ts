@@ -52,23 +52,55 @@ const SEC_PATS: [string, RegExp][] = [
   ['unsafeRegex', /new\s+RegExp\s*\([^'"`]/],
 ];
 
+/** Line-start string state: does this line begin inside a string/template literal? */
+function lineStartsInString(text: string): boolean[] {
+  const starts: boolean[] = [];
+  let inStr: string | null = null;
+  let lineStart = true;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (lineStart) { starts.push(inStr !== null); lineStart = false; }
+    if (c === '\n') { lineStart = true; continue; }
+    if (c === '\\') { i++; continue; }
+    if (inStr) { if (c === inStr) inStr = null; continue; }
+    if (c === "'" || c === '"' || c === '`') inStr = c;
+  }
+  return starts;
+}
+
+/** Is the match at `idx` inside a quoted string on this line? */
+function insideString(line: string, idx: number): boolean {
+  let inStr: string | null = null;
+  for (let i = 0; i < idx; i++) {
+    const c = line[i];
+    if (c === '\\') { i++; continue; }
+    if (inStr) { if (c === inStr) inStr = null; continue; }
+    if (c === "'" || c === '"' || c === '`') inStr = c;
+  }
+  return inStr !== null;
+}
+
 export function scanCode(fileTexts: Map<string, string>, pats: [string, RegExp][], perFileCap = 3, skipComments = false): SmellScan {
   const out: SmellScan = {};
   for (const [file, text] of fileTexts) {
     if (/test|spec|__tests__|\.d\.ts$/i.test(file)) continue; // tests legitimately console/TODO
-    // CLI entry points (arg parsing / shebang) print to stdout on purpose —
-    // console.* is their interface, not a smell.
-    const isCli = /^#!/m.test(text) || /\bprocess\.argv\b/.test(text);
+    // CLI entry points and helper scripts print to stdout on purpose, and sync
+    // IO is fine there too — console.*/readFileSync are their interface.
+    const isCli = /^#!/m.test(text) || /\bprocess\.argv\b/.test(text) || /(^|\/)scripts?\//.test(file);
     const lines = text.split('\n');
+    const startsInStr = lineStartsInString(text);
     for (const [key, re] of pats) {
-      if (isCli && key === 'console') continue;
+      if (isCli && (key === 'console' || key === 'syncIo')) continue;
       let found = 0;
       for (let i = 0; i < lines.length && found < perFileCap; i++) {
         const line = lines[i].trim();
         // Security patterns don't apply to comment lines — `// never eval(` or
         // a doc mention of `shell: true` is not a sink.
         if (skipComments && (/^\/\//.test(line) || /^\* /.test(line) || /^\/\*/.test(line))) continue;
-        if (re.test(lines[i])) {
+        // Matches inside string literals are prompt text / fixtures, not code.
+        if (startsInStr[i]) continue;
+        const m = re.exec(lines[i]);
+        if (m && !insideString(lines[i], m.index)) {
           (out[key] ??= []).push({ file, line: i + 1, sample: line.slice(0, 90) });
           found++;
         }

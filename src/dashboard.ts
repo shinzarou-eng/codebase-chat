@@ -2,9 +2,9 @@
 // Serves an SPA shell + JSON API that runs the same engines as the CLI.
 
 import { createServer, type Server } from 'node:http';
-import { basename } from 'node:path';
+import { basename, extname } from 'node:path';
 import { buildDeterministicReport } from './report.js';
-import { analyzeProject, formatHealthReportMd } from './analysis.js';
+import { analyzeProject, formatHealthReportMd, CODE_EXTS, SKIP_EXTS } from './analysis.js';
 import { analyzeImpact, formatImpactReportMd } from './impact.js';
 import { buildContext } from './context.js';
 import { buildToolPrompt } from './prompts.js';
@@ -226,12 +226,14 @@ document.addEventListener('click', e => {
   const a = e.target.closest('a.fref');
   if (a && a.dataset.f) { e.preventDefault(); runImpact(a.dataset.f); }
 });
-// Turn <code>src/x.ts</code> mentions into impact links
+// Turn <code>src/x.ts</code> mentions into impact links (code files only — impact needs the import graph)
+const CODE_RE = /\\.(js|jsx|mjs|cjs|ts|tsx)$/i;
+const SKIP_RE = /\\.(d\\.ts|test\\.ts|test\\.js|spec\\.ts|spec\\.js|config\\.js|config\\.ts|config\\.mjs)$/i;
 function linkify() {
   out.querySelectorAll('code').forEach(c => {
     if (c.closest('a.fref')) return;
     const s = c.textContent.trim();
-    if (/^[\w@.\-\\/]+\.[a-z0-9]{1,5}$/i.test(s) && (s.includes('/') || s.includes('\\\\'))) {
+    if (/^[\\w@.\\-\\\\/]+\\.[a-z0-9]{1,5}$/i.test(s) && (s.includes('/') || s.includes('\\\\')) && CODE_RE.test(s) && !SKIP_RE.test(s) && !s.includes('.min.')) {
       const a = document.createElement('a');
       a.className = 'fref'; a.dataset.f = s; a.href = '#'; a.title = '${t('Voir l\u2019impact', 'See impact')}';
       c.replaceWith(a); a.appendChild(c);
@@ -412,7 +414,13 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
           `<tr><td>${esc(w.model)}</td><td>${fmt(w.window)}</td><td><span class="sev ${w.fits ? 'sev-ok' : 'sev-crit'}">${w.fits ? tt('tient', 'fits') : tt('dépasse', 'exceeds')}</span></td><td><div class="fitbar"><i style="width:${Math.min(w.usedPct, 100)}%"></i></div><span class="dim-s">${w.usedPct}%</span></td></tr>`).join('');
         const costRows = s.costs.map(c =>
           `<tr><td>${esc(c.label)}</td><td>${c.free ? 'local' : `$${c.priceIn}/$${c.priceOut}`}</td><td>${c.free ? `<span class="sev sev-ok">${tt('gratuit', 'free')}</span>` : `~${fmtCost(c.estCost)}`}</td><td class="dim-s">${esc(c.context ?? '')}</td></tr>`).join('');
-        const fileRows = s.topFiles.map(f => `<tr><td><a class="fref" data-f="${esc(f.path)}" href="#"><code>${esc(f.path)}</code></a></td><td>${fmt(f.tokens)}</td></tr>`).join('');
+        const isCode = (p: string) => {
+          const e = extname(p).toLowerCase();
+          return CODE_EXTS.has(e) && !SKIP_EXTS.has(e) && !p.includes('.min.');
+        };
+        const fileRows = s.topFiles.map(f => `<tr><td>${isCode(f.path)
+          ? `<a class="fref" data-f="${esc(f.path)}" href="#"><code>${esc(f.path)}</code></a>`
+          : `<code>${esc(f.path)}</code> <span class="dim-s">${tt('(hors graphe d\u2019imports)', '(not in import graph)')}</span>`}</td><td>${fmt(f.tokens)}</td></tr>`).join('');
         const extRows = s.topExts.map(e => `<tr><td><code>${esc(e.ext)}</code></td><td>${e.count}</td></tr>`).join('');
         const body = `<section id="stats"><h2>${tt('Statistiques du projet', 'Project statistics')}</h2>
 <div class="kpis">${kpi(String(s.files), tt('fichiers indexés', 'indexed files'))}${kpi(String(s.chunks), 'chunks')}${kpi(fmt(s.terms), tt('termes dans l\'index', 'index terms'))}${kpi(mb, tt('taille totale', 'total size'))}${kpi(fmt(s.o200k), 'tokens o200k')}${kpi(fmt(s.cl100k), 'tokens cl100k')}</div>
@@ -425,7 +433,7 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
 <h3>${tt('Coût estimé par appel (--call)', 'Estimated cost per call (--call)')}</h3>
 <p class="dim-s">${tt(`Chaque appel envoie ≈${fmt(CALL_INPUT_TOKENS)} tokens d'entrée (budget retrieval) + ≤${fmt(CALL_OUTPUT_TOKENS)} tokens de sortie. Tarifs catalogue sept. 2026 — le cache, le batch et les prix d'intro changent la facture réelle.`, `Each call sends ≈${fmt(CALL_INPUT_TOKENS)} input tokens (retrieval budget) + ≤${fmt(CALL_OUTPUT_TOKENS)} output tokens. Sept 2026 list prices — caching, batch and intro tiers change the real bill.`)}</p>
 <table><tr><th>${tt('Modèle', 'Model')}</th><th>${tt('Prix $/M (in/out)', 'Price $/M (in/out)')}</th><th>${tt('Coût/appel', 'Cost/call')}</th><th>${tt('Contexte', 'Context')}</th></tr>${costRows}</table>
-<h3>${tt('Fichiers les plus lourds — cliquer pour l\u2019impact', 'Heaviest files — click for impact')}</h3>
+<h3>${tt('Fichiers les plus lourds — cliquer un fichier de code pour l\u2019impact', 'Heaviest files — click a code file for impact')}</h3>
 <table><tr><th>${tt('Fichier', 'File')}</th><th>Tokens</th></tr>${fileRows}</table>
 <h3>${tt('Fichiers par extension', 'Files by extension')}</h3>
 <table><tr><th>Ext</th><th>${tt('Fichiers', 'Files')}</th></tr>${extRows}</table>

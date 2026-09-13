@@ -5,6 +5,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, buildDeterministicReport, reportToHtml } from "dsh-codebase-chat";
 
@@ -137,7 +139,7 @@ async function buildPrompt(name, args) {
 
 const server = new Server(
   { name: "dsh-codebase-chat-mcp", version: VERSION },
-  { capabilities: { tools: {} } }
+  { capabilities: { tools: {}, prompts: {} } }
 );
 
 const COMMON_PROPS = {
@@ -181,6 +183,60 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       }
     }))
   };
+});
+
+// MCP prompts — surface each tool as a user-invocable slash command
+// (Claude Code: /mcp__dsh-codebase-chat-mcp__<name>).
+const PROMPTS = TOOLS.map((t) => ({
+  name: t.name.replace(/^codebase_/, ""),
+  description: t.description,
+  arguments: [
+    ...(t.required ?? []).map((k) => ({
+      name: k,
+      description: k === "file" ? "File to analyze (relative path or name)" : "Query / question",
+      required: true,
+    })),
+    { name: "query", description: "Question or focus (optional)", required: false },
+    { name: "projectPath", description: "Absolute project path (default: cwd)", required: false },
+    { name: "lang", description: "fr | en (default: fr)", required: false },
+    { name: "diff", description: "Git ref — scope to files changed vs it", required: false },
+  ].filter((a, i, arr) => arr.findIndex((b) => b.name === a.name) === i),
+}));
+
+server.setRequestHandler(ListPromptsRequestSchema, async () => ({ prompts: PROMPTS }));
+
+server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+  const { name, arguments: args = {} } = request.params;
+  const tool = TOOLS.find((t) => t.name === name || t.name === `codebase_${name}`);
+  if (!tool) throw new Error(`unknown prompt "${name}"`);
+
+  const project = getProjectPath(args.projectPath);
+  const lang = args.lang === "en" ? "en" : "fr";
+
+  // Deterministic analyses: run locally, return the finished report.
+  if (tool.deterministic) {
+    let text;
+    if (tool.name === "codebase_health") {
+      const report = await analyzeProject(project);
+      text = formatHealthReportMd(report, lang);
+    } else if (tool.name === "codebase_deep_audit") {
+      text = await buildDeterministicReport(project, lang);
+    } else if (tool.name === "codebase_impact") {
+      const file = String(args.file ?? args.query ?? "").trim();
+      const r = file ? await analyzeImpact(project, file) : { ok: false, candidates: [] };
+      text = r.ok
+        ? formatImpactReportMd(r.report, lang)
+        : (lang === "en" ? "Pass a file name, e.g. `src/store.ts`." : "Passe un nom de fichier, ex. `src/store.ts`.");
+    }
+    return { messages: [{ role: "user", content: { type: "text", text } }] };
+  }
+
+  const { prompt } = await buildPrompt(tool.name, {
+    ...args,
+    file: args.file,
+    lang,
+  });
+  return { messages: [{ role: "user", content: { type: "text", text: prompt } }] };
 });
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {

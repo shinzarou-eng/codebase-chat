@@ -2,9 +2,9 @@ import { basename, extname, join, relative, sep, posix as posixPath } from 'node
 import { readFile } from 'node:fs/promises';
 import { findProjectRoot, getWalkOptions, resolveProjectPath, safeReadText, walkFiles } from './project.js';
 
-const CODE_EXTS = new Set(['.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx']);
+export const CODE_EXTS = new Set(['.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx']);
 const ENTRY_BASENAMES = new Set(['index', 'main', 'app', 'cli', 'server', 'bin', 'mod']);
-const SKIP_EXTS = new Set(['.d.ts', '.test.ts', '.test.js', '.spec.ts', '.spec.js', '.config.js', '.config.ts', '.config.mjs']);
+export const SKIP_EXTS = new Set(['.d.ts', '.test.ts', '.test.js', '.spec.ts', '.spec.js', '.config.js', '.config.ts', '.config.mjs']);
 
 export interface ImportEdge { from: string; to: string; }
 export interface Cycle { path: string[]; }
