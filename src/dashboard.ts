@@ -152,13 +152,13 @@ a.fref:hover code,a.fref:hover{color:var(--acc)}
 <button class="act" data-a="health"><span class="it g">${IC.health}</span>${t('Santé du code', 'Code health')}</button>
 <button class="act" data-a="stats"><span class="it p">${IC.stats}</span>${t('Statistiques', 'Statistics')}</button>
 <button class="act" data-a="impact"><span class="it o">${IC.impact}</span>${t('Impact d\'un fichier', 'File impact')}</button>
-<div id="impactBox" class="mini hidden"><input type="text" id="ifile" list="fileList" placeholder="src/store.ts" autocomplete="off"><datalist id="fileList"></datalist><button class="act" id="igo">${IC.play}${t('Analyser', 'Analyze')}</button><div class="chips" id="chgChips"></div></div>
+<div id="impactBox" class="mini hidden"><input type="text" id="ifile" list="fileList" placeholder="src/store.ts" autocomplete="off" aria-label="${t('Fichier à analyser', 'File to analyse')}"><datalist id="fileList"></datalist><button class="act" id="igo">${IC.play}${t('Analyser', 'Analyze')}</button><div class="chips" id="chgChips"></div></div>
 <div class="grp">${t('Prompt pour un LLM', 'Prompt for an LLM')}</div>
-<div class="mini"><select id="mode">${PROMPT_MODES.map(m => `<option>${m}</option>`).join('')}</select>
-<input type="text" id="q" placeholder="${t('question / fichier / focus', 'question / file / focus')}">
+<div class="mini"><select id="mode" aria-label="${t('Mode du prompt', 'Prompt mode')}">${PROMPT_MODES.map(m => `<option>${m}</option>`).join('')}</select>
+<input type="text" id="q" placeholder="${t('question / fichier / focus', 'question / file / focus')}" aria-label="${t('Question ou focus', 'Question or focus')}">
 <button class="act" id="gen">${IC.wand}${t('Générer le prompt', 'Generate prompt')}</button></div>
 <div class="grp">${t('Projet', 'Project')}</div>
-<div class="mini"><input type="text" id="proj" value="${esc(absPath)}" placeholder="C:\\path\\to\\project">
+<div class="mini"><input type="text" id="proj" value="${esc(absPath)}" placeholder="C:\\path\\to\\project" aria-label="${t('Chemin du projet', 'Project path')}">
 <button class="act" id="pset">${IC.folder}${t('Analyser ce projet', 'Analyze this project')}</button></div>
 <div class="grp" id="navGrp" style="display:none">${t('Sections', 'Sections')}</div>
 <div id="navList"></div>
@@ -173,7 +173,7 @@ a.fref:hover code,a.fref:hover{color:var(--acc)}
 <span class="chip" data-sev="med">${t('Moyenne', 'Medium')}<i class="cnt"></i></span>
 </div>
 <div class="spacer"></div>
-<div class="searchwrap">${IC.search}<input type="text" id="search" placeholder="${t('Filtrer les résultats…', 'Filter results…')}"></div>
+<div class="searchwrap">${IC.search}<input type="text" id="search" placeholder="${t('Filtrer les résultats…', 'Filter results…')}" aria-label="${t('Filtrer les résultats', 'Filter results')}"></div>
 <button id="viewMd" title="Markdown">${IC.file}Markdown</button>
 <button id="copyMd" title="${t('Copier le rapport', 'Copy report')}">${IC.copy}${t('Copier', 'Copy')}</button>
 <button id="dlMd" title="${t('Télécharger en Markdown', 'Download as Markdown')}">${IC.download}.md</button>
@@ -184,7 +184,7 @@ a.fref:hover code,a.fref:hover{color:var(--acc)}
 <div class="askcard">
 <div class="askhd">${IC.chat}<h2>${t('Pose une question sur ce projet', 'Ask anything about this project')}</h2></div>
 <div class="askrow">
-<textarea id="ask" rows="1" placeholder="${t('ex : où est gérée l\'authentification ? que risque un refactor de src/store.ts ?', 'e.g. where is auth handled? what breaks if I refactor src/store.ts?')}"></textarea>
+<textarea id="ask" rows="1" placeholder="${t('ex : où est gérée l\'authentification ? que risque un refactor de src/store.ts ?', 'e.g. where is auth handled? what breaks if I refactor src/store.ts?')}" aria-label="${t('Question sur le code', 'Question about the code')}"></textarea>
 <button class="btn-acc" id="askBtn">${IC.wand}${t('Préparer le prompt', 'Build prompt')}</button>
 </div>
 <div class="hint">${t('Le prompt contient le code pertinent — colle-le dans ChatGPT, Claude ou Ollama.', 'The prompt carries the relevant code — paste it into ChatGPT, Claude or Ollama.')} <kbd>Ctrl</kbd>+<kbd>K</kbd> ${t('pour écrire', 'to focus')} · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> ${t('pour générer', 'to build')}</div>
@@ -195,15 +195,20 @@ a.fref:hover code,a.fref:hover{color:var(--acc)}
 </main>
 <script>
 const out = document.getElementById('out'), navList = document.getElementById('navList'), navGrp = document.getElementById('navGrp');
-let curMd = '', curHtml = '', proj = '${esc(absPath).replace(/'/g, "\\'").replace(/\\/g, '\\\\')}', sevFilter = '', mdView = false;
+let curMd = '', curHtml = '', proj = '${esc(absPath).replace(/'/g, "\\'").replace(/\\/g, '\\\\')}', sevFilter = '', mdView = false, seq = 0;
+const DEFAULT_PROJ = proj;
 const LANG = '${lang}';
 const qp = () => (proj ? '&project=' + encodeURIComponent(proj) : '') + '&lang=' + LANG;
+const pushUrl = (st) => history.pushState(st, '', '?view=' + st.view + (st.file ? '&file=' + encodeURIComponent(st.file) : '') + (proj !== DEFAULT_PROJ ? '&project=' + encodeURIComponent(proj) : ''));
 const escH = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const loading = () => { out.innerHTML = '<div class="skel"><i></i><i></i><i></i><i></i></div><div class="spin" style="padding-top:6px;font-size:12px">${t('analyse en cours', 'analysing')}…</div>'; };
-async function call(url) {
+async function call(url, st) {
+  const my = ++seq;
   loading(); setActive(url); mdView = false;
+  if (st) pushUrl(st);
   try {
     const r = await fetch(url); const j = await r.json();
+    if (my !== seq) return;
     if (j.error) {
       out.innerHTML = '<div class="err">' + escH(j.error) + '</div>'
         + (j.candidates ? '<div class="chips">' + j.candidates.map(f => '<a class="fref chip2" data-f="' + escH(f) + '" href="#">' + escH(f) + '</a>').join('') + '</div>' : '');
@@ -217,20 +222,20 @@ async function call(url) {
     } else { navGrp.style.display = 'none'; navList.innerHTML = ''; }
     out.innerHTML = (j.hero || '') + (j.intro || '') + (j.body || j.text || '');
     linkify(); filter(); spy(); sevCounts();
-  } catch (e) { out.innerHTML = '<div class="err">' + escH(e.message) + '</div>'; }
+  } catch (e) { if (my !== seq) return; out.innerHTML = '<div class="err">' + escH(e.message) + '</div>'; }
 }
 function setActive(url) {
   document.querySelectorAll('button.act[data-a]').forEach(b => b.classList.toggle('on', url.includes('/api/' + b.dataset.a)));
 }
 const impactBox = document.getElementById('impactBox');
-const runImpact = f => call('/api/impact?file=' + encodeURIComponent(f) + qp());
+const runImpact = (f, push = true) => call('/api/impact?file=' + encodeURIComponent(f) + qp(), push ? { view: 'impact', file: f } : undefined);
 document.querySelectorAll('button.act[data-a]').forEach(b => b.onclick = () => {
   const a = b.dataset.a;
   impactBox.classList.toggle('hidden', a !== 'impact');
   if (a === 'impact') { loadFiles(); loadChanged(); }
-  if (a === 'audit') call('/api/audit?x=1' + qp());
-  if (a === 'health') call('/api/health?x=1' + qp());
-  if (a === 'stats') call('/api/stats?x=1' + qp());
+  if (a === 'audit') call('/api/audit?x=1' + qp(), { view: 'audit' });
+  if (a === 'health') call('/api/health?x=1' + qp(), { view: 'health' });
+  if (a === 'stats') call('/api/stats?x=1' + qp(), { view: 'stats' });
 });
 // Collapsible sections
 out.addEventListener('click', e => {
@@ -260,14 +265,18 @@ function linkify() {
 let filesLoaded = false, changedLoaded = false;
 async function loadFiles() {
   if (filesLoaded) return; filesLoaded = true;
+  const p = proj;
   const r = await fetch('/api/files?x=1' + qp()); const j = await r.json();
+  if (p !== proj) return;
   document.getElementById('fileList').innerHTML = (j.files || []).map(f => '<option value="' + f + '">').join('');
 }
 async function loadChanged() {
   if (changedLoaded) return; changedLoaded = true;
+  const p = proj;
   const el = document.getElementById('chgChips');
   try {
     const r = await fetch('/api/changed?x=1' + qp()); const j = await r.json();
+    if (p !== proj) return;
     el.innerHTML = j.ok && j.files.length
       ? '<span class="lbl">${t('MODIFIÉS vs HEAD — cliquer pour analyser', 'CHANGED vs HEAD — click to analyse')}</span>' + j.files.slice(0, 15).map(f => '<a class="fref chip2" data-f="' + escH(f) + '" href="#">' + escH(f) + '</a>').join('')
       : '';
@@ -312,9 +321,21 @@ document.addEventListener('keydown', e => {
     document.getElementById('search').focus();
   }
 });
+function setProj(v) {
+  proj = v;
+  filesLoaded = changedLoaded = false;
+  document.getElementById('fileList').innerHTML = '';
+  document.getElementById('chgChips').innerHTML = '';
+  curMd = curHtml = '';
+  document.getElementById('promptOut').classList.add('hidden');
+  navList.innerHTML = ''; navGrp.style.display = 'none';
+  const nm = document.querySelector('.brand .nm');
+  const seg = v.split(/[\\\\/]/).filter(Boolean).pop() || v;
+  if (nm) { nm.textContent = seg; nm.title = v; }
+}
 document.getElementById('pset').onclick = () => {
   const v = document.getElementById('proj').value.trim();
-  if (v) { proj = v; filesLoaded = false; call('/api/audit?x=1' + qp()); }
+  if (v) { setProj(v); call('/api/audit?x=1' + qp(), { view: 'audit' }); }
 };
 // Copy / downloads / view
 const flash = (el, txt) => { const old = el.textContent; el.textContent = txt; setTimeout(() => el.textContent = old, 1500); };
@@ -339,7 +360,14 @@ function filter() {
   document.querySelectorAll('#out section').forEach(s => {
     total++;
     const okQ = !q || s.textContent.toLowerCase().includes(q);
-    const okS = !sevFilter || s.querySelector('.sev-' + sevFilter);
+    let visRows = 0;
+    s.querySelectorAll('tr, li').forEach(r => {
+      if (!r.querySelector('[class*="sev-"]')) { if (!sevFilter) r.style.display = ''; return; }
+      const hit = !sevFilter || !!r.querySelector('.sev-' + sevFilter);
+      r.style.display = hit ? '' : 'none';
+      if (hit && sevFilter) visRows++;
+    });
+    const okS = !sevFilter || visRows > 0 || !!s.querySelector('.sev-' + sevFilter);
     s.style.display = okQ && okS ? '' : 'none';
     if (okQ && okS) vis++;
   });
@@ -355,9 +383,11 @@ document.getElementById('search').oninput = filter;
 // Severity counts on the filter chips
 function sevCounts() {
   const counts = { '': 0, crit: 0, high: 0, med: 0 };
-  document.querySelectorAll('#out section').forEach(s => {
+  document.querySelectorAll('#out .sev-crit, #out .sev-high, #out .sev-med').forEach(el => {
     counts['']++;
-    ['crit', 'high', 'med'].forEach(k => { if (s.querySelector('.sev-' + k)) counts[k]++; });
+    if (el.classList.contains('sev-crit')) counts.crit++;
+    if (el.classList.contains('sev-high')) counts.high++;
+    if (el.classList.contains('sev-med')) counts.med++;
   });
   document.querySelectorAll('.chip[data-sev]').forEach(c => {
     const b = c.querySelector('.cnt');
@@ -377,7 +407,21 @@ function spy() {
   }, { rootMargin: '-15% 0px -75% 0px' });
   document.querySelectorAll('#out section[id]').forEach(s => observer.observe(s));
 }
-call('/api/audit?x=1' + qp());
+// Restore view/file/project from the query string — hash stays for anchors.
+function route() {
+  const p = new URLSearchParams(location.search);
+  const pr = (p.get('project') || '').trim();
+  if (pr && pr !== proj) { document.getElementById('proj').value = pr; setProj(pr); }
+  const v = p.get('view') || 'audit', f = (p.get('file') || '').trim();
+  impactBox.classList.toggle('hidden', v !== 'impact');
+  if (v === 'impact') {
+    loadFiles(); loadChanged();
+    if (f) { runImpact(f, false); return; }
+  }
+  call('/api/' + (v === 'health' || v === 'stats' ? v : 'audit') + '?x=1' + qp());
+}
+window.onpopstate = route;
+route();
 </script></body></html>`;
 }
 
@@ -495,7 +539,11 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
         const mode = u.searchParams.get('mode') ?? 'intelligence';
         const q = u.searchParams.get('q') ?? '';
         const isFile = /\.[a-z0-9]+$/i.test(q);
-        const result = await buildContext({ project: target, query: q, filePath: isFile ? q : undefined, lang: reqLang });
+        const result = await buildContext({ project: target, query: q, filePath: isFile ? q : undefined, searchQuery: mode === 'search' && !isFile ? q : undefined, lang: reqLang });
+        if (result.noMatch) {
+          json(res, { prompt: reqLang === 'en' ? `No code chunk matches "${q}" — nothing to send.` : `Aucun fragment ne correspond à « ${q} » — rien à envoyer.` });
+          return;
+        }
         let staticSection = '';
         if (new Set(['intelligence', 'report', 'audit', 'tasks', 'ceo']).has(mode)) {
           try {
