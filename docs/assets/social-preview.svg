@@ -14,32 +14,8 @@
   <rect width="1280" height="640" fill="url(#bg)"/>
   <rect width="1280" height="640" fill="url(#glow)"/>
 
-  <!-- Logo tile — Fluent card, accent border -->
-  <g transform="translate(250, 320) translate(-110, -110)">
-    <rect x="0" y="0" width="220" height="220" rx="14" fill="#2b2b2b" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
-    <rect x="0" y="0" width="4" height="220" rx="2" fill="#4cc2ff"/>
-    <g transform="translate(22, 22)">
-      <rect x="0" y="0" width="176" height="176" rx="12" fill="#1f1f1f" stroke="#4cc2ff" stroke-width="8"/>
-      <path d="M 40 96
-               a 40 40 0 0 1 40 -40
-               h 22
-               a 40 40 0 0 1 40 40
-               v 7
-               a 40 40 0 0 1 -40 40
-               h -22
-               l -24 29
-               l 11 -29
-               h 13
-               a 40 40 0 0 1 -40 -40
-               v -7
-               z"
-            fill="none" stroke="#4cc2ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M 66 82 L 46 103 L 66 124" fill="none" stroke="#8fd3ff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M 116 82 L 136 103 L 116 124" fill="none" stroke="#8fd3ff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-      <line x1="96" y1="130" x2="86" y2="80" stroke="#8fd3ff" stroke-width="7" stroke-linecap="round"/>
-      <circle cx="142" cy="140" r="11" fill="#6ccb5f"/>
-    </g>
-  </g>
+  <!-- Real app logo -->
+  <image href="logo.png" x="140" y="196" width="248" height="248"/>
 
   <!-- Text on the right -->
   <g transform="translate(520, 320)">
