@@ -44,6 +44,7 @@ const IC = {
   lock: ic('<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>', 11),
   chat: ic('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>', 16),
   play: ic('<polygon points="7 4 20 12 7 20 7 4"/>'),
+  zen: ic('<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>'),
 };
 
 function appHtml(project: string, absPath: string, lang: Lang): string {
@@ -177,6 +178,26 @@ li button.fact{margin-left:8px}
 .statusbar code{font-family:'Cascadia Code',Consolas,monospace;background:transparent;color:#fff;font-size:10.5px}
 .statusbar a{color:#fff;text-decoration:none;opacity:.85}
 .statusbar a:hover{opacity:1;text-decoration:underline}
+.statusbar .sitem.kb{cursor:pointer;border-radius:3px;padding:1px 6px}
+.statusbar .sitem.kb:hover{background:rgba(255,255,255,.18)}
+/* ---------- command palette ---------- */
+.pal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;padding-top:12vh}
+.palbox{width:min(560px,92vw);background:#252526;border:1px solid #454545;border-radius:8px;box-shadow:0 16px 48px rgba(0,0,0,.55);overflow:hidden;animation:rise .15s ease both}
+.palbox input{width:100%;background:transparent;border:none;border-bottom:1px solid var(--line);padding:12px 16px;font-size:14px;color:var(--txt);border-radius:0}
+.palbox input:focus{outline:none;box-shadow:none;border-bottom-color:var(--acc)}
+#palList{max-height:320px;overflow-y:auto;padding:6px}
+.palit{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:5px;color:var(--txt);font-size:13px;cursor:pointer}
+.palit .it{width:14px;height:14px;display:flex;align-items:center;justify-content:center;color:#8a8a8a;flex-shrink:0}
+.palit.sel,.palit:hover{background:#094771;color:#fff}
+.palit.sel .it,.palit:hover .it{color:#fff}
+.palit .kk{margin-left:auto;flex-shrink:0}
+.palit kbd{background:rgba(255,255,255,.08);border:1px solid var(--line);border-bottom-width:2px;border-radius:3px;padding:0 5px;font-size:10px;font-family:inherit;color:var(--dim)}
+.palit.sel kbd{color:#cfe8ff;border-color:rgba(255,255,255,.3)}
+.palfoot{padding:6px 12px;border-top:1px solid var(--line);color:#6a6a6a;font-size:10.5px;display:flex;gap:14px}
+.palfoot kbd{background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:3px;padding:0 4px;font-size:9.5px;font-family:inherit}
+/* ---------- zen mode ---------- */
+body.zen .top,body.zen .strip{display:none}
+body.zen .wrap{max-width:880px;padding-top:48px}
 @media(max-width:960px){.top{height:auto;min-height:42px;flex-wrap:wrap;padding:4px 8px;gap:4px}.brand{border-right:none}.strip{top:auto;flex-wrap:wrap;padding:4px 8px}.projwrap{order:5;flex:1 1 100%}.projwrap input{width:100%;flex:1;min-width:0}.seg{overflow-x:auto;scrollbar-width:none;max-width:100%}.seg::-webkit-scrollbar{display:none}.seg .chip{padding:3px 8px;white-space:nowrap}.searchwrap{flex:1;min-width:110px}.searchwrap input{width:100%;min-width:0}.askrow{flex-direction:column;align-items:stretch}.askrow .aicon{display:none}.askrow select{width:100%}.btn-acc{justify-content:center}.wrap{padding:14px 14px 50px}.statusbar{gap:8px}.statusbar .sright{gap:8px}}
 </style></head><body>
 <header class="top">
@@ -216,7 +237,7 @@ li button.fact{margin-left:8px}
 <select id="mode" aria-label="${t('Mode du prompt', 'Prompt mode')}">${PROMPT_MODES.map(m => `<option${m === 'chat' ? ' selected' : ''}>${m}</option>`).join('')}</select>
 <button class="btn-acc" id="askBtn">${IC.wand}${t('Préparer le prompt', 'Build prompt')}</button>
 </div>
-<div class="hint">${t('Le prompt contient le code pertinent — colle-le dans ChatGPT, Claude ou Ollama.', 'The prompt carries the relevant code — paste it into ChatGPT, Claude or Ollama.')} <kbd>Ctrl</kbd>+<kbd>K</kbd> ${t('pour écrire', 'to focus')} · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> ${t('pour générer', 'to build')}</div>
+<div class="hint">${t('Le prompt contient le code pertinent — colle-le dans ChatGPT, Claude ou Ollama.', 'The prompt carries the relevant code — paste it into ChatGPT, Claude or Ollama.')} <kbd>Ctrl</kbd>+<kbd>K</kbd> ${t('pour les commandes', 'for commands')} · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> ${t('pour générer', 'to build')}</div>
 </div>
 <div id="impactBar" class="ibar hidden"><span class="lbl">${IC.impact} ${t('Fichier à analyser', 'File to analyse')}</span><div class="irow"><input type="text" id="ifile" list="fileList" placeholder="src/store.ts" autocomplete="off"><datalist id="fileList"></datalist><button class="act go" id="igo">${IC.play}${t('Analyser', 'Analyze')}</button></div><div class="chips" id="chgChips"></div></div>
 <div id="promptOut" class="hidden"><div class="prompthd"><h2>Prompt</h2><button id="copyBtn" class="act">${IC.copy}${t('Copier', 'Copy')}</button></div><pre id="promptPre" class="big"></pre></div>
@@ -228,8 +249,9 @@ li button.fact{margin-left:8px}
 <span class="sitem" title="${esc(absPath)}" style="max-width:320px">${esc(absPath)}</span>
 <span class="sitem" id="sbView"></span>
 <span class="sitem" id="sbMsg" style="opacity:.85">ready</span>
-<span class="sright"><span class="sitem">${IC.lock} ${t('local — aucun envoi automatique', 'local — no automatic upload')}</span><span class="sitem"><code>npx dsh-codebase-chat --ui</code></span></span>
+<span class="sright"><span class="sitem kb" id="sbCmd" title="${t('Palette de commandes', 'Command palette')}">⌘K</span><span class="sitem">${IC.lock} ${t('local — aucun envoi automatique', 'local — no automatic upload')}</span><span class="sitem"><code>npx dsh-codebase-chat --ui</code></span></span>
 </div>
+<div class="pal hidden" id="pal"><div class="palbox"><input type="text" id="palIn" placeholder="${t('Tape une commande…', 'Type a command…')}" aria-label="${t('Palette de commandes', 'Command palette')}" autocomplete="off"><div id="palList"></div><div class="palfoot"><span><kbd>↑↓</kbd> ${t('naviguer', 'navigate')}</span><span><kbd>↵</kbd> ${t('exécuter', 'run')}</span><span><kbd>esc</kbd> ${t('fermer', 'close')}</span><span style="margin-left:auto"><kbd>1-5</kbd> ${t('vues', 'views')} · <kbd>z</kbd> zen</span></div></div></div>
 <script>
 const out = document.getElementById('out'), navList = document.getElementById('navList'), navGrp = document.getElementById('navGrp');
 let curMd = '', curHtml = '', proj = '${esc(absPath).replace(/'/g, "\\'").replace(/\\/g, '\\\\')}', sevFilter = '', mdView = false, seq = 0;
@@ -421,15 +443,72 @@ document.getElementById('askBtn').onclick = async () => {
   document.getElementById('promptPre').textContent = j.prompt || j.error;
 };
 document.getElementById('ask').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) document.getElementById('askBtn').click(); });
-// Ctrl+K / Cmd+K — focus the question field (command-palette convention)
+// ---------- command palette + global shortcuts ----------
+const goView = a => { const b = document.querySelector('button.nl[data-a="' + a + '"]'); if (b) b.click(); };
+const toggleZen = () => {
+  const zen = document.body.classList.toggle('zen');
+  if (sbMsg) sbMsg.textContent = zen ? 'zen — ${t('z pour quitter', 'z to exit')}' : 'ready';
+};
+const CMDS = [
+  { i: '${IC.check}', l: '${t('Mes changements', 'My changes')}', k: '1', run: () => goView('check') },
+  { i: '${IC.audit}', l: '${t('Audit complet', 'Deep audit')}', k: '2', run: () => goView('audit') },
+  { i: '${IC.health}', l: '${t('Santé du code', 'Code health')}', k: '3', run: () => goView('health') },
+  { i: '${IC.stats}', l: '${t('Statistiques', 'Statistics')}', k: '4', run: () => goView('stats') },
+  { i: '${IC.impact}', l: '${t('Impact d\u2019un fichier', 'File impact')}', k: '5', run: () => goView('impact') },
+  { i: '${IC.chat}', l: '${t('Poser une question', 'Ask a question')}', run: () => { const a = document.getElementById('ask'); a.focus(); a.select(); } },
+  { i: '${IC.wand}', l: '${t('Générer le prompt', 'Build prompt')}', run: () => document.getElementById('askBtn').click() },
+  { i: '${IC.search}', l: '${t('Filtrer les résultats', 'Filter results')}', k: '/', run: () => document.getElementById('search').focus() },
+  { i: '${IC.copy}', l: '${t('Copier le rapport', 'Copy report')}', run: () => document.getElementById('copyMd').click() },
+  { i: '${IC.file}', l: '${t('Vue Markdown', 'Markdown view')}', run: () => document.getElementById('viewMd').click() },
+  { i: '${IC.download}', l: '${t('Exporter en Markdown', 'Export as Markdown')}', run: () => document.getElementById('dlMd').click() },
+  { i: '${IC.download}', l: '${t('Exporter en HTML', 'Export as HTML')}', run: () => document.getElementById('dlHtml').click() },
+  { i: '${IC.zen}', l: '${t('Mode zen', 'Zen mode')}', k: 'z', run: toggleZen },
+];
+const pal = document.getElementById('pal'), palIn = document.getElementById('palIn'), palList = document.getElementById('palList');
+let palSel = 0, palItems = [];
+function palRender() {
+  const q = palIn.value.toLowerCase().trim();
+  palItems = CMDS.filter(c => !q || c.l.toLowerCase().includes(q));
+  palSel = Math.min(palSel, Math.max(0, palItems.length - 1));
+  palList.innerHTML = palItems.length
+    ? palItems.map((c, i) => '<div class="palit' + (i === palSel ? ' sel' : '') + '" data-i="' + i + '"><span class="it">' + c.i + '</span><span>' + escH(c.l) + '</span>' + (c.k ? '<span class="kk"><kbd>' + escH(c.k) + '</kbd></span>' : '') + '</div>').join('')
+    : '<div class="palit" style="color:var(--dim)">${t('Aucune commande', 'No matching command')}</div>';
+}
+const palOpen = () => { pal.classList.remove('hidden'); palIn.value = ''; palSel = 0; palRender(); palIn.focus(); };
+const palClose = () => pal.classList.add('hidden');
+palIn.addEventListener('input', () => { palSel = 0; palRender(); });
+palIn.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown') { e.preventDefault(); palSel = Math.min(palSel + 1, palItems.length - 1); palRender(); }
+  if (e.key === 'ArrowUp') { e.preventDefault(); palSel = Math.max(palSel - 1, 0); palRender(); }
+  if (e.key === 'Enter') { e.preventDefault(); const c = palItems[palSel]; palClose(); if (c) c.run(); }
+});
+palList.addEventListener('click', e => {
+  const it = e.target.closest('.palit');
+  if (it && it.dataset.i !== undefined) { palClose(); palItems[+it.dataset.i].run(); }
+});
+pal.addEventListener('click', e => { if (e.target === pal) palClose(); });
+document.getElementById('sbCmd').onclick = palOpen;
+const MOD = /mac/i.test(navigator.platform) ? '⌘' : 'Ctrl';
+document.getElementById('sbCmd').textContent = MOD + 'K';
+document.getElementById('sbCmd').title = '${t('Palette de commandes', 'Command palette')}' + ' (' + MOD + '+K)';
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
     e.preventDefault();
-    const a = document.getElementById('ask'); a.focus(); a.select();
+    pal.classList.contains('hidden') ? palOpen() : palClose();
+    return;
   }
-  if (e.key === '/' && !/input|textarea|select/i.test(document.activeElement.tagName)) {
-    e.preventDefault();
-    document.getElementById('search').focus();
+  if (e.key === 'Escape') {
+    if (!pal.classList.contains('hidden')) { palClose(); return; }
+    if (document.body.classList.contains('zen')) toggleZen();
+    return;
+  }
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  if (/input|textarea|select/i.test(document.activeElement.tagName)) return;
+  if (e.key === '/') { e.preventDefault(); document.getElementById('search').focus(); return; }
+  if (e.key.toLowerCase() === 'z') { e.preventDefault(); toggleZen(); return; }
+  if (/^[1-5]$/.test(e.key)) {
+    const b = document.querySelectorAll('button.nl[data-a]')[+e.key - 1];
+    if (b) b.click();
   }
 });
 function setProj(v) {

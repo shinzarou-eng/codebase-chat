@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.29.1 — IDE-style dashboard, command palette & security hardening
+
+**Dashboard**
+
+- Dense IDE redesign — VS Code-inspired title bar with editor tabs, compact panels, blue status bar, amber code styling. Replaces the sidebar layout; the standalone HTML export and MCP `ui://` resource share the same theme.
+- Command palette — `Ctrl+K` / `⌘K` opens a searchable command overlay (views, prompt builder, filters, exports, zen mode) with arrow-key navigation.
+- Zen mode — `z` hides the chrome for focused report reading; `Esc` exits.
+- View shortcuts — `1`–`5` switch views; `/` focuses the filter.
+
+**Security**
+
+- `esc()` now escapes quotes in HTML attributes — a file path containing `"` could previously break out of `title="…"`/`value="…"` attributes; the file datalist is now escaped too.
+
+**Internals**
+
+- `src/report.ts` (808l, complexity 184) split into focused modules (`report-scan`, `report-git`, `report-deps`, `report-collect`, `report-i18n`, `report-render`) — max per-file complexity down to 64, output verified byte-identical.
+- New tests: `ui.test.ts`, `dashboard.test.ts` (HTTP smoke), `scanCode` comment-awareness regression tests.
+- CI: empty-SARIF fallback so `upload-sarif` never masks a check failure; `codeql-action` v4.
+
 ## 0.29.0 / mcp 0.10.0 — local dashboard, verified fixes & 18 tools
 
 **New**
