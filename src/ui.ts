@@ -170,6 +170,7 @@ a{color:var(--acc)}
 .sev-high{background:rgba(255,185,140,.14);color:#ffb98c}
 .sev-med{background:rgba(252,225,0,.12);color:var(--warn)}
 .sev-info{background:rgba(76,194,255,.13);color:var(--acc)}
+.sev-ok{background:rgba(108,203,95,.14);color:var(--ok)}
 .mb{display:inline-flex;align-items:center;gap:10px;vertical-align:middle}
 .mb i{display:inline-block;width:120px;height:6px;background:#ffffff12;border-radius:4px;overflow:hidden}
 .mb u{display:block;height:100%;background:linear-gradient(90deg,#ff99a4,#fce100,#6ccb5f);border-radius:4px}

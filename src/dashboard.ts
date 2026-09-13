@@ -11,6 +11,7 @@ import { buildToolPrompt } from './prompts.js';
 import { getIndex } from './indexer.js';
 import { findProjectRoot } from './project.js';
 import { parseReportMd, DASH_CSS, scoreGauge, reportToHtml } from './ui.js';
+import { computeStats } from './stats.js';
 
 type Lang = 'fr' | 'en';
 
@@ -70,6 +71,13 @@ input:hover,select:hover{border-color:var(--line2)}
 .btn-acc{background:#4cc2ff;color:#00395e;border:1px solid #60cdff}
 .btn-acc:hover{background:#69c9ff}
 pre.big{max-height:60vh}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:6px 0 8px}
+.kpi{background:#232323;border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.kpi .kv{font-size:21px;font-weight:600;line-height:1.2}
+.kpi .kl{color:var(--dim);font-size:11.5px;margin-top:2px}
+.dim-s{color:var(--dim);font-size:12px}
+.fitbar{display:inline-block;width:90px;height:6px;background:#ffffff14;border-radius:3px;overflow:hidden;vertical-align:middle;margin-right:8px}
+.fitbar i{display:block;height:100%;background:var(--acc);border-radius:3px}
 .hidden{display:none!important}
 @media(max-width:860px){aside{position:static;width:auto}body{display:block}main{margin:0}.top{flex-wrap:wrap}}
 </style></head><body>
@@ -287,10 +295,32 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
       }
       if (u.pathname === '/api/stats') {
         const index = await getIndex(await findProjectRoot(target).catch(() => target), () => {});
-        const fileCount = Object.keys(index.files).length;
-        const totalTokens = Object.values(index.files).reduce((s, f) => s + f.chunks.reduce((a, c) => a + c.tokens, 0), 0);
-        const termCount = Object.keys(index.terms).length;
-        json(res, { body: `<section><h2>Stats</h2><ul><li><strong>Project</strong>: <code>${esc(index.projectPath)}</code></li><li><strong>Files</strong>: ${fileCount}</li><li><strong>Tokens</strong>: ${totalTokens.toLocaleString()}</li><li><strong>Terms</strong>: ${termCount.toLocaleString()}</li><li><strong>Cache</strong>: <code>${esc(index.projectHash)}</code></li></ul></section>` });
+        const s = computeStats(index);
+        const fmt = (n: number) => n.toLocaleString('en-US');
+        const tt = (fr: string, en: string) => (reqLang === 'en' ? en : fr);
+        const mb = s.bytes >= 1_048_576 ? (s.bytes / 1_048_576).toFixed(1) + ' MB' : Math.round(s.bytes / 1024) + ' KB';
+        const kpi = (v: string, l: string) => `<div class="kpi"><div class="kv">${v}</div><div class="kl">${l}</div></div>`;
+        const modelRows = s.models.map(m =>
+          `<tr><td>${esc(m.family)}</td><td><code>${esc(m.tokenizer)}</code></td><td>${m.exact ? '' : '~'}${fmt(m.tokens)}</td><td>${m.exact ? `<span class="sev sev-ok">exact</span>` : `<span class="sev sev-med">est.</span> <span class="dim-s">${esc(m.note)}</span>`}</td></tr>`).join('');
+        const winRows = s.windows.map(w =>
+          `<tr><td>${esc(w.model)}</td><td>${fmt(w.window)}</td><td><span class="sev ${w.fits ? 'sev-ok' : 'sev-crit'}">${w.fits ? tt('tient', 'fits') : tt('dépasse', 'exceeds')}</span></td><td><div class="fitbar"><i style="width:${Math.min(w.usedPct, 100)}%"></i></div><span class="dim-s">${w.usedPct}%</span></td></tr>`).join('');
+        const fileRows = s.topFiles.map(f => `<tr><td><code>${esc(f.path)}</code></td><td>${fmt(f.tokens)}</td></tr>`).join('');
+        const extRows = s.topExts.map(e => `<tr><td><code>${esc(e.ext)}</code></td><td>${e.count}</td></tr>`).join('');
+        const body = `<section id="stats"><h2>${tt('Statistiques du projet', 'Project statistics')}</h2>
+<div class="kpis">${kpi(String(s.files), tt('fichiers indexés', 'indexed files'))}${kpi(String(s.chunks), 'chunks')}${kpi(fmt(s.terms), tt('termes dans l\'index', 'index terms'))}${kpi(mb, tt('taille totale', 'total size'))}${kpi(fmt(s.o200k), 'tokens o200k')}${kpi(fmt(s.cl100k), 'tokens cl100k')}</div>
+<h3>${tt('Tokens par famille de modèle', 'Tokens per model family')}</h3>
+<p class="dim-s">${tt('Combien de tokens représente ce codebase selon le tokenizer de chaque modèle. Utile pour estimer le coût et la faisabilité avant d\'envoyer du code à une API.', 'How many tokens this codebase represents under each model\'s tokenizer. Useful to estimate cost and feasibility before sending code to an API.')}</p>
+<table><tr><th>${tt('Modèle', 'Model')}</th><th>Tokenizer</th><th>Tokens</th><th>${tt('Précision', 'Accuracy')}</th></tr>${modelRows}</table>
+<h3>${tt('Fenêtres de contexte — le projet entier y tient-il ?', 'Context windows — does the whole project fit?')}</h3>
+<p class="dim-s">${tt('Si vous envoyiez l\'intégralité du code en une seule requête. En pratique le retrieval n\'envoie qu\'une sélection ≤ 60k tokens (maxTokens) — aucune fenêtre n\'est nécessaire pour tout le projet.', 'If you sent the entire codebase in a single request. In practice retrieval only sends a ≤ 60k-token selection (maxTokens) — no window needs to hold the whole project.')}</p>
+<table><tr><th>${tt('Modèle', 'Model')}</th><th>${tt('Fenêtre', 'Window')}</th><th></th><th>${tt('Occupation', 'Usage')}</th></tr>${winRows}</table>
+<h3>${tt('Fichiers les plus lourds (tokens)', 'Heaviest files (tokens)')}</h3>
+<table><tr><th>${tt('Fichier', 'File')}</th><th>Tokens</th></tr>${fileRows}</table>
+<h3>${tt('Fichiers par extension', 'Files by extension')}</h3>
+<table><tr><th>Ext</th><th>${tt('Fichiers', 'Files')}</th></tr>${extRows}</table>
+<p class="dim-s">${tt('Cache d\'index', 'Index cache')}: <code>${esc(s.projectHash)}</code> · <code>${esc(s.projectPath)}</code></p>
+</section>`;
+        json(res, { body });
         return;
       }
       if (u.pathname === '/api/prompt') {
