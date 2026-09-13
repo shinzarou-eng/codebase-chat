@@ -26,8 +26,17 @@ jobs:
       - run: pnpm build
       # Dogfooding: the tool audits its own diff — new findings block the merge.
       - run: node dist/cli.js --check --strict --sarif results.sarif --diff "${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}"
+      # If the check crashed before writing SARIF, upload an empty run so the
+      # real failure stays readable instead of a "Path does not exist" error.
+      - name: Ensure SARIF output exists
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -f results.sarif ]; then
+            printf '%s\n' '{"version":"2.1.0","$schema":"https://json.schemastore.org/sarif-2.1.0.json","runs":[{"tool":{"driver":{"name":"dsh-codebase-chat","rules":[]}},"results":[]}]}' > results.sarif
+          fi
       # …and lands as inline annotations on the PR (even when the check fails).
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: results.sarif
