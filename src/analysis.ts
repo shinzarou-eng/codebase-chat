@@ -237,16 +237,22 @@ export async function analyzeProject(projectPath: string, opts: AnalyzeOptions =
     .sort();
 
   // Unused exports: name not imported and not referenced elsewhere.
-  // One identifier pass per file (Set), then O(1) lookups — no per-export regex.
+  // A name referenced by other code in its own file (e.g. a type used by a
+  // public interface) is live API surface, not dead code — so we also index
+  // identifiers on non-export lines per file.
   const IDENT_RE = /[A-Za-z_$][\w$]*/g;
   const identifiersByFile = new Map<string, Set<string>>();
+  const nonExportIdsByFile = new Map<string, Set<string>>();
   for (const [file, text] of fileTexts) {
     identifiersByFile.set(file, new Set(text.match(IDENT_RE) ?? []));
+    const nonExport = text.split('\n').filter(l => !/^\s*export\b/.test(l)).join('\n');
+    nonExportIdsByFile.set(file, new Set(nonExport.match(IDENT_RE) ?? []));
   }
   const unusedExports: UnusedExport[] = [];
   for (const rel of scopedFiles) {
     for (const exp of parseExports(fileTexts.get(rel)!)) {
       if (exp.name === 'default') continue;
+      if (nonExportIdsByFile.get(rel)!.has(exp.name)) continue; // referenced by own module
       let used = false;
       for (const [otherFile, ids] of identifiersByFile) {
         if (otherFile === rel) continue;

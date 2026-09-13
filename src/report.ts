@@ -44,21 +44,32 @@ const SMELL_PATS: [string, RegExp][] = [
 const SEC_PATS: [string, RegExp][] = [
   ['secret', /(?:api[_-]?key|secret|passwd|password|token|private[_-]?key)\s*[:=]\s*['"`][A-Za-z0-9_\/+\-.]{8,}['"`]/i],
   ['eval', /\beval\s*\(|new\s+Function\s*\(/],
-  ['exec', /\bexecSync\s*\(|child_process/],
+  // Only shell-string execution is a risky sink — exec/execSync take a shell
+  // string, and spawn*/execFile* with `shell: true` opt into a shell too.
+  // spawn(cmd, args[]) and execFile are the safe array-arg APIs.
+  ['exec', /(?<![.\w$])exec(?:Sync)?\s*\((?!\?)|shell\s*:\s*true/],
   ['innerHTML', /\.innerHTML\s*=/],
   ['unsafeRegex', /new\s+RegExp\s*\([^'"`]/],
 ];
 
-export function scanCode(fileTexts: Map<string, string>, pats: [string, RegExp][], perFileCap = 3): SmellScan {
+export function scanCode(fileTexts: Map<string, string>, pats: [string, RegExp][], perFileCap = 3, skipComments = false): SmellScan {
   const out: SmellScan = {};
   for (const [file, text] of fileTexts) {
     if (/test|spec|__tests__|\.d\.ts$/i.test(file)) continue; // tests legitimately console/TODO
+    // CLI entry points (arg parsing / shebang) print to stdout on purpose —
+    // console.* is their interface, not a smell.
+    const isCli = /^#!/m.test(text) || /\bprocess\.argv\b/.test(text);
     const lines = text.split('\n');
     for (const [key, re] of pats) {
+      if (isCli && key === 'console') continue;
       let found = 0;
       for (let i = 0; i < lines.length && found < perFileCap; i++) {
+        const line = lines[i].trim();
+        // Security patterns don't apply to comment lines — `// never eval(` or
+        // a doc mention of `shell: true` is not a sink.
+        if (skipComments && (/^\/\//.test(line) || /^\* /.test(line) || /^\/\*/.test(line))) continue;
         if (re.test(lines[i])) {
-          (out[key] ??= []).push({ file, line: i + 1, sample: lines[i].trim().slice(0, 90) });
+          (out[key] ??= []).push({ file, line: i + 1, sample: line.slice(0, 90) });
           found++;
         }
       }
@@ -150,8 +161,18 @@ async function envAudit(abs: string, fileTexts: Map<string, string>) {
 }
 
 /** package.json dependencies never imported anywhere in the codebase. */
-function unusedDeps(deps: string[], imported: Set<string>): string[] {
-  return deps.filter(d => ![...imported].some(i => pkgRoot(i) === d));
+function unusedDeps(deps: string[], imported: Set<string>, pkg: Record<string, any>, fileTexts: Map<string, string>): string[] {
+  // Deps invoked as CLIs in npm scripts (tsup, vitest) or resolved by path
+  // (require.resolve, wasm assets) are used even without a static import.
+  const scripts = Object.values(pkg?.scripts ?? {}).join('\n');
+  return deps.filter(d => {
+    if ([...imported].some(i => pkgRoot(i) === d)) return false;
+    if (new RegExp(`\\b${d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(scripts)) return false;
+    for (const text of fileTexts.values()) {
+      if (text.includes(`'${d}`) || text.includes(`"${d}`) || text.includes(`\`${d}`)) return false;
+    }
+    return true;
+  });
 }
 
 /** Config hygiene: tsconfig strict, .gitignore, package.json completeness. */
@@ -280,7 +301,7 @@ function pkgRoot(spec: string): string {
  *  package imports. */
 function importedPackages(fileTexts: Map<string, string>, skipTests = false): Set<string> {
   const imported = new Set<string>();
-  const IMPORT_RE = /(?:\bfrom\s+|\bimport\s*\(|\bimport\s+|\brequire\s*\()\s*['"]([^'"./][^'"]*)['"]/g;
+  const IMPORT_RE = /(?:\bfrom\s+|\bimport\s*\(|\bimport\s+|\brequire\s*\(|\brequire\.resolve\s*\()\s*['"]([^'"./][^'"]*)['"]/g;
   const TEST_PATH = /(^|[\\/])(tests?|__tests__|fixtures?)([\\/]|$)|\.(test|spec)\.[tj]sx?$/i;
   for (const [p, text] of fileTexts) {
     if (skipTests && TEST_PATH.test(p)) continue;
@@ -455,13 +476,13 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   const docs = ['readme.md', 'license', 'license.md', 'changelog.md', 'contributing.md', 'security.md', 'agents.md']
     .filter(d => indexPaths.has(d));
   const smells = scanCode(graph.fileTexts, SMELL_PATS);
-  const sec = scanCode(graph.fileTexts, SEC_PATS, 5);
+  const sec = scanCode(graph.fileTexts, SEC_PATS, 5, true);
   const hasTests = testFiles.length > 0;
   const git = await gitActivity(health.projectPath);
   const infra = detectInfra(indexPaths);
   const env = await envAudit(health.projectPath, graph.fileTexts);
   const imported = importedPackages(graph.fileTexts);
-  const deadDeps = unusedDeps(deps, imported);
+  const deadDeps = unusedDeps(deps, imported, pkg, graph.fileTexts);
   const missing = await missingDeps(health.projectPath, graph.fileTexts, pkg, indexPaths);
   const lockDrift = await lockfileDrift(health.projectPath, deps);
   const fnComplex = functionComplexity(index);
