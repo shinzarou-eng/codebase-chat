@@ -14,6 +14,12 @@ Règles :
 - Premier mot = outil ou alias → appelle `mcp__dsh-codebase-chat__codebase_<outil>` avec le mapping ci-dessous. `projectPath` = répertoire courant sauf indication contraire.
 - Outil inconnu → affiche le menu.
 
+Robustesse :
+- Tool MCP absent ou serveur non connecté → bascule sur le CLI équivalent : `npx dsh-codebase-chat --check` | `--health` | `--impact <f>` | `--search <q>` | `--doctor`. Si rien n'est installé → propose `npx dsh-codebase-chat-mcp-setup`.
+- Tool demandé inconnu du serveur (ex. `codebase_check`) → version trop vieille : le dire et suggérer de mettre à jour / recharger.
+- Verdict `check` rouge → enchaîne proactivement : `impact` sur le fichier le plus risqué + `explain` sur le finding bloquant.
+- Résultat déterministe → présente le verdict et les raisons tels quels, sans les réécrire.
+
 ## Que veux-tu faire ?
 
 | Intention | Commande |
