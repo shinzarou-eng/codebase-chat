@@ -9,6 +9,7 @@ import { analyzeProject, formatHealthReport } from './analysis.js';
 import { analyzeImpact, formatImpactReport } from './impact.js';
 import { buildToolPrompt } from './prompts.js';
 import { buildDeterministicReport } from './report.js';
+import { reportToHtml } from './ui.js';
 import { getChangedFiles } from './diff.js';
 import { loadProjectConfig } from './config.js';
 import { disposeTreeSitter } from './treesitter.js';
@@ -93,6 +94,7 @@ Options:
                          or OPENAI_API_KEY; DEEPSEEK_BASE_URL / CODEBASE_MODEL
                          customize endpoint/model) instead of printing it.
   --no-llm               With --prompt: deterministic full report — pure static
+  --ui                   Local web dashboard of the deterministic report (no LLM)
                          analysis, no model, no key, no network.
   -w, --watch            Keep the index hot — rebuild incrementally on file changes
   -e, --embed            Enable local semantic embeddings (slower, more relevant)
@@ -125,6 +127,7 @@ async function main() {
       style: { type: 'string' },
       call: { type: 'boolean', default: false },
       'no-llm': { type: 'boolean', default: false },
+      ui: { type: 'boolean', default: false },
       watch: { type: 'boolean', short: 'w', default: false },
       embed: { type: 'boolean', short: 'e', default: false },
       lang: { type: 'string' },
@@ -227,6 +230,27 @@ async function main() {
     }
     console.log(formatImpactReport(r.report, lang));
     exit(0);
+  }
+
+  if (values.ui) {
+    const report = await buildDeterministicReport(values.project, lang);
+    const abs = await findProjectRoot(resolveProjectPath(values.project)).catch(() => resolveProjectPath(values.project));
+    const html = reportToHtml(report, { project: basename(abs), generated: new Date().toISOString().slice(0, 10) });
+    const { createServer } = await import('node:http');
+    const server = createServer((_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+    });
+    await new Promise<void>(r => server.listen(0, '127.0.0.1', r));
+    const port = (server.address() as { port: number }).port;
+    const url = `http://127.0.0.1:${port}`;
+    console.log(lang === 'en' ? `Dashboard: ${url} (Ctrl+C to quit)` : `Dashboard : ${url} (Ctrl+C pour quitter)`);
+    const { execFile } = await import('node:child_process');
+    const opener = process.platform === 'win32' ? 'cmd' : process.platform === 'darwin' ? 'open' : 'xdg-open';
+    const args = process.platform === 'win32' ? ['/c', 'start', '', url] : [url];
+    execFile(opener, args, () => {});
+    process.on('SIGINT', () => { server.close(); exit(0); });
+    await new Promise(() => {});
   }
 
   if (values.prompt) {

@@ -38,4 +38,5 @@ export {
 } from './prompts.js';
 export type { ToolPromptOptions } from './prompts.js';
 export { buildDeterministicReport } from './report.js';
+export { reportToHtml } from './ui.js';
 export type * from './types.js';

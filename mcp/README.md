@@ -145,7 +145,7 @@ On Windows with a local clone you can also use the absolute path:
 | `codebase_crea` | Creative / marketing ideas from the code |
 | `codebase_health` | **Deterministic** static analysis — cycles, dead code, duplication, complexity, health score. No LLM needed |
 | `codebase_impact` | **Deterministic** blast-radius analysis — which files transitively depend on a target (`file`, required). No LLM needed |
-| `codebase_deep_audit` | **Deterministic** full audit — git churn & bus factor, churn × complexity risk, dependency integrity, per-function complexity, secrets, env coverage, README/config hygiene. ~30 analyses, all cited `file:line`. No LLM needed |
+| `codebase_deep_audit` | **Deterministic** full audit — git churn & bus factor, churn × complexity risk, dependency integrity, per-function complexity, secrets, env coverage, README/config hygiene. ~30 analyses, all cited `file:line`. No LLM needed. Pass `ui: true` to also get a `ui://` HTML dashboard resource (MCP-UI clients) |
 
 All tools accept:
 
