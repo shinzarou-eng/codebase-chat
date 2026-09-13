@@ -18,4 +18,4 @@
 
 ## Conventions
 - Commits : `<prefix>: <une phrase>` sans trailer ni co-auteur.
-- Thème Fluent du dashboard/site et bannière brandée `docs/assets/social-preview.png` (générée depuis le SVG) à conserver.
+- Thème du dashboard : **dense type IDE (VS Code)** — validé par l'utilisateur. Palette `#1e1e1e/#252526/#3c3c3c`, accent `#007fd4`, base 13px, radius 4px, status bar en bas. JAMAIS de dégradés criards, glow, ombres portées ou palette violette — rejetés comme "amateur". Bannière `docs/assets/social-preview.png` (générée depuis le SVG) à conserver.
