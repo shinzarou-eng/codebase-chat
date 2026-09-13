@@ -6,7 +6,7 @@ import { basename, extname, join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { getIndex } from './indexer.js';
-import { analyzeProject, collectImportGraph, formatHealthReportMd, looksLikeEntry } from './analysis.js';
+import { analyzeProject, collectImportGraph, formatHealthReportMd, insideString, lineStartsInString, looksLikeEntry } from './analysis.js';
 import { recommendations } from './recommendations.js';
 import type { Reco } from './recommendations.js';
 
@@ -32,7 +32,8 @@ export type { Finding, SmellScan, GitStats } from './report-types.js';
 import type { Finding, SmellScan, GitStats } from './report-types.js';
 
 const SMELL_PATS: [string, RegExp][] = [
-  ['todo', /\b(?:TODO|FIXME|HACK|XXX|WIP)\b/i],
+  // The (?:) no-ops keep this pattern table from matching its own source.
+  ['todo', /\b(?:TOD(?:)O|FIXM(?:)E|HAC(?:)K|XX(?:)X|WI(?:)P)\b/],
   ['console', /\bconsole\.(log|warn|error|debug|info)\s*\(/],
   ['tsIgnore', /@ts-(ignore|expect-error|nocheck)\b/],
   ['any', /:\s*any\b/],
@@ -52,35 +53,10 @@ const SEC_PATS: [string, RegExp][] = [
   ['unsafeRegex', /new\s+RegExp\s*\([^'"`]/],
 ];
 
-/** Line-start string state: does this line begin inside a string/template literal? */
-function lineStartsInString(text: string): boolean[] {
-  const starts: boolean[] = [];
-  let inStr: string | null = null;
-  let lineStart = true;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (lineStart) { starts.push(inStr !== null); lineStart = false; }
-    if (c === '\n') { lineStart = true; continue; }
-    if (c === '\\') { i++; continue; }
-    if (inStr) { if (c === inStr) inStr = null; continue; }
-    if (c === "'" || c === '"' || c === '`') inStr = c;
-  }
-  return starts;
-}
-
-/** Is the match at `idx` inside a quoted string on this line? */
-function insideString(line: string, idx: number): boolean {
-  let inStr: string | null = null;
-  for (let i = 0; i < idx; i++) {
-    const c = line[i];
-    if (c === '\\') { i++; continue; }
-    if (inStr) { if (c === inStr) inStr = null; continue; }
-    if (c === "'" || c === '"' || c === '`') inStr = c;
-  }
-  return inStr !== null;
-}
-
-export function scanCode(fileTexts: Map<string, string>, pats: [string, RegExp][], perFileCap = 3, skipComments = false): SmellScan {
+export function scanCode(
+  fileTexts: Map<string, string>, pats: [string, RegExp][], perFileCap = 3,
+  opts: { skipComments?: boolean; skipStrings?: boolean } = {},
+): SmellScan {
   const out: SmellScan = {};
   for (const [file, text] of fileTexts) {
     if (/test|spec|__tests__|\.d\.ts$/i.test(file)) continue; // tests legitimately console/TODO
@@ -88,22 +64,22 @@ export function scanCode(fileTexts: Map<string, string>, pats: [string, RegExp][
     // IO is fine there too — console.*/readFileSync are their interface.
     const isCli = /^#!/m.test(text) || /\bprocess\.argv\b/.test(text) || /(^|\/)scripts?\//.test(file);
     const lines = text.split('\n');
-    const startsInStr = lineStartsInString(text);
+    const startsInStr = opts.skipStrings ? lineStartsInString(text) : [];
     for (const [key, re] of pats) {
       if (isCli && (key === 'console' || key === 'syncIo')) continue;
       let found = 0;
       for (let i = 0; i < lines.length && found < perFileCap; i++) {
         const line = lines[i].trim();
-        // Security patterns don't apply to comment lines — `// never eval(` or
-        // a doc mention of `shell: true` is not a sink.
-        if (skipComments && (/^\/\//.test(line) || /^\* /.test(line) || /^\/\*/.test(line))) continue;
-        // Matches inside string literals are prompt text / fixtures, not code.
-        if (startsInStr[i]) continue;
+        // Comments mentioning `shell: true` or `eval(` are not sinks.
+        if (opts.skipComments && (/^\/\//.test(line) || /^\* /.test(line) || /^\/\*/.test(line))) continue;
+        // Smell patterns inside string literals are prompt text / fixtures —
+        // but security patterns keep strings (secrets and generated code
+        // like `out.innerHTML = ...` in a template live inside them).
         const m = re.exec(lines[i]);
-        if (m && !insideString(lines[i], m.index)) {
-          (out[key] ??= []).push({ file, line: i + 1, sample: line.slice(0, 90) });
-          found++;
-        }
+        if (!m) continue;
+        if (opts.skipStrings && (startsInStr[i] || insideString(lines[i], m.index))) continue;
+        (out[key] ??= []).push({ file, line: i + 1, sample: line.slice(0, 90) });
+        found++;
       }
     }
   }
@@ -507,8 +483,8 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   const indexPaths = new Set(Object.keys(index.files).map(f => f.toLowerCase()));
   const docs = ['readme.md', 'license', 'license.md', 'changelog.md', 'contributing.md', 'security.md', 'agents.md']
     .filter(d => indexPaths.has(d));
-  const smells = scanCode(graph.fileTexts, SMELL_PATS);
-  const sec = scanCode(graph.fileTexts, SEC_PATS, 5, true);
+  const smells = scanCode(graph.fileTexts, SMELL_PATS, 3, { skipStrings: true });
+  const sec = scanCode(graph.fileTexts, SEC_PATS, 5, { skipComments: true });
   const hasTests = testFiles.length > 0;
   const git = await gitActivity(health.projectPath);
   const infra = detectInfra(indexPaths);

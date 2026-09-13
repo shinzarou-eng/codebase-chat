@@ -45,6 +45,34 @@ function parseImports(text: string, relPath: string, known: Set<string>): string
   return out;
 }
 
+/** Is the char at `idx` inside a quoted string on this line? */
+export function insideString(line: string, idx: number): boolean {
+  let inStr: string | null = null;
+  for (let i = 0; i < idx; i++) {
+    const c = line[i];
+    if (c === '\\') { i++; continue; }
+    if (inStr) { if (c === inStr) inStr = null; continue; }
+    if (c === "'" || c === '"' || c === '`') inStr = c;
+  }
+  return inStr !== null;
+}
+
+/** Line-start string state: does this line begin inside a string/template literal? */
+export function lineStartsInString(text: string): boolean[] {
+  const starts: boolean[] = [];
+  let inStr: string | null = null;
+  let lineStart = true;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (lineStart) { starts.push(inStr !== null); lineStart = false; }
+    if (c === '\n') { lineStart = true; continue; }
+    if (c === '\\') { i++; continue; }
+    if (inStr) { if (c === inStr) inStr = null; continue; }
+    if (c === "'" || c === '"' || c === '`') inStr = c;
+  }
+  return starts;
+}
+
 export function parseExports(text: string): { name: string; line: number }[] {
   const out: { name: string; line: number }[] = [];
   let m: RegExpExecArray | null;
@@ -237,26 +265,36 @@ export async function analyzeProject(projectPath: string, opts: AnalyzeOptions =
     .sort();
 
   // Unused exports: name not imported and not referenced elsewhere.
-  // A name referenced by other code in its own file (e.g. a type used by a
-  // public interface) is live API surface, not dead code — so we also index
-  // identifiers on non-export lines per file.
+  // A name is "used" when referenced on any line other than its own export
+  // declaration — e.g. a type appearing in another export's signature, or a
+  // helper consumed by the module's public functions.
   const IDENT_RE = /[A-Za-z_$][\w$]*/g;
   const identifiersByFile = new Map<string, Set<string>>();
-  const nonExportIdsByFile = new Map<string, Set<string>>();
+  const idsPerLineByFile = new Map<string, Set<string>[]>();
   for (const [file, text] of fileTexts) {
     identifiersByFile.set(file, new Set(text.match(IDENT_RE) ?? []));
-    const nonExport = text.split('\n').filter(l => !/^\s*export\b/.test(l)).join('\n');
-    nonExportIdsByFile.set(file, new Set(nonExport.match(IDENT_RE) ?? []));
+    idsPerLineByFile.set(file, text.split('\n').map(l => new Set(l.match(IDENT_RE) ?? [])));
   }
   const unusedExports: UnusedExport[] = [];
+  const TEST_FILE = /(^|\/)(tests?|__tests__|fixtures?)(\/|$)|\.(test|spec)\.[cm]?[jt]sx?$/i;
   for (const rel of scopedFiles) {
-    for (const exp of parseExports(fileTexts.get(rel)!)) {
+    if (TEST_FILE.test(rel)) continue; // test files export fixtures — executed, not imported
+    const ownLines = idsPerLineByFile.get(rel)!;
+    const text = fileTexts.get(rel)!;
+    const textLines = text.split('\n');
+    const startsInStr = lineStartsInString(text);
+    for (const exp of parseExports(text)) {
       if (exp.name === 'default') continue;
-      if (nonExportIdsByFile.get(rel)!.has(exp.name)) continue; // referenced by own module
-      let used = false;
+      const dLine = textLines[exp.line - 1] ?? '';
+      const expIdx = dLine.indexOf('export');
+      // `export` inside a string literal is fixture/generated text, not code.
+      if (startsInStr[exp.line - 1] || (expIdx >= 0 && insideString(dLine, expIdx))) continue;
+      // Same-file use: any line other than the export declaration itself.
+      let used = ownLines.some((ids, i) => i !== exp.line - 1 && ids.has(exp.name));
       for (const [otherFile, ids] of identifiersByFile) {
+        if (used) break;
         if (otherFile === rel) continue;
-        if (ids.has(exp.name)) { used = true; break; }
+        if (ids.has(exp.name)) used = true;
       }
       if (!used) unusedExports.push({ file: rel, name: exp.name, line: exp.line });
     }

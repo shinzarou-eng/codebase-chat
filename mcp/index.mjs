@@ -18,7 +18,7 @@ if (process.argv[2] === "setup") {
   process.exit(0);
 }
 
-const VERSION = "0.9.1";
+const VERSION = "0.9.2";
 
 const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || "";
 const baseUrl = process.env.DEEPSEEK_BASE_URL || process.env.OPENAI_BASE_URL || "https://api.deepseek.com/v1";

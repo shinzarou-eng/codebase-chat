@@ -6,6 +6,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from
 import { dirname, join } from "node:path";
 import { homedir, platform } from "node:os";
 import { createInterface } from "node:readline/promises";
+import { fileURLToPath } from "node:url";
 
 const PKG = "dsh-codebase-chat-mcp";
 const SERVER_NAME = "dsh-codebase-chat";
@@ -195,6 +196,7 @@ const T = {
     checking: "  Vérification de l'installation...",
     checkOk: (n) => `  [check] serveur OK — ${n} outils codebase_* disponibles`,
     checkFail: (m) => `  [check] échec : ${m}\n  Le client risque de ne pas démarrer le serveur. Vérifie que Node.js >= 20 est installé.`,
+    cmdOk: (p) => `  [ok] /codebase → ${p} (menu des outils dans Claude Code)`,
   },
   en: {
     title: (p) => `\n  ${p} — setup\n`,
@@ -219,6 +221,7 @@ const T = {
     checking: "  Verifying installation...",
     checkOk: (n) => `  [check] server OK — ${n} codebase_* tools available`,
     checkFail: (m) => `  [check] failed: ${m}\n  The client may fail to start the server. Make sure Node.js >= 20 is installed.`,
+    cmdOk: (p) => `  [ok] /codebase -> ${p} (tool menu in Claude Code)`,
   },
 };
 
@@ -227,6 +230,19 @@ function detectLang() {
   const flag = flagIdx >= 0 ? process.argv[flagIdx + 1] : "";
   const raw = flag || process.env.CODEBASE_LANG || process.env.LANG || Intl.DateTimeFormat().resolvedOptions().locale || "";
   return String(raw).toLowerCase().startsWith("en") ? "en" : "fr";
+}
+
+// Installs the /codebase slash command (tool menu) into ~/.claude/commands.
+// Claude Code only surfaces MCP *prompts* as /mcp__<srv>__<name>; this file
+// gives users the short, friendly entry point.
+function installClaudeCommands(home, t) {
+  const src = join(dirname(fileURLToPath(import.meta.url)), "commands", "codebase.md");
+  if (!existsSync(src)) return;
+  const dest = join(home, ".claude", "commands", "codebase.md");
+  mkdirSync(dirname(dest), { recursive: true });
+  if (existsSync(dest)) copyFileSync(dest, `${dest}.bak`);
+  copyFileSync(src, dest);
+  console.log(t.cmdOk(dest));
 }
 
 // Minimal JSON-RPC handshake over stdio: initialize + tools/list. Proves the
@@ -348,6 +364,8 @@ export async function runSetup() {
     writeConfig(path, merged);
     console.log(t.ok(client.name, path));
   }
+
+  if (chosen.some((c) => c.id === "claude-code")) installClaudeCommands(home, t);
 
   console.log(t.restart(chosen.length));
   if (!apiKey) console.log(t.promptActive);
