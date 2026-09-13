@@ -22,7 +22,13 @@
 
 <br>
 
-## Get started
+## Installation
+
+```bash
+dsh plugin --profile web add dsh-codebase-chat
+```
+
+or as a standalone MCP server / CLI:
 
 ```bash
 npx dsh-codebase-chat-mcp setup
@@ -39,7 +45,9 @@ Other paths — DeepSeek Harness plugin · CLI · from source · manual config: 
   <em>Real MCP session on a real 422-file codebase — <code>codebase_health</code> finds 324 circular deps, <code>codebase_chat</code> answers with <code>[source: file:line]</code> receipts · <a href="docs/assets/demo-power.gif">PR review (--diff + --watch)</a> · <a href="docs/assets/demo.gif">CLI tour</a> · <a href="docs/assets/demo-mcp.gif">MCP stdio</a> · <a href="docs/assets/demo-fr.gif">French mode</a></em>
 </p>
 
-## What a real session looks like
+## Usage
+
+_What a real session looks like_ —
 
 Run on this repository — the exact text the tools return:
 
