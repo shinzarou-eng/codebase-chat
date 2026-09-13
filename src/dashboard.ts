@@ -10,7 +10,7 @@ import { buildContext } from './context.js';
 import { buildToolPrompt } from './prompts.js';
 import { getIndex } from './indexer.js';
 import { findProjectRoot } from './project.js';
-import { parseReportMd, DASH_CSS } from './ui.js';
+import { parseReportMd, DASH_CSS, scoreGauge } from './ui.js';
 
 type Lang = 'fr' | 'en';
 
@@ -18,102 +18,144 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 
 const PROMPT_MODES = ['intelligence', 'audit', 'report', 'ceo', 'tasks', 'player', 'crea', 'chat', 'search', 'explain', 'refactor', 'git', 'build'];
 
-function appHtml(project: string, lang: Lang): string {
+function appHtml(project: string, absPath: string, lang: Lang): string {
   const t = (fr: string, en: string) => (lang === 'en' ? en : fr);
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>◆ ${esc(project)} — codebase dashboard</title><style>${DASH_CSS}
-body{display:block}
-.top{position:sticky;top:0;z-index:10;background:rgba(11,15,20,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:14px 28px;display:flex;align-items:center;gap:16px}
-.top .logo{color:var(--acc);font-weight:700;font-size:15px}
-.top .tag{color:var(--dim);font-size:12px;border:1px solid var(--line);border-radius:20px;padding:3px 10px}
-.wrap{max-width:1200px;margin:0 auto;padding:24px 28px 60px}
-.toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}
-button.act{background:var(--card);border:1px solid var(--line);color:var(--txt);padding:9px 16px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600}
-button.act:hover{border-color:var(--acc);color:var(--acc)}
-button.act.primary{background:linear-gradient(135deg,#1e3a5f,#14263d);border-color:#2d5a8f;color:#cfe8ff}
-button.act.primary:hover{border-color:var(--acc)}
+body{display:flex;margin:0}
+aside{position:fixed;inset:0 auto 0 0;width:264px;background:#0d1219;border-right:1px solid var(--line);padding:22px 16px;overflow:auto;display:flex;flex-direction:column}
+aside .logo{color:var(--acc);font-weight:700;font-size:15px;padding:0 8px 6px;word-break:break-all}
+aside .tag{color:var(--dim);font-size:11px;padding:0 8px 18px;border-bottom:1px solid var(--line);margin-bottom:14px}
+aside .grp{font-size:10px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;padding:12px 8px 6px}
+button.act{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:1px solid transparent;color:var(--txt);padding:9px 12px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600}
+button.act:hover{background:var(--card);border-color:var(--line)}
+button.act.on{background:#14263d;border-color:#2d5a8f;color:#cfe8ff}
 button.act:disabled{opacity:.4;cursor:wait}
-.pane{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin-bottom:18px}
-.pane h2{margin-top:0}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.mini{padding:4px 8px}
+.mini input,.mini select{width:100%;margin-bottom:7px}
+.mini button.act{justify-content:center;background:var(--card);border-color:var(--line)}
+.mini button.act:hover{border-color:var(--acc);color:var(--acc)}
+#navList a{display:block;color:var(--dim);text-decoration:none;padding:5px 10px;border-radius:7px;font-size:12.5px}
+#navList a:hover{background:var(--card);color:var(--txt)}
+aside .foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--dim)}
+main{margin-left:264px;flex:1;min-width:0}
+.top{position:sticky;top:0;z-index:10;background:rgba(11,15,20,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:12px 28px;display:flex;align-items:center;gap:12px}
+.top input{flex:0 1 300px;margin-left:auto}
+.top button{background:var(--card);border:1px solid var(--line);color:var(--txt);padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600}
+.top button:hover{border-color:var(--acc);color:var(--acc)}
+.wrap{max-width:1060px;padding:26px 32px 80px}
 input,select{background:#0d1319;border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:8px;font-size:13px;font-family:inherit}
 input:focus,select:focus{outline:none;border-color:var(--acc)}
-input[type=text]{flex:1;min-width:220px}
-.hint{color:var(--dim);font-size:12px;margin-top:8px}
-#out{min-height:200px}
-.spin{color:var(--dim);padding:40px 0;text-align:center}
+#out{min-height:300px}
+.spin{color:var(--dim);padding:60px 0;text-align:center;font-size:14px}
 .spin::after{content:'…';animation:dots 1.2s infinite}
 @keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'…'}}
 .err{color:var(--bad);padding:20px}
-#out section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin-bottom:18px}
-.subnav{position:sticky;top:57px;background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line);margin-bottom:16px;display:none;flex-wrap:wrap;gap:6px}
-.subnav a{color:var(--dim);font-size:12px;text-decoration:none;padding:3px 9px;border-radius:6px;border:1px solid var(--line)}
-.subnav a:hover{color:var(--acc);border-color:var(--acc)}
-.copybar{display:flex;justify-content:flex-end;margin-bottom:8px}
-.copybar button{background:#1a2430;border:1px solid var(--line);color:var(--txt);padding:6px 14px;border-radius:7px;cursor:pointer;font-size:12px}
-.copybar button:hover{border-color:var(--acc)}
-.hero2{margin:10px 0 20px}
-.hero2 .big{font-size:36px;font-weight:700}
+#out section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-bottom:18px;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+.rhero{display:flex;align-items:center;gap:22px;margin-bottom:20px}
+.rhero h1{font-size:20px;margin:0}
+.rhero .sub{color:var(--dim);font-size:12px}
+.prompthd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.prompthd h2{margin:0}
+pre.big{max-height:60vh}
+.hidden{display:none!important}
+@media(max-width:860px){aside{position:static;width:auto}body{display:block}main{margin:0}.top{flex-wrap:wrap}}
 </style></head><body>
-<div class="top"><span class="logo">◆ ${esc(project)}</span><span class="tag">${t('100% local — rien ne quitte ta machine', '100% local — nothing leaves your machine')}</span></div>
+<aside>
+<div class="logo">◆ ${esc(project)}</div>
+<div class="tag">${t('100% local · aucune donnée ne sort', '100% local · nothing leaves your machine')}</div>
+<div class="grp">${t('Analyses', 'Analysis')}</div>
+<button class="act" data-a="audit">🔍 ${t('Audit complet', 'Deep audit')}</button>
+<button class="act" data-a="health">❤️ ${t('Santé', 'Health')}</button>
+<button class="act" data-a="stats">📊 Stats</button>
+<button class="act" data-a="impact">💥 Impact</button>
+<div id="impactBox" class="mini hidden"><input type="text" id="ifile" placeholder="src/store.ts"><button class="act" id="igo">${t('Analyser', 'Analyze')}</button></div>
+<div class="grp">${t('Prompt pour un LLM', 'Prompt for an LLM')}</div>
+<div class="mini"><select id="mode">${PROMPT_MODES.map(m => `<option>${m}</option>`).join('')}</select>
+<input type="text" id="q" placeholder="${t('question / fichier / focus', 'question / file / focus')}">
+<button class="act" id="gen">${t('Générer le prompt', 'Generate prompt')}</button></div>
+<div class="grp">${t('Projet', 'Project')}</div>
+<div class="mini"><input type="text" id="proj" value="${esc(absPath)}" placeholder="C:\\path\\to\\project">
+<button class="act" id="pset">${t('Analyser ce projet', 'Analyze this project')}</button></div>
+<div class="grp" id="navGrp" style="display:none">${t('Sections', 'Sections')}</div>
+<div id="navList"></div>
+<div class="foot">dsh-codebase-chat<br>npx dsh-codebase-chat --ui</div>
+</aside>
+<main>
+<div class="top">
+<button id="copyMd">${t('⧉ Copier le rapport', '⧉ Copy report')}</button>
+<input type="text" id="search" placeholder="${t('Filtrer les résultats…', 'Filter results…')}">
+</div>
 <div class="wrap">
-<div class="toolbar">
-  <button class="act primary" data-a="audit">${t('🔍 Audit complet', '🔍 Deep audit')}</button>
-  <button class="act" data-a="health">${t('❤️ Santé', '❤️ Health')}</button>
-  <button class="act" data-a="stats">📊 Stats</button>
-  <button class="act" data-a="impact">💥 Impact</button>
+<div id="promptOut" class="hidden"><div class="prompthd"><h2>Prompt</h2><button id="copyBtn" class="act" style="width:auto">${t('Copier', 'Copy')}</button></div><pre id="promptPre" class="big"></pre></div>
+<div id="out"><div class="spin">${t('audit en cours', 'running audit')}</div></div>
 </div>
-<div class="pane"><h2>${t('Générateur de prompt', 'Prompt generator')}</h2>
-<div class="row"><select id="mode">${PROMPT_MODES.map(m => `<option>${m}</option>`).join('')}</select>
-<input type="text" id="q" placeholder="${t('question / fichier / focus (optionnel selon le mode)', 'question / file / focus (optional by mode)')}">
-<button class="act" id="gen">${t('Générer', 'Generate')}</button></div>
-<div class="hint">${t('Le prompt assemblé est copiable — colle-le dans n\'importe quel LLM (ChatGPT, Claude, Ollama…).', 'The assembled prompt is copyable — paste it into any LLM (ChatGPT, Claude, Ollama…).')}</div>
-<div id="promptOut" style="display:none"><div class="copybar"><button id="copyBtn">${t('Copier', 'Copy')}</button></div><pre id="promptPre" style="max-height:340px"></pre></div>
-</div>
-<div id="impactBox" class="pane" style="display:none"><h2>💥 ${t('Analyse d\'impact', 'Impact analysis')}</h2>
-<div class="row"><input type="text" id="ifile" placeholder="src/store.ts"><button class="act" id="igo">${t('Analyser', 'Analyze')}</button></div></div>
-<div class="subnav" id="subnav"></div>
-<div id="out"><div class="spin">${t('Choisis une action ci-dessus', 'Pick an action above')}</div></div>
-</div>
+</main>
 <script>
-const out = document.getElementById('out'), subnav = document.getElementById('subnav');
-const loading = () => { out.innerHTML = '<div class="spin">${t('analyse en cours', 'analysing')}</div>'; subnav.style.display = 'none'; };
+const out = document.getElementById('out'), navList = document.getElementById('navList'), navGrp = document.getElementById('navGrp');
+let curMd = '', proj = '${esc(absPath).replace(/'/g, "\\'").replace(/\\/g, '\\\\')}';
+const qp = () => proj ? '&project=' + encodeURIComponent(proj) : '';
+const loading = () => { out.innerHTML = '<div class="spin">${t('analyse en cours', 'analysing')}</div>'; };
 async function call(url) {
-  loading();
+  loading(); setActive(url);
   try {
     const r = await fetch(url); const j = await r.json();
     if (j.error) { out.innerHTML = '<div class="err">' + j.error + '</div>'; return; }
+    curMd = j.md || '';
+    document.getElementById('promptOut').classList.add('hidden');
     if (j.nav && j.nav.length) {
-      subnav.innerHTML = j.nav.map(n => '<a href="#' + n.id + '">' + n.title + '</a>').join('');
-      subnav.style.display = 'flex';
-    }
+      navGrp.style.display = 'block';
+      navList.innerHTML = j.nav.map(n => '<a href="#' + n.id + '">' + n.title + '</a>').join('');
+    } else { navGrp.style.display = 'none'; navList.innerHTML = ''; }
     out.innerHTML = (j.hero || '') + (j.intro || '') + (j.body || j.text || '');
+    filter();
   } catch (e) { out.innerHTML = '<div class="err">' + e.message + '</div>'; }
+}
+function setActive(url) {
+  document.querySelectorAll('button.act[data-a]').forEach(b => b.classList.toggle('on', url.includes('/api/' + b.dataset.a)));
 }
 const impactBox = document.getElementById('impactBox');
 document.querySelectorAll('button.act[data-a]').forEach(b => b.onclick = () => {
   const a = b.dataset.a;
-  impactBox.style.display = a === 'impact' ? 'block' : 'none';
-  if (a === 'audit') call('/api/audit');
-  if (a === 'health') call('/api/health');
-  if (a === 'stats') call('/api/stats');
+  impactBox.classList.toggle('hidden', a !== 'impact');
+  if (a === 'audit') call('/api/audit?x=1' + qp());
+  if (a === 'health') call('/api/health?x=1' + qp());
+  if (a === 'stats') call('/api/stats?x=1' + qp());
 });
 document.getElementById('igo').onclick = () => {
   const f = document.getElementById('ifile').value.trim();
-  if (f) call('/api/impact?file=' + encodeURIComponent(f));
+  if (f) call('/api/impact?file=' + encodeURIComponent(f) + qp());
 };
 document.getElementById('gen').onclick = async () => {
   const mode = document.getElementById('mode').value, q = document.getElementById('q').value;
-  const r = await fetch('/api/prompt?mode=' + mode + '&q=' + encodeURIComponent(q));
+  const r = await fetch('/api/prompt?mode=' + mode + '&q=' + encodeURIComponent(q) + qp());
   const j = await r.json();
-  document.getElementById('promptOut').style.display = 'block';
+  document.getElementById('promptOut').classList.remove('hidden');
   document.getElementById('promptPre').textContent = j.prompt || j.error;
+  document.getElementById('promptOut').scrollIntoView({ behavior: 'smooth' });
 };
-document.getElementById('copyBtn').onclick = () => {
+document.getElementById('pset').onclick = () => {
+  const v = document.getElementById('proj').value.trim();
+  if (v) { proj = v; call('/api/audit?x=1' + qp()); }
+};
+document.getElementById('copyBtn').onclick = (e) => {
   navigator.clipboard.writeText(document.getElementById('promptPre').textContent);
-  document.getElementById('copyBtn').textContent = '${t('Copié ✓', 'Copied ✓')}';
+  e.target.textContent = '${t('Copié ✓', 'Copied ✓')}';
 };
-call('/api/audit');
+document.getElementById('copyMd').onclick = (e) => {
+  if (!curMd) return;
+  navigator.clipboard.writeText(curMd);
+  e.target.textContent = '${t('Copié ✓', 'Copied ✓')}';
+  setTimeout(() => e.target.textContent = '${t('⧉ Copier le rapport', '⧉ Copy report')}', 1500);
+};
+function filter() {
+  const q = document.getElementById('search').value.toLowerCase();
+  document.querySelectorAll('#out section').forEach(s => {
+    s.style.display = !q || s.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+document.getElementById('search').oninput = filter;
+call('/api/audit?x=1');
 </script></body></html>`;
 }
 
@@ -129,34 +171,37 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
   const server = createServer(async (req, res) => {
     const u = new URL(req.url ?? '/', 'http://x');
     try {
-      if (u.pathname === '/') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(appHtml(project, lang)); return; }
+      if (u.pathname === '/') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(appHtml(project, abs, lang)); return; }
 
+      const target = (u.searchParams.get('project') ?? '').trim() || projectPath;
       if (u.pathname === '/api/audit') {
-        const md = await buildDeterministicReport(projectPath, lang);
+        const md = await buildDeterministicReport(target, lang);
         const r = parseReportMd(md, project);
-        json(res, { title: r.title, intro: r.intro, nav: r.nav, body: r.body, hero: r.score !== null ? `<div class="hero2"><div class="big">${r.score}<small style="font-size:16px;color:var(--dim)">/100</small></div></div>` : '' });
+        json(res, { title: r.title, intro: r.intro, nav: r.nav, body: r.body, md, hero: `<div class="rhero">${scoreGauge(r.score, r.grade)}<div><h1>${esc(r.title)}</h1><div class="sub">${esc(target)}</div></div></div>` });
         return;
       }
       if (u.pathname === '/api/health') {
-        const report = await analyzeProject(abs);
-        const r = parseReportMd(formatHealthReportMd(report, lang), project);
-        json(res, { title: r.title, intro: r.intro, nav: r.nav, body: r.body });
+        const report = await analyzeProject(await findProjectRoot(target).catch(() => target));
+        const md = formatHealthReportMd(report, lang);
+        const r = parseReportMd(md, project);
+        json(res, { title: r.title, intro: r.intro, nav: r.nav, body: r.body, md });
         return;
       }
       if (u.pathname === '/api/impact') {
         const file = (u.searchParams.get('file') ?? '').trim();
         if (!file) { json(res, { error: 'file param required' }, 400); return; }
-        const r = await analyzeImpact(projectPath, file);
+        const r = await analyzeImpact(target, file);
         if (!r.ok) {
           json(res, { error: r.candidates.length ? `Ambiguous — candidates: ${r.candidates.join(', ')}` : `No code file matches "${file}"` });
           return;
         }
-        const p = parseReportMd(formatImpactReportMd(r.report, lang), project);
-        json(res, { body: p.body || `<p>${p.intro}</p>` });
+        const md = formatImpactReportMd(r.report, lang);
+        const p = parseReportMd(md, project);
+        json(res, { body: p.body || `<p>${p.intro}</p>`, md });
         return;
       }
       if (u.pathname === '/api/stats') {
-        const index = await getIndex(abs, () => {});
+        const index = await getIndex(await findProjectRoot(target).catch(() => target), () => {});
         const fileCount = Object.keys(index.files).length;
         const totalTokens = Object.values(index.files).reduce((s, f) => s + f.chunks.reduce((a, c) => a + c.tokens, 0), 0);
         const termCount = Object.keys(index.terms).length;
@@ -167,7 +212,7 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
         const mode = u.searchParams.get('mode') ?? 'intelligence';
         const q = u.searchParams.get('q') ?? '';
         const isFile = /\.[a-z0-9]+$/i.test(q);
-        const result = await buildContext({ project: projectPath, query: q, filePath: isFile ? q : undefined, lang });
+        const result = await buildContext({ project: target, query: q, filePath: isFile ? q : undefined, lang });
         let staticSection = '';
         if (new Set(['intelligence', 'report', 'audit', 'tasks', 'ceo']).has(mode)) {
           try {
