@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="420" viewBox="0 0 1600 420" font-family="Segoe UI, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#242424"/>
+      <stop offset="100%" stop-color="#1f1f1f"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="420" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="48" y="62" fill="#f0f0f0" font-size="34" font-weight="600">How it <tspan fill="#4cc2ff">works</tspan></text>
+  <text x="1600" y="62" fill="#a3a3a3" font-size="15" text-anchor="end">inside the dashed box = <tspan fill="#6ccb5f" font-weight="600">your machine</tspan> — nothing leaves by default</text>
+
+  <!-- Machine boundary -->
+  <rect x="40" y="92" width="880" height="252" rx="10" fill="none" stroke="#6ccb5f" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <rect x="64" y="80" width="236" height="24" rx="6" fill="#1f1f1f"/>
+  <text x="76" y="97" fill="#6ccb5f" font-size="13" font-weight="600" font-family="Cascadia Code, Consolas, monospace">YOUR MACHINE — local-first</text>
+
+  <!-- Pipeline cards -->
+  <g font-size="13">
+    <!-- card template repeated -->
+    <g transform="translate(64,120)">
+      <rect width="186" height="140" rx="8" fill="#2b2b2b" stroke="rgba(255,255,255,0.08)"/>
+      <text x="16" y="30" fill="#4cc2ff" font-size="12" font-weight="700" font-family="Cascadia Code, Consolas, monospace">01</text>
+      <text x="16" y="58" fill="#f0f0f0" font-size="18" font-weight="600">Source</text>
+      <text x="16" y="92" fill="#a3a3a3" font-family="Cascadia Code, Consolas, monospace" font-size="11.5">JS · TS · Py · Go</text>
+      <text x="16" y="110" fill="#a3a3a3" font-family="Cascadia Code, Consolas, monospace" font-size="11.5">Rust · Java · C# · PHP</text>
+    </g>
+    <text x="258" y="198" fill="#7d7d7d" font-size="20">→</text>
+    <g transform="translate(274,120)">
+      <rect width="186" height="140" rx="8" fill="#2b2b2b" stroke="rgba(255,255,255,0.08)"/>
+      <text x="16" y="30" fill="#4cc2ff" font-size="12" font-weight="700" font-family="Cascadia Code, Consolas, monospace">02</text>
+      <text x="16" y="58" fill="#f0f0f0" font-size="18" font-weight="600">AST index</text>
+      <text x="16" y="92" fill="#a3a3a3" font-family="Cascadia Code, Consolas, monospace" font-size="11.5">Babel + tree-sitter</text>
+      <text x="16" y="110" fill="#a3a3a3" font-family="Cascadia Code, Consolas, monospace" font-size="11.5">incremental cache</text>
+    </g>
+    <text x="468" y="198" fill="#7d7d7d" font-size="20">→</text>
+    <g transform="translate(484,120)">
+      <rect width="186" height="140" rx="8" fill="#2b2b2b" stroke="rgba(255,255,255,0.08)"/>
+      <text x="16" y="30" fill="#4cc2ff" font-size="12" font-weight="700" font-family="Cascadia Code, Consolas, monospace">03</text>
+      <text x="16" y="58" fill="#f0f0f0" font-size="18" font-weight="600">Retrieval</text>
+      <text x="16" y="92" fill="#a3a3a3" font-family="Cascadia Code, Consolas, monospace" font-size="11.5">lexical + local</text>
+      <text x="16" y="110" fill="#a3a3a3" font-family="Cascadia Code, Consolas, monospace" font-size="11.5">embeddings</text>
+      <text x="16" y="128" fill="#a3a3a3" font-family="Cascadia Code, Consolas, monospace" font-size="11.5">token-budgeted</text>
+    </g>
+    <text x="678" y="198" fill="#7d7d7d" font-size="20">→</text>
+    <g transform="translate(694,120)">
+      <rect width="186" height="140" rx="8" fill="#2b2b2b" stroke="rgba(76,194,255,0.35)"/>
+      <text x="16" y="30" fill="#4cc2ff" font-size="12" font-weight="700" font-family="Cascadia Code, Consolas, monospace">04</text>
+      <text x="16" y="58" fill="#f0f0f0" font-size="18" font-weight="600">Briefing</text>
+      <text x="16" y="92" fill="#a3a3a3" font-family="Cascadia Code, Consolas, monospace" font-size="11.5">module graph · metrics</text>
+      <text x="16" y="110" fill="#a3a3a3" font-family="Cascadia Code, Consolas, monospace" font-size="11.5">debt signals · cite rules</text>
+    </g>
+  </g>
+
+  <!-- Deterministic strip -->
+  <g transform="translate(64,286)">
+    <rect width="816" height="44" rx="8" fill="#232323" stroke="rgba(76,194,255,0.18)"/>
+    <text x="20" y="28" fill="#8fd3ff" font-size="14" font-weight="600" font-family="Cascadia Code, Consolas, monospace">Σ&#160; Deterministic analysis</text>
+    <text x="796" y="28" fill="#7d7d7d" font-size="13" font-family="Cascadia Code, Consolas, monospace" text-anchor="end">cycles · dead code · duplication · score — no LLM needed</text>
+  </g>
+
+  <!-- Arrow to outputs -->
+  <text x="930" y="218" fill="#7d7d7d" font-size="22">→</text>
+
+  <!-- Answer mode cards -->
+  <g transform="translate(956,118)">
+    <rect width="260" height="100" rx="8" fill="#2b2b2b" stroke="rgba(76,194,255,0.35)"/>
+    <rect x="0" y="0" width="3" height="100" rx="1.5" fill="#4cc2ff"/>
+    <text x="20" y="30" fill="#f0f0f0" font-size="16" font-weight="600">Host model</text>
+    <rect x="20" y="44" width="150" height="20" rx="4" fill="rgba(76,194,255,0.13)"/>
+    <text x="30" y="58" fill="#4cc2ff" font-size="11" font-weight="600" font-family="Cascadia Code, Consolas, monospace">promptOnly — default</text>
+    <text x="20" y="88" fill="#a3a3a3" font-size="12">Claude · Cursor · Windsurf · Devin</text>
+  </g>
+  <g transform="translate(956,240)">
+    <rect width="260" height="100" rx="8" fill="#2b2b2b" stroke="rgba(255,255,255,0.08)"/>
+    <text x="20" y="30" fill="#f0f0f0" font-size="16" font-weight="600">DeepSeek / OpenAI</text>
+    <rect x="20" y="44" width="86" height="20" rx="4" fill="rgba(252,225,0,0.10)"/>
+    <text x="30" y="58" fill="#fce100" font-size="11" font-weight="600" font-family="Cascadia Code, Consolas, monospace">API key set</text>
+    <text x="20" y="88" fill="#a3a3a3" font-size="12">direct calls — only if a key is set</text>
+  </g>
+
+  <text x="1230" y="218" fill="#7d7d7d" font-size="22">→</text>
+
+  <!-- Final answer card -->
+  <g transform="translate(1250,118)">
+    <rect width="310" height="222" rx="8" fill="#2b2b2b" stroke="rgba(108,203,95,0.4)"/>
+    <rect x="0" y="0" width="3" height="222" rx="1.5" fill="#6ccb5f"/>
+    <text x="20" y="34" fill="#f0f0f0" font-size="17" font-weight="600">Cited answer</text>
+    <rect x="20" y="48" width="160" height="24" rx="5" fill="rgba(108,203,95,0.12)"/>
+    <text x="30" y="64" fill="#6ccb5f" font-size="12" font-weight="600" font-family="Cascadia Code, Consolas, monospace">[source: file:line]</text>
+    <text x="20" y="104" fill="#a3a3a3" font-size="13" font-family="Cascadia Code, Consolas, monospace">[Confidence: 87%]</text>
+    <text x="20" y="126" fill="#a3a3a3" font-size="13" font-family="Cascadia Code, Consolas, monospace">[Severity: High]</text>
+    <text x="20" y="160" fill="#7d7d7d" font-size="13">verify in seconds —</text>
+    <text x="20" y="180" fill="#7d7d7d" font-size="13">every claim points to code</text>
+  </g>
+
+  <!-- Legend chips -->
+  <g font-size="13">
+    <g transform="translate(48,380)">
+      <rect width="120" height="28" rx="6" fill="#2b2b2b" stroke="rgba(255,255,255,0.08)"/>
+      <circle cx="16" cy="14" r="4" fill="#4cc2ff"/><text x="28" y="18" fill="#a3a3a3">local-first</text>
+    </g>
+    <g transform="translate(180,380)">
+      <rect width="150" height="28" rx="6" fill="#2b2b2b" stroke="rgba(255,255,255,0.08)"/>
+      <circle cx="16" cy="14" r="4" fill="#fce100"/><text x="28" y="18" fill="#a3a3a3">token-budgeted</text>
+    </g>
+    <g transform="translate(342,380)">
+      <rect width="178" height="28" rx="6" fill="#2b2b2b" stroke="rgba(255,255,255,0.08)"/>
+      <circle cx="16" cy="14" r="4" fill="#8fd3ff"/><text x="28" y="18" fill="#a3a3a3">deterministic audits</text>
+    </g>
+    <g transform="translate(532,380)">
+      <rect width="128" height="28" rx="6" fill="#2b2b2b" stroke="rgba(255,255,255,0.08)"/>
+      <circle cx="16" cy="14" r="4" fill="#6ccb5f"/><text x="28" y="18" fill="#a3a3a3">zero API key</text>
+    </g>
+  </g>
+</svg>
