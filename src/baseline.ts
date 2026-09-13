@@ -47,17 +47,27 @@ export async function readBaseline(absProject: string): Promise<Baseline | null>
   }
 }
 
+const SEV_RANK: Record<string, number> = { 'Critique': 3, 'Élevée': 2, 'Moyenne': 1, 'Faible': 0 };
+
 export function diffFindings(baseline: Baseline | null, current: AuditFinding[]): {
   added: AuditFinding[];
   resolved: Baseline['findings'];
   unchanged: number;
+  /** Findings present in the baseline whose severity went UP since. */
+  escalated: AuditFinding[];
 } {
-  if (!baseline) return { added: current, resolved: [], unchanged: 0 };
+  if (!baseline) return { added: current, resolved: [], unchanged: 0, escalated: [] };
   const baseIds = new Set(baseline.findings.map(f => f.id));
+  const baseById = new Map(baseline.findings.map(f => [f.id, f]));
   const curIds = new Set(current.map(f => f.id));
+  const escalated = current.filter(f => {
+    const b = baseById.get(f.id);
+    return b !== undefined && (SEV_RANK[f.severity] ?? -1) > (SEV_RANK[b.severity] ?? -1);
+  });
   return {
     added: current.filter(f => !baseIds.has(f.id)),
     resolved: baseline.findings.filter(f => !curIds.has(f.id)),
-    unchanged: current.filter(f => baseIds.has(f.id)).length,
+    unchanged: current.filter(f => baseIds.has(f.id)).length - escalated.length,
+    escalated,
   };
 }

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { analyzeProject, formatHealthReport } from '../src/analysis.js';
+import { analyzeProject, formatHealthReport, isTestPath } from '../src/analysis.js';
 
 let dir: string;
 
@@ -83,5 +83,21 @@ describe('analyzeProject', () => {
     expect(fr).toContain('ANALYSE STATIQUE');
     expect(en).toContain('STATIC ANALYSIS');
     expect(en).toContain('Circular dependencies');
+  });
+});
+
+describe('isTestPath', () => {
+  it('matches dir segments and filename conventions', () => {
+    expect(isTestPath('test/a.test.ts')).toBe(true);
+    expect(isTestPath('src/__tests__/a.ts')).toBe(true);
+    expect(isTestPath('src/a.spec.ts')).toBe(true);
+    expect(isTestPath('foo_test.go')).toBe(true);
+    expect(isTestPath('tests/e2e.ts')).toBe(true);
+  });
+  it('never treats a substring inside a real name as a test', () => {
+    expect(isTestPath('src/latest.ts')).toBe(false);
+    expect(isTestPath('src/contest.ts')).toBe(false);
+    expect(isTestPath('src/spectacle.ts')).toBe(false);
+    expect(isTestPath('src/protest.ts')).toBe(false);
   });
 });

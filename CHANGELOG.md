@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased — correctness & DSH parity
+
+**Fixes**
+
+- `--check` / `codebase_check` fail closed: an invalid git ref (or non-git project) now yields a **red** verdict with `scopeError` instead of a silent green with zero files.
+- `maxTokens` is actually enforced: the file tree and product-constraints blocks are budgeted too (was: head could exceed the whole budget). New `--maxTokens <n>` CLI flag.
+- Test-file detection no longer treats `src/latest.ts`, `contest.ts`, `protest.ts` as tests — shared `isTestPath`/`isSkippablePath` match dir segments and filename conventions only.
+- `codebase_apply` (DSH) now supports **line insertions and deletions** — `computePatch` emits insert/delete/replace ops instead of silently dropping them.
+- MCP `prompts/get ignore` no longer returns an empty text block; `check` prompt exposes the `base` arg; `health` prompt honours `diff`.
+- Baseline diff detects **severity escalations** (a finding that went from Faible → Critique is flagged, not counted as unchanged).
+
+**DSH plugin parity**
+
+- New deterministic tools: `codebase_check`, `codebase_doctor`, `codebase_deep_audit`, `codebase_ignore`.
+- `collectCodebaseContext` delegates to the shared `buildContext` engine (symbol-chunk retrieval + real token budget) when `dist/` is built — same context quality as CLI/MCP; the byte-walker stays as the unbuilt-checkout fallback.
+
 ## Unreleased — local dashboard & token stats
 
 **New**

@@ -13,6 +13,7 @@
 - Dans le `<script>` de `src/dashboard.ts` (template literal), une regex `/[\\/]/` est servie comme `/[\/]/` — doubler les antislashs (`/[\\\\/]/`).
 - Les scanners (`scanCode`, `codeShape`, exports) doivent ignorer le texte des strings/templates (`insideString`, `lineStartsInString`) : help CLI, HTML généré, fixtures de démo produisent des faux positifs.
 - `scanCode` plafonne les échantillons par fichier : pour un compte réel, passer `opts.totals`.
+- Détection des fichiers test : `isTestPath` / `isSkippablePath` (analysis.ts) — jamais un regex substring (`src/latest.ts` n'est PAS un test).
 - Le retriever ne remplit le budget avec des chunks non pertinents (`fallback`) que pour les requêtes génériques (audit/intelligence) — jamais pour `--search`.
 
 ## Conventions

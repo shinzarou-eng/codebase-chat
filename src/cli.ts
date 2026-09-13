@@ -122,6 +122,8 @@ Options:
                          analysis, no model, no key, no network.
   -w, --watch            Keep the index hot — rebuild incrementally on file changes
   -e, --embed            Enable local semantic embeddings (slower, more relevant)
+  --maxTokens <n>        Token budget for built contexts (default: 60000 or the
+                         maxTokens key in .codebase-chat.json)
   --lang <en|fr>         Language for headings (default: .codebase-chat.json lang, else fr)
   -h, --help             Show this help
 
@@ -169,6 +171,7 @@ async function main() {
       json: { type: 'boolean', default: false },
       watch: { type: 'boolean', short: 'w', default: false },
       embed: { type: 'boolean', short: 'e', default: false },
+      maxTokens: { type: 'string' },
       lang: { type: 'string' },
       help: { type: 'boolean', short: 'h', default: false },
     },
@@ -183,6 +186,9 @@ async function main() {
   const project = resolveProjectPath(values.project);
   const cfg = await loadProjectConfig(project);
   const lang = values.lang === 'en' || values.lang === 'fr' ? values.lang : (cfg.lang ?? 'fr');
+  const maxTokens = values.maxTokens !== undefined
+    ? Math.max(500, Math.floor(Number(values.maxTokens)) || cfg.maxTokens || 60_000)
+    : undefined;
 
   if (values.index) {
     await getIndex(project, m => console.log(m), true);
@@ -431,6 +437,7 @@ async function main() {
       lang,
       embed: values.embed,
       diff: values.diff,
+      maxTokens,
     });
     if (result.noMatch) console.error(lang === 'en'
       ? `No code chunk matches "${values.search}" — context holds the file tree only.`
@@ -523,6 +530,7 @@ async function main() {
       lang,
       embed: values.embed,
       diff: values.diff,
+      maxTokens,
     });
     if (result.noMatch) console.error(lang === 'en'
       ? `No code chunk matches "${values.search}" — context holds the file tree only.`

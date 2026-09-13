@@ -188,17 +188,50 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   };
 });
 
+// Shared ignore logic — used by both tools/call and prompts/get.
+// A missing id means "list" (a prompt cannot reasonably require one).
+async function handleIgnore(project, args) {
+  const abs = await findProjectRoot(project).catch(() => project);
+  const id = String(args?.id ?? "").trim();
+  const action = String(args?.action ?? "").trim() || (id ? "add" : "list");
+  if (action === "list" || !id) {
+    const list = await readIgnores(abs);
+    return list.length
+      ? list.map((i) => `- \`${i.id}\` — ${i.reason} (${i.createdAt.slice(0, 10)})`).join("\n")
+      : "No ignores.";
+  }
+  if (action === "remove") {
+    const ok = await removeIgnore(abs, id);
+    return ok ? `Removed ignore \`${id}\`.` : `No ignore entry \`${id}\`.`;
+  }
+  const reason = String(args?.reason ?? "").trim() || "no reason given";
+  const entry = await addIgnore(abs, id, reason);
+  return entry ? `Ignored \`${id}\` — ${reason} (.codebase-chat/ignores.json, commit it).` : `\`${id}\` is already ignored.`;
+}
+
 // MCP prompts — surface each tool as a user-invocable slash command
 // (Claude Code: /mcp__dsh-codebase-chat-mcp__<name>).
+const ARG_DESC = {
+  file: "File to analyze (relative path or name)",
+  id: "Finding id or prefix (e.g. sec:innerHTML:src/x.ts)",
+  query: "Query / question",
+};
 const PROMPTS = TOOLS.map((t) => ({
   name: t.name.replace(/^codebase_/, ""),
   description: t.description,
   arguments: [
     ...(t.required ?? []).map((k) => ({
       name: k,
-      description: k === "file" ? "File to analyze (relative path or name)" : "Query / question",
+      description: ARG_DESC[k] ?? "Query / question",
       required: true,
     })),
+    ...(t.name === "codebase_check"
+      ? [{ name: "base", description: "Git ref to diff against (default HEAD)", required: false }]
+      : []),
+    ...(t.name === "codebase_ignore"
+      ? [{ name: "action", description: "add | remove | list (default: add, or list when id omitted)", required: false },
+         { name: "reason", description: "Why this finding is silenced", required: false }]
+      : []),
     { name: "query", description: "Question or focus (optional)", required: false },
     { name: "projectPath", description: "Absolute project path (default: cwd)", required: false },
     { name: "lang", description: "fr | en (default: fr)", required: false },
@@ -220,8 +253,19 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
   if (tool.deterministic) {
     let text;
     if (tool.name === "codebase_health") {
-      const report = await analyzeProject(project);
-      text = formatHealthReportMd(report, lang);
+      let scope;
+      let scopeNote = "";
+      if (args.diff) {
+        const s = await getChangedFiles(await findProjectRoot(resolveProjectPath(project)), String(args.diff));
+        if (s.ok) {
+          scope = { files: s.files };
+          scopeNote = lang === "en"
+            ? `> Diff scope: **${s.files.size}** file(s) changed vs \`${args.diff}\`\n\n`
+            : `> Périmètre diff : **${s.files.size}** fichier(s) modifié(s) vs \`${args.diff}\`\n\n`;
+        }
+      }
+      const report = await analyzeProject(project, scope);
+      text = `${scopeNote}${formatHealthReportMd(report, lang)}`;
     } else if (tool.name === "codebase_deep_audit") {
       text = await buildDeterministicReport(project, lang);
     } else if (tool.name === "codebase_impact") {
@@ -235,6 +279,8 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
       text = formatCheckMd(report, lang);
     } else if (tool.name === "codebase_doctor") {
       text = formatDoctorMd(await runDoctor(project, lang), lang);
+    } else if (tool.name === "codebase_ignore") {
+      text = await handleIgnore(project, args);
     }
     return { messages: [{ role: "user", content: { type: "text", text } }] };
   }
@@ -321,24 +367,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
     if (name === "codebase_ignore") {
       const project = getProjectPath(args?.projectPath);
-      const abs = await findProjectRoot(project).catch(() => project);
       const id = String(args?.id ?? "").trim();
-      const action = String(args?.action ?? "add");
-      if (action === "list") {
-        const list = await readIgnores(abs);
-        const text = list.length
-          ? list.map((i) => `- \`${i.id}\` — ${i.reason} (${i.createdAt.slice(0, 10)})`).join("\n")
-          : "No ignores.";
-        return { content: [{ type: "text", text }] };
-      }
-      if (!id) return { content: [{ type: "text", text: "Error: `id` is required." }], isError: true };
-      if (action === "remove") {
-        const ok = await removeIgnore(abs, id);
-        return { content: [{ type: "text", text: ok ? `Removed ignore \`${id}\`.` : `No ignore entry \`${id}\`.` }] };
-      }
-      const reason = String(args?.reason ?? "").trim() || "no reason given";
-      const entry = await addIgnore(abs, id, reason);
-      return { content: [{ type: "text", text: entry ? `Ignored \`${id}\` — ${reason} (.codebase-chat/ignores.json, commit it).` : `\`${id}\` is already ignored.` }] };
+      const action = String(args?.action ?? "").trim() || (id ? "add" : "list");
+      if (!id && action !== "list") return { content: [{ type: "text", text: "Error: `id` is required." }], isError: true };
+      const text = await handleIgnore(project, { ...args, action });
+      return { content: [{ type: "text", text }] };
     }
     const { prompt, projectName, noMatch } = await buildPrompt(name, args);
     // Prompt mode: hand the assembled context+prompt back to the host model.

@@ -151,19 +151,30 @@ export async function buildContext(options: ContextOptions): Promise<ContextResu
   }
 
   const constraints = await extractProductConstraints(absProject);
-  const constraintsText = constraints.length
-    ? `== ${labels.constraints} ==\n${constraints.map(c => `- ${c}`).join('\n')}`
-    : `== ${labels.constraints} ==\n${labels.noConstraints}`;
+  // Constraints also live in the head — cap them so a noisy README cannot
+  // eat the whole budget either.
+  const constraintsText = truncateToTokens(
+    constraints.length
+      ? `== ${labels.constraints} ==\n${constraints.map(c => `- ${c}`).join('\n')}`
+      : `== ${labels.constraints} ==\n${labels.noConstraints}`,
+    Math.max(80, Math.floor(maxTokens / 6)),
+  );
 
-  const head = `${labels.project} : ${absProject}\n${labels.focus} : ${focus}\n${scopeLine}${noMatch && searchQuery ? `${labels.noMatch(searchQuery)}\n` : ''}${constraintsText}\n\n== ${labels.tree} ==\n${index.tree}\n`;
+  // The file tree lives in the head — cap it so a large project cannot blow
+  // the whole budget before a single chunk is emitted.
+  const treeBudget = Math.max(150, Math.min(4000, Math.floor(maxTokens / 3)));
+  const tree = truncateToTokens(index.tree, treeBudget);
+  const head = `${labels.project} : ${absProject}\n${labels.focus} : ${focus}\n${scopeLine}${noMatch && searchQuery ? `${labels.noMatch(searchQuery)}\n` : ''}${constraintsText}\n\n== ${labels.tree} ==\n${tree}\n`;
   const headTokens = countTokens(head);
-
-  const body = selectedChunks.map(c => formatChunk(c)).join('\n\n');
-  const bodyBudget = Math.max(0, maxTokens - headTokens - 100);
-  const truncatedBody = truncateToTokens(body, bodyBudget);
 
   const baseInstruction = `${labels.answerIn}\nAnswer the question or perform the requested task using the code context above. Cite every technical claim with [source: relative/path:line]. Provide confidence and severity where relevant.`;
   const finalInstruction = instruction ? `${instruction}\n\n${baseInstruction}` : baseInstruction;
+  const instrTokens = countTokens(finalInstruction);
+
+  const body = selectedChunks.map(c => formatChunk(c)).join('\n\n');
+  const bodyBudget = Math.max(0, maxTokens - headTokens - instrTokens - 50);
+  const truncatedBody = truncateToTokens(body, bodyBudget);
+
   const prompt = `${head}\n\n${truncatedBody}\n\n${finalInstruction}`;
 
   const tokenCount = countTokens(prompt);

@@ -10,6 +10,7 @@ import { auditFindings } from './findings.js';
 import { readBaseline, diffFindings } from './baseline.js';
 import { readIgnores, splitIgnored } from './ignores.js';
 import { analyzeImpact, type ImpactReport } from './impact.js';
+import { isTestPath } from './analysis.js';
 import type { AuditFinding, Severity } from './report-types.js';
 
 const run = promisify(execFile);
@@ -38,9 +39,12 @@ export interface CheckReport {
   ignored: AuditFinding[];
   verdict: 'red' | 'yellow' | 'green';
   reasons: string[];
+  /** Set when the diff could not be computed (bad ref, not a git repo) — the
+   *  check could not verify anything, so the verdict is never green. */
+  scopeError?: string;
 }
 
-const isTestFile = (f: string) => /test|spec|__tests__/i.test(f);
+const isTestFile = isTestPath;
 
 const RISK_RANK: Record<ImpactReport['risk'], number> = { high: 2, medium: 1, low: 0 };
 const SEV_RANK: Record<Severity, number> = { 'Critique': 3, 'Élevée': 2, 'Moyenne': 1, 'Faible': 0 };
@@ -98,13 +102,17 @@ export async function runCheck(projectPath: string, opts: { base?: string; lang:
   // Added findings only matter for the verdict when they belong to a changed
   // file — or are file-less (deps/config findings caused by the change).
   const relevant = (baseline
-    ? diff.added.filter(f => !f.file || changed.includes(f.file))
+    ? [...diff.added, ...diff.escalated].filter(f => !f.file || changed.includes(f.file))
     : files.flatMap(f => f.findings)
   ).filter(f => !ignoredIds.has(f.id));
   const maxAddedSev = relevant.reduce((m, f) => Math.max(m, SEV_RANK[f.severity]), -1);
   const maxRisk = files.reduce((m, f) => Math.max(m, riskOf(f)), -1);
+  const scopeError = scope.ok ? undefined : (scope.error ?? 'diff failed');
+  // Fail closed: when the change set cannot be established (bad ref, not a
+  // git repo), the check verified nothing — green would be a lie.
   const verdict: CheckReport['verdict'] =
-    maxAddedSev >= SEV_RANK['Élevée'] || maxRisk === RISK_RANK.high ? 'red'
+    !scope.ok ? 'red'
+    : maxAddedSev >= SEV_RANK['Élevée'] || maxRisk === RISK_RANK.high ? 'red'
     : maxAddedSev >= SEV_RANK.Moyenne || maxRisk === RISK_RANK.medium ? 'yellow'
     : 'green';
 
@@ -115,6 +123,11 @@ export async function runCheck(projectPath: string, opts: { base?: string; lang:
     if (!cf.impact) continue;
     if (cf.impact.risk === 'high') reasons.push(en ? `High impact: \`${cf.file}\` (${deps(cf.impact.directCount)})` : `Impact élevé : \`${cf.file}\` (${deps(cf.impact.directCount)})`);
     else if (cf.impact.risk === 'medium') reasons.push(en ? `Medium impact: \`${cf.file}\` (${deps(cf.impact.directCount)})` : `Impact moyen : \`${cf.file}\` (${deps(cf.impact.directCount)})`);
+  }
+  if (scopeError) {
+    reasons.push(en
+      ? `Could not diff vs \`${base}\` — nothing was verified (${scopeError})`
+      : `Diff impossible vs \`${base}\` — rien n'a été vérifié (${scopeError})`);
   }
   const grouped = new Map<string, { sev: Severity; n: number }>();
   for (const f of relevant) {
@@ -140,7 +153,7 @@ export async function runCheck(projectPath: string, opts: { base?: string; lang:
     } catch { /* keep baseline head */ }
   }
 
-  return { project: abs, base, head, changedFiles: changed, files, score: data.health.score, baselineScore: baseline?.score, diff, hasBaseline: !!baseline, ignored, verdict, reasons };
+  return { project: abs, base, head, changedFiles: changed, files, score: data.health.score, baselineScore: baseline?.score, diff, hasBaseline: !!baseline, ignored, verdict, reasons, scopeError };
 }
 
 const SEV_ICON: Record<Severity, string> = { Critique: '🔴', 'Élevée': '🟠', Moyenne: '🟡', Faible: '🔵' };
@@ -159,6 +172,10 @@ export function formatCheckMd(r: CheckReport, lang: 'fr' | 'en'): string {
   out.push(`**${verdictTxt}${r.hasBaseline ? '' : (en ? ' (no baseline: every finding on the changed files counts)' : ' (sans baseline : tous les findings des fichiers modifiés comptent)')}**`);
   for (const rs of r.reasons) out.push(`- ${rs}`);
   out.push('');
+  if (r.scopeError) {
+    out.push(`> ⚠ ${en ? `The diff vs \`${r.base}\` failed — the file list is empty and the verdict cannot be trusted as a pass.` : `Le diff vs \`${r.base}\` a échoué — la liste de fichiers est vide et le verdict ne peut pas être lu comme un feu vert.`}`);
+    out.push('');
+  }
   const delta = r.baselineScore !== undefined ? ` (${en ? 'baseline' : 'baseline'} ${r.baselineScore}/100, ${r.score - r.baselineScore >= 0 ? '+' : ''}${r.score - r.baselineScore})` : '';
   out.push(`- ${r.changedFiles.length} ${en ? `file(s) changed vs \`${r.base}\`` : `fichier(s) modifié(s) vs \`${r.base}\``}${r.head ? ` · HEAD \`${r.head}\`` : ''}`);
   out.push(`- ${en ? 'Score' : 'Score'} : **${r.score}/100**${delta}`);
@@ -196,6 +213,12 @@ export function formatCheckMd(r: CheckReport, lang: 'fr' | 'en'): string {
       out.push('', en ? '**New findings** :' : '**Nouveaux findings** :', '');
       out.push(`| ${en ? 'Severity' : 'Sévérité'} | ${en ? 'Rule' : 'Règle'} | ${en ? 'Line' : 'Ligne'} | ${en ? 'Finding' : 'Constat'} |`, '|---|---|---|---|');
       for (const f of added) out.push(`| ${SEV_ICON[f.severity]} ${f.severity} | \`${f.rule}\` | ${f.line ?? '—'} | ${f.message} |`);
+    }
+    const escalated = r.diff.escalated.filter(f => !ignoredIds.has(f.id));
+    if (escalated.length) {
+      out.push('', en ? '**Severity increased since baseline** :' : '**Sévérité aggravée depuis la baseline** :', '');
+      out.push(`| ${en ? 'Severity' : 'Sévérité'} | ${en ? 'Rule' : 'Règle'} | ${en ? 'Line' : 'Ligne'} | ${en ? 'Finding' : 'Constat'} |`, '|---|---|---|---|');
+      for (const f of escalated) out.push(`| ${SEV_ICON[f.severity]} ${f.severity} | \`${f.rule}\` | ${f.line ?? '—'} | ${f.message} |`);
     }
     if (r.diff.resolved.length) {
       out.push('', en ? '**Resolved** :' : '**Résolus** :', '');

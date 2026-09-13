@@ -6,7 +6,7 @@ import { basename, extname, join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { getIndex } from './indexer.js';
-import { analyzeProject, collectImportGraph, formatHealthReportMd, insideString, lineStartsInString, looksLikeEntry } from './analysis.js';
+import { analyzeProject, collectImportGraph, formatHealthReportMd, insideString, isSkippablePath, isTestPath, lineStartsInString, looksLikeEntry } from './analysis.js';
 import { recommendations } from './recommendations.js';
 import type { Reco } from './recommendations.js';
 
@@ -59,7 +59,7 @@ export function scanCode(
 ): SmellScan {
   const out: SmellScan = {};
   for (const [file, text] of fileTexts) {
-    if (/test|spec|__tests__|\.d\.ts$/i.test(file)) continue; // tests legitimately console/TODO
+    if (isSkippablePath(file)) continue; // tests legitimately console/TODO
     // CLI entry points and helper scripts print to stdout on purpose, and sync
     // IO is fine there too — console.*/readFileSync are their interface.
     const isCli = /^#!/m.test(text) || /\bprocess\.argv\b/.test(text) || /(^|\/)scripts?\//.test(file);
@@ -155,7 +155,7 @@ const SYSTEM_ENV = new Set([
 async function envAudit(abs: string, fileTexts: Map<string, string>) {
   const used = new Set<string>();
   for (const [file, text] of fileTexts) {
-    if (/test|spec|__tests__/i.test(file)) continue;
+    if (isTestPath(file)) continue;
     for (const m of text.matchAll(/\bprocess\.env\.([A-Z_][A-Z0-9_]*)/g)) used.add(m[1]);
     for (const m of text.matchAll(/\bimport\.meta\.env\.([A-Z_][A-Z0-9_]*)/g)) used.add(m[1]);
   }
@@ -204,7 +204,7 @@ async function configAudit(abs: string, pkg: Record<string, any>, _indexPaths: S
 function functionHotspots(index: { files: Record<string, { relPath: string; chunks: { kind: string; name?: string; startLine: number; endLine: number }[] }> }) {
   const out: { file: string; name: string; lines: number }[] = [];
   for (const f of Object.values(index.files)) {
-    if (/test|spec|__tests__|\.d\.ts$/i.test(f.relPath)) continue;
+    if (isSkippablePath(f.relPath)) continue;
     for (const c of f.chunks) {
       if ((c.kind === 'function' || c.kind === 'method' || c.kind === 'class') && c.name)
         out.push({ file: f.relPath, name: c.name, lines: c.endLine - c.startLine + 1 });
@@ -236,7 +236,7 @@ function deepImports(fileTexts: Map<string, string>): Finding[] {
   const out: Finding[] = [];
   const re = /from\s+['"]((?:\.\.\/){3,}[^'"]*)['"]/;
   for (const [file, text] of fileTexts) {
-    if (/test|spec|__tests__/i.test(file)) continue;
+    if (isTestPath(file)) continue;
     const lines = text.split('\n');
     for (let i = 0; i < lines.length; i++) {
       const m = lines[i].match(re);
@@ -251,7 +251,7 @@ function codeShape(fileTexts: Map<string, string>) {
   let commentLines = 0, codeLines = 0;
   const deepNest: { file: string; depth: number }[] = [];
   for (const [file, text] of fileTexts) {
-    if (/test|spec|__tests__|\.d\.ts$/i.test(file)) continue;
+    if (isSkippablePath(file)) continue;
     let maxDepth = 0, inBlock = false;
     // Lines inside template literals (help text, HTML, embedded SQL…) are not
     // code — their indentation must not count toward nesting depth.
@@ -319,9 +319,8 @@ function pkgRoot(spec: string): string {
 function importedPackages(fileTexts: Map<string, string>, skipTests = false): Set<string> {
   const imported = new Set<string>();
   const IMPORT_RE = /(?:\bfrom\s+|\bimport\s*\(|\bimport\s+|\brequire\s*\(|\brequire\.resolve\s*\()\s*['"]([^'"./][^'"]*)['"]/g;
-  const TEST_PATH = /(^|[\\/])(tests?|__tests__|fixtures?)([\\/]|$)|\.(test|spec)\.[tj]sx?$/i;
   for (const [p, text] of fileTexts) {
-    if (skipTests && TEST_PATH.test(p)) continue;
+    if (skipTests && isTestPath(p)) continue;
     for (const m of text.matchAll(IMPORT_RE)) imported.add(m[1]);
   }
   return imported;
@@ -363,7 +362,7 @@ function functionComplexity(index: { files: Record<string, { relPath: string; ch
   const BRANCH = /\b(if|for|while|case|catch)\b|&&|\|\||\?/g;
   const out: { file: string; name: string; score: number }[] = [];
   for (const f of Object.values(index.files)) {
-    if (/test|spec|__tests__|\.d\.ts$/i.test(f.relPath)) continue;
+    if (isSkippablePath(f.relPath)) continue;
     for (const c of f.chunks) {
       if ((c.kind === 'function' || c.kind === 'method') && c.name)
         out.push({ file: f.relPath, name: c.name, score: (c.content.match(BRANCH) ?? []).length });
@@ -389,7 +388,7 @@ function duplicateNames(codeFiles: string[]): { name: string; files: string[] }[
 function asyncWithoutAwait(index: { files: Record<string, { relPath: string; chunks: { kind: string; name?: string; content: string }[] }> }) {
   const out: { file: string; name: string }[] = [];
   for (const f of Object.values(index.files)) {
-    if (/test|spec|__tests__|\.d\.ts$/i.test(f.relPath)) continue;
+    if (isSkippablePath(f.relPath)) continue;
     for (const c of f.chunks) {
       if ((c.kind === 'function' || c.kind === 'method') && c.name
         && /\basync\b/.test(c.content.split('\n')[0]) && !/\bawait\b/.test(c.content))
@@ -424,7 +423,7 @@ function docCoverage(fileTexts: Map<string, string>): { documented: number; tota
   let documented = 0, total = 0;
   const EXPORT_LINE = /^\s*export\s+(?:async\s+)?(?:function|class|const|let|interface|type|enum|default)\b/;
   for (const [file, text] of fileTexts) {
-    if (/test|spec|__tests__|\.d\.ts$/i.test(file)) continue;
+    if (isSkippablePath(file)) continue;
     const lines = text.split('\n');
     for (let i = 0; i < lines.length; i++) {
       if (!EXPORT_LINE.test(lines[i])) continue;
@@ -488,8 +487,8 @@ export async function collectAudit(projectPath: string): Promise<AuditData> {
   const hubs = [...graph.inDegree.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
   const entryPoints = graph.codeFiles.filter(f => looksLikeEntry(f, pkg)).slice(0, 10);
   const leaves = graph.codeFiles.filter(f => !graph.edges.some(e => e.from === f)).length;
-  const testFiles = Object.keys(index.files).filter(f => /test|spec|__tests__/i.test(f));
-  const srcFiles = graph.codeFiles.filter(f => !/test|spec|__tests__/i.test(f));
+  const testFiles = Object.keys(index.files).filter(isTestPath);
+  const srcFiles = graph.codeFiles.filter(f => !isTestPath(f));
   const testRatio = srcFiles.length ? Math.round((testFiles.length / srcFiles.length) * 100) : 0;
   const largest = graph.codeFiles
     .map(f => ({ f, lines: graph.fileTexts.get(f)!.split('\n').length }))

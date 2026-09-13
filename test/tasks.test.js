@@ -58,7 +58,21 @@ describe('computePatch', () => {
   it('extracts changed lines from before/after blocks', () => {
     const patches = computePatch(task.before, task.after);
     expect(patches).toEqual([
-      { line: 12, oldCode: 'console.log("debug");', newCode: 'logger.debug("debug");' },
+      { line: 12, op: 'replace', oldCode: 'console.log("debug");', newCode: 'logger.debug("debug");' },
+    ]);
+  });
+
+  it('emits insert ops for lines that only exist in the after block', () => {
+    const patches = computePatch('1: const a = 1;', '1: const a = 1;\n2: const b = 2;');
+    expect(patches).toEqual([
+      { line: 2, op: 'insert', oldCode: '', newCode: 'const b = 2;' },
+    ]);
+  });
+
+  it('emits delete ops for lines that only exist in the before block', () => {
+    const patches = computePatch('1: const a = 1;\n2: const b = 2;', '1: const a = 1;');
+    expect(patches).toEqual([
+      { line: 2, op: 'delete', oldCode: 'const b = 2;', newCode: '' },
     ]);
   });
 });

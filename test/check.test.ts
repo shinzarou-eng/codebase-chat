@@ -52,6 +52,16 @@ describe('baseline', () => {
     expect(d.added.map(f => f.id)).toEqual(['new']);
     expect(d.resolved.map(f => f.id)).toEqual(['gone']);
     expect(d.unchanged).toBe(1);
+    expect(d.escalated).toEqual([]);
+  });
+
+  it('diffFindings reports severity upgrades as escalated, not unchanged', () => {
+    const mk = (id: string, severity: AuditFinding['severity']): AuditFinding => ({ id, rule: 'r', severity, message: id });
+    const baseline = { version: 1 as const, createdAt: '', score: 80, findings: [{ id: 'a', rule: 'r', severity: 'Faible' as const }] };
+    const d = diffFindings(baseline, [mk('a', 'Critique')]);
+    expect(d.escalated.map(f => f.id)).toEqual(['a']);
+    expect(d.unchanged).toBe(0);
+    expect(d.added).toEqual([]);
   });
 });
 
@@ -71,6 +81,18 @@ describe('runCheck', () => {
       const md = formatCheckMd(r, 'en');
       expect(md).toContain('Verdict');
       expect(md).toContain('src/b.ts');
+    } finally { cleanup(); }
+  });
+
+  it('an invalid git ref can never look green — scopeError + red verdict', async () => {
+    const { dir, cleanup } = makeRepo();
+    try {
+      const r = await runCheck(dir, { base: 'refs/definitely/missing', lang: 'en' });
+      expect(r.scopeError).toBeTruthy();
+      expect(r.verdict).toBe('red');
+      expect(r.reasons.join(' ')).toMatch(/Could not diff/);
+      const md = formatCheckMd(r, 'en');
+      expect(md).toContain('cannot be trusted');
     } finally { cleanup(); }
   });
 
