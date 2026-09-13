@@ -109,4 +109,18 @@ describe('runCheck', () => {
       expect(r.verdict).toBe('green');
     } finally { cleanup(); }
   });
+
+  it('high blast radius alone is advisory (yellow), never blocking', async () => {
+    const { dir, cleanup } = makeRepo();
+    try {
+      const data = await collectAudit(dir);
+      await writeBaseline(dir, data, auditFindings(data, 'en'));
+      // a.ts is imported by b.ts → ~33% of the repo depends on it = high risk.
+      // A clean change to it must not block the gate.
+      writeFileSync(join(dir, 'src', 'a.ts'), `export const a = 2;\n`);
+      const r = await runCheck(dir, { lang: 'en' });
+      expect(r.files.find(f => f.file === 'src/a.ts')?.impact?.risk).toBe('high');
+      expect(r.verdict).toBe('yellow');
+    } finally { cleanup(); }
+  });
 });

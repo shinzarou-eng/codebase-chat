@@ -110,10 +110,15 @@ export async function runCheck(projectPath: string, opts: { base?: string; lang:
   const scopeError = scope.ok ? undefined : (scope.error ?? 'diff failed');
   // Fail closed: when the change set cannot be established (bad ref, not a
   // git repo), the check verified nothing — green would be a lie.
+  // Impact is review information, not a defect: touching a hub file is worth
+  // a careful look (yellow), but it must not block — otherwise every commit to
+  // a core file is red and the gate gets bypassed with --no-verify. Red is
+  // reserved for what the change *introduces* (Élevée+ findings) or fails to
+  // establish (broken diff).
   const verdict: CheckReport['verdict'] =
     !scope.ok ? 'red'
-    : maxAddedSev >= SEV_RANK['Élevée'] || maxRisk === RISK_RANK.high ? 'red'
-    : maxAddedSev >= SEV_RANK.Moyenne || maxRisk === RISK_RANK.medium ? 'yellow'
+    : maxAddedSev >= SEV_RANK['Élevée'] ? 'red'
+    : maxAddedSev >= SEV_RANK.Moyenne || maxRisk >= RISK_RANK.medium ? 'yellow'
     : 'green';
 
   const en = opts.lang === 'en';

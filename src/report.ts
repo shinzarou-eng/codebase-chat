@@ -56,7 +56,7 @@ const SEC_PATS: [string, RegExp][] = [
 
 export function scanCode(
   fileTexts: Map<string, string>, pats: [string, RegExp][], perFileCap = 3,
-  opts: { skipComments?: boolean; skipStrings?: boolean; totals?: Record<string, number> } = {},
+  opts: { skipComments?: boolean; skipCommentsExcept?: ReadonlySet<string>; skipStrings?: boolean; totals?: Record<string, number> } = {},
 ): SmellScan {
   const out: SmellScan = {};
   for (const [file, text] of fileTexts) {
@@ -71,8 +71,12 @@ export function scanCode(
       let found = 0;
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
+        const isComment = /^\/\//.test(line) || /^\* /.test(line) || /^\/\*/.test(line);
         // Comments mentioning `shell: true` or `eval(` are not sinks.
-        if (opts.skipComments && (/^\/\//.test(line) || /^\* /.test(line) || /^\/\*/.test(line))) continue;
+        if (opts.skipComments && isComment) continue;
+        // Smell rules live in code — a comment saying "use: any" is not an
+        // `any` type. Only comment-based patterns (todo, tsIgnore) match there.
+        if (isComment && opts.skipCommentsExcept && !opts.skipCommentsExcept.has(key)) continue;
         // Smell patterns inside string literals are prompt text / fixtures —
         // but security patterns keep strings (secrets and generated code
         // like `out.innerHTML = ...` in a template live inside them).
@@ -507,7 +511,7 @@ export async function collectAudit(projectPath: string): Promise<AuditData> {
   const indexPaths = new Set(Object.keys(index.files).map(f => f.toLowerCase()));
   const docs = ['readme.md', 'license', 'license.md', 'changelog.md', 'contributing.md', 'security.md', 'agents.md']
     .filter(d => indexPaths.has(d));
-  const smells = scanCode(graph.fileTexts, SMELL_PATS, 3, { skipStrings: true });
+  const smells = scanCode(graph.fileTexts, SMELL_PATS, 3, { skipStrings: true, skipCommentsExcept: new Set(['todo', 'tsIgnore']) });
   const secTotals: Record<string, number> = {};
   const sec = scanCode(graph.fileTexts, SEC_PATS, 5, { skipComments: true, totals: secTotals });
   const hasTests = testFiles.length > 0;

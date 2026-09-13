@@ -8,7 +8,7 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, buildDeterministicReport, reportToHtml, runCheck, formatCheckMd, runDoctor, formatDoctorMd, addIgnore, removeIgnore, readIgnores, appendHistory } from "dsh-codebase-chat";
+import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, buildDeterministicReport, reportToHtml, runCheck, formatCheckMd, runDoctor, formatDoctorMd, addIgnore, removeIgnore, readIgnores, appendHistory, collectAudit, auditFindings, splitIgnored, planFixes, applyFixes } from "dsh-codebase-chat";
 
 // `dsh-codebase-chat-mcp setup` runs the interactive client-config wizard
 // instead of starting the MCP server.
@@ -171,6 +171,7 @@ const TOOLS = [
   { name: "codebase_check", description: "Verify your changes vs a git ref: blast radius, complexity, findings and delta vs the committed baseline (.codebase-chat/baseline.json). Deterministic, no LLM call.", extra: { base: { type: "string", description: "Git ref to diff against (default: HEAD)" } }, deterministic: true },
   { name: "codebase_doctor", description: "Installation & environment diagnostic: node version, index cache, LLM keys presence, tree-sitter, baseline staleness, MCP client integrations. Deterministic, no LLM call.", deterministic: true },
   { name: "codebase_ignore", description: "Silence a finding with a justification (written to .codebase-chat/ignores.json — commit it). `id` may be a full finding id or a prefix like `sec:innerHTML:src/x.ts` covering every such finding in that file. Use action=list/remove to manage entries.", extra: { id: { type: "string", description: "Finding id or prefix (see codebase_check JSON output)" }, reason: { type: "string" }, action: { type: "string", enum: ["add", "remove", "list"] } }, required: ["id"], deterministic: true },
+  { name: "codebase_fix", description: "Apply mechanical repairs for the rules where the fix is unambiguous — env-undoc (append to .env.example), dead-dep (remove from package.json), unused-export (delete or un-export), console/debugger lines (delete). Each fix re-checks: the finding disappears. Pass dry=true to preview without writing. Deterministic, no LLM call.", extra: { dry: { type: "boolean", description: "Preview the plan without writing (default: false — applies)" } }, deterministic: true },
   { name: "codebase_deep_audit", description: "Full deterministic audit (~30 analyses): git churn & bus factor, churn × complexity risk, dependency integrity (undeclared imports, dead deps, lockfile drift, broken package entries), per-function complexity, secrets & sensitive files, env-var coverage, config & README hygiene — all cited file:line. Returns findings directly — no LLM call. Set ui=true to also receive an interactive HTML dashboard (MCP-UI).", extra: { ui: { type: "boolean", description: "Also return a ui:// resource with an interactive HTML dashboard" } }, deterministic: true },
 ];
 
@@ -207,6 +208,37 @@ async function handleIgnore(project, args) {
   const reason = String(args?.reason ?? "").trim() || "no reason given";
   const entry = await addIgnore(abs, id, reason);
   return entry ? `Ignored \`${id}\` — ${reason} (.codebase-chat/ignores.json, commit it).` : `\`${id}\` is already ignored.`;
+}
+
+// Mechanical fixes — plan, optionally apply, then re-check so the caller sees
+// the findings actually disappear. Ignored findings are never "repaired".
+async function handleFix(project, args) {
+  const abs = await findProjectRoot(project).catch(() => project);
+  const lang = args?.lang === "en" ? "en" : "fr";
+  const en = lang === "en";
+  const data = await collectAudit(abs);
+  const ignores = await readIgnores(abs);
+  const { active } = splitIgnored(auditFindings(data, lang), ignores);
+  const fixes = planFixes(active, lang);
+  if (!fixes.length)
+    return en ? "No mechanically fixable findings." : "Aucun finding réparable mécaniquement.";
+  const plan = (en ? `${fixes.length} mechanical fix(es):\n` : `${fixes.length} réparation(s) mécanique(s) :\n`)
+    + fixes.map((f) => `- ${f.description}  (\`${f.finding.id}\`)`).join("\n");
+  if (args?.dry)
+    return plan + (en ? "\n\nDry run — nothing written. Call again without `dry` to apply." : "\n\nDry run — rien d'écrit. Relancer sans `dry` pour appliquer.");
+  const { applied, skipped, failed } = await applyFixes(abs, fixes);
+  let text = plan + (en
+    ? `\n\n${applied.length} applied${skipped.length ? `, ${skipped.length} skipped` : ""}${failed.length ? `, ${failed.length} failed` : ""}.`
+    : `\n\n${applied.length} appliquée(s)${skipped.length ? `, ${skipped.length} ignorée(s)` : ""}${failed.length ? `, ${failed.length} en échec` : ""}.`);
+  for (const f of skipped) text += `\n- – ${f.description} (${en ? "no standalone match" : "pas de ligne autonome"})`;
+  for (const f of failed) text += `\n- ✗ ${f.fix.description} — ${f.error}`;
+  // Proof: re-audit and count how many planned findings are gone.
+  const after = new Set(auditFindings(await collectAudit(abs), lang).map((f) => f.id));
+  const gone = applied.filter((f) => !after.has(f.finding.id)).length;
+  text += en
+    ? `\n\nRe-audit: ${gone}/${applied.length} finding(s) resolved.`
+    : `\n\nRe-audit : ${gone}/${applied.length} finding(s) résolu(s).`;
+  return text;
 }
 
 // MCP prompts — surface each tool as a user-invocable slash command
@@ -281,6 +313,8 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
       text = formatDoctorMd(await runDoctor(project, lang), lang);
     } else if (tool.name === "codebase_ignore") {
       text = await handleIgnore(project, args);
+    } else if (tool.name === "codebase_fix") {
+      text = await handleFix(project, args);
     }
     return { messages: [{ role: "user", content: { type: "text", text } }] };
   }
@@ -372,6 +406,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       if (!id && action !== "list") return { content: [{ type: "text", text: "Error: `id` is required." }], isError: true };
       const text = await handleIgnore(project, { ...args, action });
       return { content: [{ type: "text", text }] };
+    }
+    if (name === "codebase_fix") {
+      const project = getProjectPath(args?.projectPath);
+      return { content: [{ type: "text", text: await handleFix(project, args) }] };
     }
     const { prompt, projectName, noMatch } = await buildPrompt(name, args);
     // Prompt mode: hand the assembled context+prompt back to the host model.

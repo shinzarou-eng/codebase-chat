@@ -29,6 +29,7 @@ Robustesse :
 | 4. Chercher / expliquer | `/codebase search <q>` · `explain <fichier\|symbole>` · `chat <question>` |
 | 5. Rapports avancés | `report` · `ceo` · `player` · `crea` · `refactor <fichier> [objectif]` *(LLM)* |
 | 6. Diagnostic de l'installation | `/codebase doctor` *(déterministe)* |
+| 7. Réparer ce qui est mécanique | `/codebase fix` *(déterministe)* |
 
 ## Alias du premier mot
 
@@ -41,6 +42,7 @@ Robustesse :
 
 - `check <ref>` → `codebase_check` `{ base: "<ref>" }`
 - `ignore <id> [raison]` → `codebase_ignore` `{ id: "<id>", reason: "<raison>" }` · `ignores` → `{ id: "", action: "list" }` · `unignore <id>` → `{ id: "<id>", action: "remove" }`
+- `fix` → `codebase_fix` `{}` · `fix dry` → `{ dry: true }`
 - `impact <f>` → `codebase_impact` `{ file: "<f>" }` (`<f>` = fichier, `fichier#symbole` ou symbole)
 - `search <q>` / `chat <q>` → `{ query: "<q>" }`
 - `explain <x>` → `codebase_explain` `{ filePath: "<x>" }` si `<x>` ressemble à un chemin, sinon `{ query: "<x>" }`
@@ -51,7 +53,7 @@ Robustesse :
 
 ## /codebase help — aide complète
 
-`/codebase` est le point d'entrée des 16 outils du serveur MCP **dsh-codebase-chat** : analyse statique locale, indexation et rapports. Deux familles :
+`/codebase` est le point d'entrée des 18 outils du serveur MCP **dsh-codebase-chat** : analyse statique locale, indexation et rapports. Deux familles :
 
 - **Déterministe** — analyse du code réel, aucune clé API, résultats reproductibles et audités.
 - **LLM** — construit un prompt contextualisé sur ton projet (mode `promptOnly`) ou appelle un modèle si une clé est configurée.
@@ -66,6 +68,7 @@ Robustesse :
 | `/codebase health` | Santé : cycles, dead code, duplication, hotspots, priorités triées par sévérité. |
 | `/codebase impact <fichier>` | Rayon d'impact : qui importe le fichier, qui casse s'il change. `fichier#symbole` ou un nom de symbole seul → limité aux fichiers qui utilisent vraiment ce symbole. |
 | `/codebase ignore <id> [raison]` | Silence un finding avec justification (`.codebase-chat/ignores.json`, à commiter). `id` peut être un préfixe : `sec:innerHTML:src/x.ts` couvre tous les innerHTML du fichier. |
+| `/codebase fix` | Répare ce qui est mécanique : `env-undoc` → `.env.example`, `dead-dep` → package.json, `unused-export` → supprimé/désexporté, lignes `console.*`/`debugger` autonomes → supprimées. `fix dry` prévisualise sans écrire. Re-audit en fin de run : les findings réparés disparaissent — c'est la preuve. |
 
 ### Comprendre & décider (LLM)
 

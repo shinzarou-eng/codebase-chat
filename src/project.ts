@@ -4,11 +4,6 @@ import { createHash } from 'node:crypto';
 import { homedir } from 'node:os';
 import { loadProjectConfig, matchesAnyGlob, type ProjectConfig } from './config.js';
 
-export interface TreeOptions {
-  maxLines?: number;
-  skipDirs?: Set<string>;
-}
-
 const SOURCE_EXTS = new Set([
   '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
   '.vue', '.svelte', '.py', '.rs', '.go', '.java', '.kt',

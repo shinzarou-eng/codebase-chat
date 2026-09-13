@@ -46,6 +46,9 @@ export type { CheckFile, CheckReport } from './check.js';
 export { readIgnores, addIgnore, removeIgnore, splitIgnored, IGNORES_REL } from './ignores.js';
 export type { Ignore } from './ignores.js';
 export { appendHistory, readHistory, HISTORY_REL } from './history.js';
+
+export { planFixes, applyFixes } from './fix.js';
+export type { Fix } from './fix.js';
 export type { CheckHistoryEntry } from './history.js';
 export { runDoctor, formatDoctorMd } from './doctor.js';
 export type { DoctorItem, DoctorReport } from './doctor.js';

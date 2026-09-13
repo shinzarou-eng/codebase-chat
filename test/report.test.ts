@@ -183,4 +183,24 @@ describe('known traps', () => {
       expect(d.shape.deepNest.filter(n => n.file === 'src/c.ts')).toHaveLength(0);
     } finally { cleanup(); }
   });
+
+  it('code smells ignore comment lines — except comment-based rules', async () => {
+    const { dir, cleanup } = makeRepo();
+    try {
+      writeFileSync(join(dir, 'src', 'c.ts'), [
+        '// Same-file use: any line other than the export declaration itself.',
+        '// TODO: real marker',
+        'const x: any = 1;',
+        'export const y = x;',
+        '',
+      ].join('\n'));
+      const d = await collectAudit(dir);
+      // `use: any` in a comment is not an `any` type — but the real one counts.
+      const anyHits = (d.smells.any ?? []).filter(h => h.file === 'src/c.ts');
+      expect(anyHits).toHaveLength(1);
+      expect(anyHits[0].line).toBe(3);
+      // `todo` is comment-based — the marker is still detected.
+      expect((d.smells.todo ?? []).filter(h => h.file === 'src/c.ts')).toHaveLength(1);
+    } finally { cleanup(); }
+  });
 });

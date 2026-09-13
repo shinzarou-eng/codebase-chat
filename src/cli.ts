@@ -17,8 +17,9 @@ import { collectAudit } from './report.js';
 import { auditFindings } from './findings.js';
 import { writeBaseline, BASELINE_REL } from './baseline.js';
 import { runCheck, formatCheckMd } from './check.js';
-import { readIgnores, addIgnore, removeIgnore, IGNORES_REL } from './ignores.js';
+import { readIgnores, addIgnore, removeIgnore, IGNORES_REL, splitIgnored } from './ignores.js';
 import { appendHistory, readHistory } from './history.js';
+import { planFixes, applyFixes } from './fix.js';
 import { runDoctor, formatDoctorMd } from './doctor.js';
 import { countTokens } from './tokenizer.js';
 import { matchModelPrice, callCost, fmtCost, CALL_INPUT_TOKENS, CALL_OUTPUT_TOKENS } from './pricing.js';
@@ -106,6 +107,9 @@ Options:
   --history              Show past --check runs (verdict + score over time)
   --hook <install|uninstall|status>
                          Git pre-commit hook running --check --strict on every commit
+  --fix                  Apply mechanical repairs (env-undoc, dead-dep,
+                         unused-export, console/debugger lines); --fix --dry
+                         previews without writing
   --impact [file|sym]    Blast radius — which files transitively depend on <file>;
                          file#symbol or a bare symbol name scopes to its real
                          users; bare --impact = every file changed vs HEAD
@@ -175,6 +179,8 @@ async function main() {
       ignores: { type: 'boolean', default: false },
       history: { type: 'boolean', default: false },
       hook: { type: 'string' },
+      fix: { type: 'boolean', default: false },
+      dry: { type: 'boolean', default: false },
       strict: { type: 'boolean', default: false },
       json: { type: 'boolean', default: false },
       watch: { type: 'boolean', short: 'w', default: false },
@@ -380,6 +386,31 @@ fi
       ? (lang === 'en' ? 'pre-commit hook: installed' : 'Hook pre-commit : installé')
       : (lang === 'en' ? 'pre-commit hook: not installed — `--hook install`' : 'Hook pre-commit : absent — `--hook install`'));
     exit(installed ? 0 : 1);
+  }
+
+  if (values.fix) {
+    const abs = await findProjectRoot(project);
+    const data = await collectAudit(abs);
+    const ignores = await readIgnores(abs);
+    const { active } = splitIgnored(auditFindings(data, lang), ignores);
+    const fixes = planFixes(active, lang);
+    if (!fixes.length) {
+      console.log(lang === 'en' ? 'No mechanically fixable findings.' : 'Aucun finding réparable mécaniquement.');
+      exit(0);
+    }
+    console.log(lang === 'en' ? `${fixes.length} mechanical fix(es):` : `${fixes.length} réparation(s) mécanique(s) :`);
+    for (const f of fixes) console.log(`  • ${f.description}  (${f.finding.id})`);
+    if (values.dry) {
+      console.log(lang === 'en' ? 'Dry run — nothing written. Re-run without --dry to apply.' : 'Dry run — rien d\u2019écrit. Relancer sans --dry pour appliquer.');
+      exit(0);
+    }
+    const { applied, skipped, failed } = await applyFixes(abs, fixes);
+    for (const f of skipped) console.log(`  – ${f.description}  (${lang === 'en' ? 'no standalone match — left alone' : 'pas de ligne autonome — conservé'})`);
+    for (const f of failed) console.error(`  ✗ ${f.fix.description} — ${f.error}`);
+    console.log(lang === 'en'
+      ? `${applied.length} fix(es) applied${skipped.length ? `, ${skipped.length} skipped` : ''}${failed.length ? `, ${failed.length} failed` : ''} — re-run --check to verify.`
+      : `${applied.length} réparation(s) appliquée(s)${skipped.length ? `, ${skipped.length} ignorée(s)` : ''}${failed.length ? `, ${failed.length} en échec` : ''} — relancer --check pour vérifier.`);
+    exit(failed.length ? 1 : 0);
   }
 
   if (values.doctor) {
