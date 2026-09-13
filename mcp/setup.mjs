@@ -37,7 +37,7 @@ function zedConfigPath(home) {
 
 // Each client: how to detect it is installed (any of `detect` paths exists),
 // where its config lives, and which JSON shape it expects.
-export const CLIENTS = [
+const CLIENTS = [
   {
     id: "claude",
     name: "Claude Desktop",
@@ -231,7 +231,7 @@ function detectLang() {
 
 // Minimal JSON-RPC handshake over stdio: initialize + tools/list. Proves the
 // server actually starts — catches broken installs before the IDE does.
-export async function checkServer(timeoutMs = 20_000) {
+async function checkServer(timeoutMs = 20_000) {
   const { spawn } = await import("node:child_process");
   const { fileURLToPath } = await import("node:url");
   // Dev repo: index.mjs sits next to setup.mjs → test the local build.

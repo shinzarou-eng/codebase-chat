@@ -1,15 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="dsh-codebase-chat logo">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0d1117"/>
-      <stop offset="100%" stop-color="#161b22"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2b2b2b"/>
+      <stop offset="100%" stop-color="#1f1f1f"/>
     </linearGradient>
   </defs>
 
-  <!-- Rounded-square app icon background -->
-  <rect x="24" y="24" width="208" height="208" rx="60" fill="url(#bg)" stroke="#8dd6ff" stroke-width="10"/>
+  <!-- Rounded-square app icon — Fluent corner radius -->
+  <rect x="24" y="24" width="208" height="208" rx="44" fill="url(#bg)" stroke="#4cc2ff" stroke-width="10"/>
 
-  <!-- Chat bubble with tail, filled dark with blue stroke -->
+  <!-- Chat bubble with tail -->
   <path d="M 72 118
            a 44 44 0 0 1 44 -44
            h 24
@@ -23,13 +23,13 @@
            a 44 44 0 0 1 -44 -44
            v -8
            z"
-        fill="#0d1117" stroke="#8dd6ff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+        fill="none" stroke="#4cc2ff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
 
   <!-- Code angle brackets and slash -->
-  <path d="M 100 102 L 78 124 L 100 146" fill="none" stroke="#8dd6ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 156 102 L 178 124 L 156 146" fill="none" stroke="#8dd6ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <line x1="134" y1="154" x2="122" y2="96" stroke="#8dd6ff" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 100 102 L 78 124 L 100 146" fill="none" stroke="#8fd3ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 156 102 L 178 124 L 156 146" fill="none" stroke="#8fd3ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="134" y1="154" x2="122" y2="96" stroke="#8fd3ff" stroke-width="8" stroke-linecap="round"/>
 
   <!-- Active status dot -->
-  <circle cx="180" cy="176" r="12" fill="#5fed83"/>
+  <circle cx="180" cy="176" r="12" fill="#6ccb5f"/>
 </svg>

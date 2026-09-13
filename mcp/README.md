@@ -10,9 +10,9 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/dsh-codebase-chat-mcp"><img src="https://img.shields.io/npm/v/dsh-codebase-chat-mcp?logo=npm&color=purple" alt="npm"></a>
-  <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/releases"><img src="https://img.shields.io/github/v/release/shinzarou-eng/dsh-codebase-chat?logo=github" alt="release"></a>
-  <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shinzarou-eng/dsh-codebase-chat?color=blue" alt="license"></a>
+  <a href="https://www.npmjs.com/package/dsh-codebase-chat-mcp"><img src="https://img.shields.io/npm/v/dsh-codebase-chat-mcp?logo=npm&color=4cc2ff&labelColor=232323" alt="npm"></a>
+  <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/releases"><img src="https://img.shields.io/github/v/release/shinzarou-eng/dsh-codebase-chat?logo=github&color=4cc2ff&labelColor=232323" alt="release"></a>
+  <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shinzarou-eng/dsh-codebase-chat?color=a3a3a3&labelColor=232323" alt="license"></a>
 </p>
 
 ---

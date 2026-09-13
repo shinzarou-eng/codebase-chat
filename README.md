@@ -5,11 +5,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/dsh-codebase-chat"><img src="https://img.shields.io/npm/v/dsh-codebase-chat?logo=npm&label=plugin&color=6ec2ff" alt="npm plugin"></a>
-  <a href="https://www.npmjs.com/package/dsh-codebase-chat-mcp"><img src="https://img.shields.io/npm/v/dsh-codebase-chat-mcp?logo=npm&label=mcp&color=a78bfa" alt="npm mcp"></a>
-  <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shinzarou-eng/dsh-codebase-chat?color=93a1b5" alt="license"></a>
-  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20-4ade80?logo=nodedotjs" alt="node >= 20"></a>
-  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-22d3ee" alt="MCP compatible"></a>
+  <a href="https://www.npmjs.com/package/dsh-codebase-chat"><img src="https://img.shields.io/npm/v/dsh-codebase-chat?logo=npm&label=plugin&color=4cc2ff&labelColor=232323" alt="npm plugin"></a>
+  <a href="https://www.npmjs.com/package/dsh-codebase-chat-mcp"><img src="https://img.shields.io/npm/v/dsh-codebase-chat-mcp?logo=npm&label=mcp&color=4cc2ff&labelColor=232323" alt="npm mcp"></a>
+  <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shinzarou-eng/dsh-codebase-chat?color=a3a3a3&labelColor=232323" alt="license"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20-6ccb5f?logo=nodedotjs&labelColor=232323" alt="node >= 20"></a>
+  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-4cc2ff?labelColor=232323" alt="MCP compatible"></a>
 </p>
 
 <p align="center">
@@ -232,7 +232,6 @@ dsh --profile headless '/codebase-git --project C:\my-app'
 | --- | --- | --- |
 | `CODEBASE_CACHE_DIR` | OS cache dir | Where the index cache lives |
 | `DSH_PROJECT_ALIASES` | — | Extra `name=path` aliases (`;`-separated) |
-| `DSH_DAKO_PROJECT` | — | Override the built-in `dako` alias |
 | `DSH_PROTECTED_PATHS` | built-in list | Extra paths that can never be patched |
 | `DEEPSEEK_API_KEY` / `OPENAI_API_KEY` | — | Direct-LLM mode only |
 | `DEEPSEEK_BASE_URL` / `OPENAI_BASE_URL` | `https://api.deepseek.com/v1` | Custom endpoint |

@@ -329,6 +329,15 @@ async function main() {
       }
       const baseUrl = process.env.DEEPSEEK_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.deepseek.com/v1';
       const model = process.env.CODEBASE_MODEL || 'deepseek-chat';
+      // Cost preview on stderr — say what the call will burn before sending it.
+      const promptTok = countTokens(prompt);
+      const mp = matchModelPrice(model);
+      const inTokAdj = Math.round(promptTok * (mp?.tokMult ?? 1));
+      console.error(mp?.free
+        ? `→ ${model} · ~${promptTok.toLocaleString('en-US')} tok in · local, free`
+        : mp
+          ? `→ ${model} (${mp.label}) · ~${inTokAdj.toLocaleString('en-US')} tok in + ≤${CALL_OUTPUT_TOKENS.toLocaleString('en-US')} out · est. ${fmtCost(callCost(mp, inTokAdj, CALL_OUTPUT_TOKENS))}/call`
+          : `→ ${model} · ~${promptTok.toLocaleString('en-US')} tok in · unknown model — cost not estimated`);
       const res = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         signal: AbortSignal.timeout(120_000),

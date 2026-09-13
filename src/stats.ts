@@ -50,17 +50,18 @@ export interface ProjectStats {
 
 const MODEL_RATIOS: { family: string; tokenizer: string; ratio: number; note: string }[] = [
   { family: 'DeepSeek V4', tokenizer: 'custom BPE', ratio: 1.0, note: 'close to cl100k on code' },
-  { family: 'Claude 5 (Fable/Opus/Sonnet)', tokenizer: 'proprietary', ratio: 1.2, note: '~15-25% above cl100k on code' },
+  { family: 'Claude 5', tokenizer: 'proprietary', ratio: 1.2, note: '~15-25% above cl100k on code' },
   { family: 'Gemini 3.x', tokenizer: 'SentencePiece', ratio: 0.95, note: 'within ±10% of cl100k' },
-  { family: 'Grok / Llama / Mistral', tokenizer: 'BPE', ratio: 1.05, note: 'within ±10% of cl100k' },
+  { family: 'Grok/Llama/Mistral', tokenizer: 'BPE', ratio: 1.05, note: 'within ±10% of cl100k' },
 ];
 
 const CONTEXT_WINDOWS: { model: string; window: number }[] = [
-  { model: 'Grok 4.1 Fast', window: 2_000_000 },
   { model: 'GPT-6 Astra / GPT-5.x', window: 1_050_000 },
+  { model: 'Muse Spark 1.3', window: 1_050_000 },
   { model: 'Claude Fable/Opus/Sonnet 5', window: 1_000_000 },
   { model: 'Gemini 3.1 Pro / 3.8 Flash', window: 1_000_000 },
-  { model: 'DeepSeek V4', window: 1_000_000 },
+  { model: 'DeepSeek/Kimi/GLM', window: 1_000_000 },
+  { model: 'Grok 4.6', window: 500_000 },
   { model: 'Mistral Nemo', window: 128_000 },
 ];
 

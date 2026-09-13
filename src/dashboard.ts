@@ -12,6 +12,7 @@ import { getIndex } from './indexer.js';
 import { findProjectRoot } from './project.js';
 import { parseReportMd, DASH_CSS, scoreGauge, reportToHtml } from './ui.js';
 import { computeStats } from './stats.js';
+import { fmtCost, CALL_INPUT_TOKENS, CALL_OUTPUT_TOKENS } from './pricing.js';
 
 type Lang = 'fr' | 'en';
 
@@ -131,21 +132,22 @@ const out = document.getElementById('out'), navList = document.getElementById('n
 let curMd = '', curHtml = '', proj = '${esc(absPath).replace(/'/g, "\\'").replace(/\\/g, '\\\\')}', sevFilter = '', mdView = false;
 const LANG = '${lang}';
 const qp = () => (proj ? '&project=' + encodeURIComponent(proj) : '') + '&lang=' + LANG;
+const escH = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const loading = () => { out.innerHTML = '<div class="spin">${t('analyse en cours', 'analysing')}</div>'; };
 async function call(url) {
   loading(); setActive(url); mdView = false;
   try {
     const r = await fetch(url); const j = await r.json();
-    if (j.error) { out.innerHTML = '<div class="err">' + j.error + '</div>'; return; }
+    if (j.error) { out.innerHTML = '<div class="err">' + escH(j.error) + '</div>'; return; }
     curMd = j.md || ''; curHtml = j.standalone || '';
     document.getElementById('promptOut').classList.add('hidden');
     if (j.nav && j.nav.length) {
       navGrp.style.display = 'block';
-      navList.innerHTML = j.nav.map(n => '<a href="#' + n.id + '">' + n.title + '</a>').join('');
+      navList.innerHTML = j.nav.map(n => '<a href="#' + escH(n.id) + '">' + escH(n.title) + '</a>').join('');
     } else { navGrp.style.display = 'none'; navList.innerHTML = ''; }
     out.innerHTML = (j.hero || '') + (j.intro || '') + (j.body || j.text || '');
     filter(); spy();
-  } catch (e) { out.innerHTML = '<div class="err">' + e.message + '</div>'; }
+  } catch (e) { out.innerHTML = '<div class="err">' + escH(e.message) + '</div>'; }
 }
 function setActive(url) {
   document.querySelectorAll('button.act[data-a]').forEach(b => b.classList.toggle('on', url.includes('/api/' + b.dataset.a)));
@@ -304,6 +306,8 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
           `<tr><td>${esc(m.family)}</td><td><code>${esc(m.tokenizer)}</code></td><td>${m.exact ? '' : '~'}${fmt(m.tokens)}</td><td>${m.exact ? `<span class="sev sev-ok">exact</span>` : `<span class="sev sev-med">est.</span> <span class="dim-s">${esc(m.note)}</span>`}</td></tr>`).join('');
         const winRows = s.windows.map(w =>
           `<tr><td>${esc(w.model)}</td><td>${fmt(w.window)}</td><td><span class="sev ${w.fits ? 'sev-ok' : 'sev-crit'}">${w.fits ? tt('tient', 'fits') : tt('dépasse', 'exceeds')}</span></td><td><div class="fitbar"><i style="width:${Math.min(w.usedPct, 100)}%"></i></div><span class="dim-s">${w.usedPct}%</span></td></tr>`).join('');
+        const costRows = s.costs.map(c =>
+          `<tr><td>${esc(c.label)}</td><td>${c.free ? 'local' : `$${c.priceIn}/$${c.priceOut}`}</td><td>${c.free ? `<span class="sev sev-ok">${tt('gratuit', 'free')}</span>` : `~${fmtCost(c.estCost)}`}</td><td class="dim-s">${esc(c.context ?? '')}</td></tr>`).join('');
         const fileRows = s.topFiles.map(f => `<tr><td><code>${esc(f.path)}</code></td><td>${fmt(f.tokens)}</td></tr>`).join('');
         const extRows = s.topExts.map(e => `<tr><td><code>${esc(e.ext)}</code></td><td>${e.count}</td></tr>`).join('');
         const body = `<section id="stats"><h2>${tt('Statistiques du projet', 'Project statistics')}</h2>
@@ -314,6 +318,9 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
 <h3>${tt('Fenêtres de contexte — le projet entier y tient-il ?', 'Context windows — does the whole project fit?')}</h3>
 <p class="dim-s">${tt('Si vous envoyiez l\'intégralité du code en une seule requête. En pratique le retrieval n\'envoie qu\'une sélection ≤ 60k tokens (maxTokens) — aucune fenêtre n\'est nécessaire pour tout le projet.', 'If you sent the entire codebase in a single request. In practice retrieval only sends a ≤ 60k-token selection (maxTokens) — no window needs to hold the whole project.')}</p>
 <table><tr><th>${tt('Modèle', 'Model')}</th><th>${tt('Fenêtre', 'Window')}</th><th></th><th>${tt('Occupation', 'Usage')}</th></tr>${winRows}</table>
+<h3>${tt('Coût estimé par appel (--call)', 'Estimated cost per call (--call)')}</h3>
+<p class="dim-s">${tt(`Chaque appel envoie ≈${fmt(CALL_INPUT_TOKENS)} tokens d'entrée (budget retrieval) + ≤${fmt(CALL_OUTPUT_TOKENS)} tokens de sortie. Tarifs catalogue sept. 2026 — le cache, le batch et les prix d'intro changent la facture réelle.`, `Each call sends ≈${fmt(CALL_INPUT_TOKENS)} input tokens (retrieval budget) + ≤${fmt(CALL_OUTPUT_TOKENS)} output tokens. Sept 2026 list prices — caching, batch and intro tiers change the real bill.`)}</p>
+<table><tr><th>${tt('Modèle', 'Model')}</th><th>${tt('Prix $/M (in/out)', 'Price $/M (in/out)')}</th><th>${tt('Coût/appel', 'Cost/call')}</th><th>${tt('Contexte', 'Context')}</th></tr>${costRows}</table>
 <h3>${tt('Fichiers les plus lourds (tokens)', 'Heaviest files (tokens)')}</h3>
 <table><tr><th>${tt('Fichier', 'File')}</th><th>Tokens</th></tr>${fileRows}</table>
 <h3>${tt('Fichiers par extension', 'Files by extension')}</h3>

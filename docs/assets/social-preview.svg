@@ -1,52 +1,62 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-label="dsh-codebase-chat social preview">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0d1117"/>
-      <stop offset="100%" stop-color="#161b22"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#242424"/>
+      <stop offset="100%" stop-color="#1f1f1f"/>
     </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="0%" r="80%">
+      <stop offset="0%" stop-color="#4cc2ff" stop-opacity="0.12"/>
+      <stop offset="65%" stop-color="#4cc2ff" stop-opacity="0"/>
+    </radialGradient>
   </defs>
 
   <!-- Background -->
   <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect width="1280" height="640" fill="url(#glow)"/>
 
-  <!-- Logo mark on the left -->
-  <g transform="translate(260, 320) translate(-96, -96)">
-    <rect x="24" y="24" width="208" height="208" rx="60" fill="#0d1117" stroke="#8dd6ff" stroke-width="10"/>
-    <path d="M 72 118
-             a 44 44 0 0 1 44 -44
-             h 24
-             a 44 44 0 0 1 44 44
-             v 8
-             a 44 44 0 0 1 -44 44
-             h -24
-             l -26 32
-             l 12 -32
-             h 14
-             a 44 44 0 0 1 -44 -44
-             v -8
-             z"
-          fill="#0d1117" stroke="#8dd6ff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M 100 102 L 78 124 L 100 146" fill="none" stroke="#8dd6ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M 156 102 L 178 124 L 156 146" fill="none" stroke="#8dd6ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-    <line x1="134" y1="154" x2="122" y2="96" stroke="#8dd6ff" stroke-width="8" stroke-linecap="round"/>
-    <circle cx="180" cy="176" r="12" fill="#5fed83"/>
+  <!-- Logo tile — Fluent card, accent border -->
+  <g transform="translate(250, 320) translate(-110, -110)">
+    <rect x="0" y="0" width="220" height="220" rx="14" fill="#2b2b2b" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+    <rect x="0" y="0" width="4" height="220" rx="2" fill="#4cc2ff"/>
+    <g transform="translate(22, 22)">
+      <rect x="0" y="0" width="176" height="176" rx="12" fill="#1f1f1f" stroke="#4cc2ff" stroke-width="8"/>
+      <path d="M 40 96
+               a 40 40 0 0 1 40 -40
+               h 22
+               a 40 40 0 0 1 40 40
+               v 7
+               a 40 40 0 0 1 -40 40
+               h -22
+               l -24 29
+               l 11 -29
+               h 13
+               a 40 40 0 0 1 -40 -40
+               v -7
+               z"
+            fill="none" stroke="#4cc2ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 66 82 L 46 103 L 66 124" fill="none" stroke="#8fd3ff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 116 82 L 136 103 L 116 124" fill="none" stroke="#8fd3ff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="96" y1="130" x2="86" y2="80" stroke="#8fd3ff" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="142" cy="140" r="11" fill="#6ccb5f"/>
+    </g>
   </g>
 
   <!-- Text on the right -->
-  <g transform="translate(560, 320)">
-    <text x="0" y="-60" fill="#f0f6fc" font-family="Inter, system-ui, sans-serif" font-size="72" font-weight="800" letter-spacing="-1">dsh-codebase-chat</text>
-    <text x="0" y="10" fill="#8dd6ff" font-family="Inter, system-ui, sans-serif" font-size="30" font-weight="500" letter-spacing="-0.5">Multi-language codebase intelligence</text>
+  <g transform="translate(520, 320)">
+    <text x="0" y="-58" fill="#f0f0f0" font-family="Segoe UI, system-ui, sans-serif" font-size="70" font-weight="600" letter-spacing="-1">dsh-codebase-chat</text>
+    <text x="0" y="8" fill="#4cc2ff" font-family="Segoe UI, system-ui, sans-serif" font-size="30" font-weight="400" letter-spacing="-0.3">Multi-language codebase intelligence</text>
+    <text x="0" y="52" fill="#a3a3a3" font-family="Segoe UI, system-ui, sans-serif" font-size="20" font-weight="400">100% local · deterministic audit · FR / EN</text>
 
-    <!-- Badges -->
-    <g transform="translate(0, 75)">
-      <rect x="0" y="0" width="140" height="34" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
-      <text x="70" y="22" fill="#f0f6fc" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" text-anchor="middle">DeepSeek Harness</text>
+    <!-- Fluent chips -->
+    <g transform="translate(0, 92)" font-family="Segoe UI, system-ui, sans-serif" font-size="14" font-weight="600" text-anchor="middle">
+      <rect x="0" y="0" width="150" height="34" rx="6" fill="#2b2b2b" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+      <text x="75" y="22" fill="#f0f0f0">DeepSeek Harness</text>
 
-      <rect x="160" y="0" width="60" height="34" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
-      <text x="190" y="22" fill="#f0f6fc" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" text-anchor="middle">MCP</text>
+      <rect x="162" y="0" width="62" height="34" rx="6" fill="rgba(76,194,255,0.13)" stroke="rgba(76,194,255,0.35)" stroke-width="1"/>
+      <text x="193" y="22" fill="#4cc2ff">MCP</text>
 
-      <rect x="240" y="0" width="70" height="34" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
-      <text x="275" y="22" fill="#f0f6fc" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" text-anchor="middle">Local AI</text>
+      <rect x="236" y="0" width="96" height="34" rx="6" fill="#2b2b2b" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+      <text x="284" y="22" fill="#f0f0f0">--no-llm</text>
     </g>
   </g>
 </svg>
