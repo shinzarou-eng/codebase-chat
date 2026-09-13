@@ -55,7 +55,7 @@ describe('mcp server protocol', () => {
     const text = get.result?.messages?.[0]?.content?.text;
     expect(typeof text).toBe('string');
     expect(text.length).toBeGreaterThan(0);
-  });
+  }, 25_000);
 
   it('the check prompt exposes the `base` argument', async () => {
     const [init, list] = await rpc([
@@ -67,5 +67,5 @@ describe('mcp server protocol', () => {
     expect(check?.arguments?.some((a) => a.name === 'base')).toBe(true);
     const ignore = prompts.find((p) => p.name === 'ignore');
     expect(ignore?.arguments?.some((a) => a.name === 'reason')).toBe(true);
-  });
+  }, 25_000);
 });

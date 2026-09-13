@@ -22,8 +22,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
-      - run: pnpm test
+      # Build before test — the MCP tests spawn mcp/index.mjs, which imports the
+      # built `dsh-codebase-chat` package (main: dist/index.js).
       - run: pnpm build
+      - run: pnpm test
       # Dogfooding: the tool audits its own diff — new findings block the merge.
       - run: node dist/cli.js --check --strict --sarif results.sarif --diff "${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}"
       # If the check crashed before writing SARIF, upload an empty run so the
