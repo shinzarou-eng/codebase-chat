@@ -1,38 +1,24 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { mkdtempSync, writeFileSync, rmSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
+import { writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
-import { execFileSync } from 'node:child_process';
 import { collectAudit } from '../src/report';
 import { auditFindings } from '../src/findings';
 import { writeBaseline, readBaseline, diffFindings, BASELINE_REL } from '../src/baseline';
 import { runCheck, formatCheckMd } from '../src/check';
+import { checkToSarif } from '../src/sarif';
+import { makeRepo } from './helpers';
 import type { AuditFinding } from '../src/report-types';
 
 afterEach(() => vi.unstubAllEnvs());
 
-const GIT = (dir: string, args: string[]) =>
-  execFileSync('git', ['-C', dir, ...args], { stdio: 'pipe' });
-
-function makeRepo(): { dir: string; cache: string; cleanup: () => void } {
-  const dir = mkdtempSync(join(tmpdir(), 'dsh-check-'));
-  const cache = mkdtempSync(join(tmpdir(), 'dsh-check-cache-'));
-  vi.stubEnv('CODEBASE_CACHE_DIR', cache);
-  mkdirSync(join(dir, 'src'), { recursive: true });
-  writeFileSync(join(dir, 'src', 'a.ts'), `export const a = 1;\n`);
-  writeFileSync(join(dir, 'src', 'b.ts'), `import { a } from './a';\nexport const b = a + 1;\n`);
-  writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'tmp-check', version: '0.0.1' }));
-  try {
-    GIT(dir, ['init']);
-    GIT(dir, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'add', '-A']);
-    GIT(dir, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-m', 'init']);
-  } catch { /* git unavailable — tests will assert on non-git paths too */ }
-  return { dir, cache, cleanup: () => { rmSync(dir, { recursive: true, force: true }); rmSync(cache, { recursive: true, force: true }); } };
-}
+const repo = () => makeRepo({
+  'src/a.ts': `export const a = 1;\n`,
+  'src/b.ts': `import { a } from './a';\nexport const b = a + 1;\n`,
+});
 
 describe('baseline', () => {
   it('writeBaseline → readBaseline round-trip', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       const data = await collectAudit(dir);
       const findings = auditFindings(data, 'en');
@@ -67,7 +53,7 @@ describe('baseline', () => {
 
 describe('runCheck', () => {
   it('flags a new sec:eval finding on the changed file → red', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       // Baseline first, then introduce eval in a tracked file.
       const data = await collectAudit(dir);
@@ -85,7 +71,7 @@ describe('runCheck', () => {
   });
 
   it('an invalid git ref can never look green — scopeError + red verdict', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       const r = await runCheck(dir, { base: 'refs/definitely/missing', lang: 'en' });
       expect(r.scopeError).toBeTruthy();
@@ -97,7 +83,7 @@ describe('runCheck', () => {
   });
 
   it('green when the changed file adds no finding and baseline is current', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       writeFileSync(join(dir, 'src', 'b.ts'), `import { a } from './a';\nexport const b = a + 1;\n`);
       const data = await collectAudit(dir);
@@ -111,7 +97,7 @@ describe('runCheck', () => {
   });
 
   it('high blast radius alone is advisory (yellow), never blocking', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       const data = await collectAudit(dir);
       await writeBaseline(dir, data, auditFindings(data, 'en'));
@@ -121,6 +107,24 @@ describe('runCheck', () => {
       const r = await runCheck(dir, { lang: 'en' });
       expect(r.files.find(f => f.file === 'src/a.ts')?.impact?.risk).toBe('high');
       expect(r.verdict).toBe('yellow');
+    } finally { cleanup(); }
+  });
+
+  it('SARIF export: only the actionable findings, GitHub-shaped', async () => {
+    const { dir, cleanup } = repo();
+    try {
+      const data = await collectAudit(dir);
+      await writeBaseline(dir, data, auditFindings(data, 'en'));
+      writeFileSync(join(dir, 'src', 'b.ts'), `import { a } from './a';\nexport const b = a + 1;\neval('x');\n`);
+      const r = await runCheck(dir, { lang: 'en' });
+      const sarif = JSON.parse(checkToSarif(r, '0.0.0'));
+      expect(sarif.version).toBe('2.1.0');
+      const run = sarif.runs[0];
+      expect(run.tool.driver.name).toBe('dsh-codebase-chat');
+      const evalRes = run.results.find((x: any) => x.ruleId === 'sec:eval');
+      expect(evalRes.level).toBe('error');
+      expect(evalRes.locations[0].physicalLocation.artifactLocation.uri).toBe('src/b.ts');
+      expect(run.tool.driver.rules.map((x: any) => x.id)).toContain('sec:eval');
     } finally { cleanup(); }
   });
 });

@@ -1,26 +1,18 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { mkdtempSync, writeFileSync, rmSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
-import { execFileSync } from 'node:child_process';
 import { collectAudit } from '../src/report';
 import { auditFindings } from '../src/findings';
 import { planFixes, applyFixes } from '../src/fix';
+import { makeRepo } from './helpers';
 
 afterEach(() => vi.unstubAllEnvs());
-
-const GIT = (dir: string, args: string[]) =>
-  execFileSync('git', ['-C', dir, ...args], { stdio: 'pipe' });
 
 // One fixture carrying every fixable smell: undocumented env var, dead dep,
 // unused exports, standalone console/debugger lines — plus a console line with
 // trailing code that must NOT be deleted.
-function makeRepo(): { dir: string; cleanup: () => void } {
-  const dir = mkdtempSync(join(tmpdir(), 'dsh-fix-'));
-  const cache = mkdtempSync(join(tmpdir(), 'dsh-fix-cache-'));
-  vi.stubEnv('CODEBASE_CACHE_DIR', cache);
-  mkdirSync(join(dir, 'src'), { recursive: true });
-  writeFileSync(join(dir, 'src', 'app.ts'), [
+const repo = () => makeRepo({
+  'src/app.ts': [
     `export const used = 1;`,
     `export const deadSingle = 3;`,
     `export function orphan() {`,
@@ -31,22 +23,16 @@ function makeRepo(): { dir: string; cleanup: () => void } {
     `debugger;`,
     `export const v = process.env.SECRET_THING;`,
     ``,
-  ].join('\n'));
-  writeFileSync(join(dir, 'src', 'uses.ts'), `import { used, v } from './app';\nexport const u = used + String(v);\n`);
-  writeFileSync(join(dir, 'package.json'), JSON.stringify({
+  ].join('\n'),
+  'src/uses.ts': `import { used, v } from './app';\nexport const u = used + String(v);\n`,
+  'package.json': JSON.stringify({
     name: 'tmp-fix', version: '0.0.1', dependencies: { 'left-pad': '1.0.0' },
-  }));
-  try {
-    GIT(dir, ['init']);
-    GIT(dir, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'add', '-A']);
-    GIT(dir, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-m', 'init']);
-  } catch { /* git unavailable */ }
-  return { dir, cleanup: () => { rmSync(dir, { recursive: true, force: true }); rmSync(cache, { recursive: true, force: true }); } };
-}
+  }),
+});
 
 describe('fix', () => {
   it('plans a fix for every mechanically repairable finding', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       const findings = auditFindings(await collectAudit(dir), 'en');
       const fixes = planFixes(findings, 'en');
@@ -60,7 +46,7 @@ describe('fix', () => {
   });
 
   it('applies fixes and the re-audit proves the findings are gone', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       const before = auditFindings(await collectAudit(dir), 'en');
       const fixes = planFixes(before, 'en');
@@ -92,7 +78,7 @@ describe('fix', () => {
   });
 
   it('is idempotent — re-applying leaves no duplicates', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       const findings = auditFindings(await collectAudit(dir), 'en');
       const envFix = planFixes(findings, 'en').find(f => f.finding.rule === 'env-undoc')!;
@@ -104,7 +90,7 @@ describe('fix', () => {
   });
 
   it('does not crash when the target line has drifted', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       const findings = auditFindings(await collectAudit(dir), 'en');
       const dbg = planFixes(findings, 'en').find(f => f.finding.rule === 'smell:debugger')!;

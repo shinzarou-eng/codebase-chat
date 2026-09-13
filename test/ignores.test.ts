@@ -1,41 +1,25 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { mkdtempSync, writeFileSync, rmSync, mkdirSync, existsSync } from 'node:fs';
+import { writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
-import { execFileSync } from 'node:child_process';
 import { collectAudit } from '../src/report';
 import { auditFindings } from '../src/findings';
 import { readIgnores, addIgnore, removeIgnore, splitIgnored, isIgnored, IGNORES_REL } from '../src/ignores';
 import { appendHistory, readHistory, HISTORY_REL } from '../src/history';
 import { runCheck } from '../src/check';
 import { analyzeImpact } from '../src/impact';
+import { makeRepo } from './helpers';
 
 afterEach(() => vi.unstubAllEnvs());
 
-const GIT = (dir: string, args: string[]) =>
-  execFileSync('git', ['-C', dir, ...args], { stdio: 'pipe' });
-
-function makeRepo(): { dir: string; cleanup: () => void } {
-  const dir = mkdtempSync(join(tmpdir(), 'dsh-ign-'));
-  const cache = mkdtempSync(join(tmpdir(), 'dsh-ign-cache-'));
-  vi.stubEnv('CODEBASE_CACHE_DIR', cache);
-  mkdirSync(join(dir, 'src'), { recursive: true });
-  mkdirSync(join(dir, 'test'), { recursive: true });
-  writeFileSync(join(dir, 'src', 'a.ts'), `export const a = 1;\n`);
-  writeFileSync(join(dir, 'src', 'b.ts'), `import { a } from './a';\nexport const b = a + 1;\n`);
-  writeFileSync(join(dir, 'test', 'a.test.ts'), `import { a } from '../src/a';\n`);
-  writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'tmp-ign', version: '0.0.1' }));
-  try {
-    GIT(dir, ['init']);
-    GIT(dir, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'add', '-A']);
-    GIT(dir, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-m', 'init']);
-  } catch { /* git unavailable */ }
-  return { dir, cleanup: () => { rmSync(dir, { recursive: true, force: true }); rmSync(cache, { recursive: true, force: true }); } };
-}
+const repo = () => makeRepo({
+  'src/a.ts': `export const a = 1;\n`,
+  'src/b.ts': `import { a } from './a';\nexport const b = a + 1;\n`,
+  'test/a.test.ts': `import { a } from '../src/a';\n`,
+});
 
 describe('ignores', () => {
   it('add/read/remove round-trip', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       const e = await addIgnore(dir, 'sec:innerHTML:src/x.ts', 'escaped via escH');
       expect(e?.reason).toBe('escaped via escH');
@@ -49,7 +33,7 @@ describe('ignores', () => {
   });
 
   it('prefix key silences every matching finding id', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       const ignores = [{ id: 'sec:innerHTML:src/x.ts', reason: 'r', createdAt: '' }];
       expect(isIgnored('sec:innerHTML:src/x.ts:const a = 1', ignores)).toBe(true);
@@ -65,7 +49,7 @@ describe('ignores', () => {
   });
 
   it('an ignored finding does not drive the check verdict', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       const { writeBaseline } = await import('../src/baseline');
       // Baseline on the clean tree, then a NEW file with no dependents that
@@ -89,7 +73,7 @@ describe('ignores', () => {
 
 describe('check tests suggestion', () => {
   it('lists the dedicated spec and test importers for a changed file', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       writeFileSync(join(dir, 'src', 'a.ts'), `export const a = 2;\n`);
       const r = await runCheck(dir, { lang: 'en' });
@@ -101,7 +85,7 @@ describe('check tests suggestion', () => {
 
 describe('symbol impact', () => {
   it('bare symbol resolves to its exporter and scopes to real users', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       // Symbol name that no file path substring-matches.
       writeFileSync(join(dir, 'src', 'a.ts'), `export const meaningOfLife = 42;\n`);
@@ -117,7 +101,7 @@ describe('symbol impact', () => {
   });
 
   it('file#symbol scopes the radius to files referencing the symbol', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       // c.ts imports b but never mentions `a`.
       writeFileSync(join(dir, 'src', 'c.ts'), `import { b } from './b';\nexport const c = b + 1;\n`);
@@ -137,7 +121,7 @@ describe('symbol impact', () => {
 
 describe('history', () => {
   it('append + read round-trip, newest last', async () => {
-    const { dir, cleanup } = makeRepo();
+    const { dir, cleanup } = repo();
     try {
       await appendHistory(dir, { ts: '2026-01-01T00:00:00Z', base: 'HEAD', verdict: 'green', score: 70, changed: 1, added: 0, resolved: 0 });
       await appendHistory(dir, { ts: '2026-01-02T00:00:00Z', base: 'HEAD', verdict: 'red', score: 65, changed: 3, added: 2, resolved: 1 });

@@ -42,6 +42,7 @@ export { auditFindings } from './findings.js';
 export { writeBaseline, readBaseline, diffFindings, BASELINE_REL } from './baseline.js';
 export type { Baseline } from './baseline.js';
 export { runCheck, formatCheckMd } from './check.js';
+export { checkToSarif } from './sarif.js';
 export type { CheckFile, CheckReport } from './check.js';
 export { readIgnores, addIgnore, removeIgnore, splitIgnored, IGNORES_REL } from './ignores.js';
 export type { Ignore } from './ignores.js';

@@ -8,6 +8,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,4 +25,9 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       # Dogfooding: the tool audits its own diff — new findings block the merge.
-      - run: node dist/cli.js --check --strict --diff "${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}"
+      - run: node dist/cli.js --check --strict --sarif results.sarif --diff "${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}"
+      # …and lands as inline annotations on the PR (even when the check fails).
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif

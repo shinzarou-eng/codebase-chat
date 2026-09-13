@@ -17,6 +17,7 @@ import { collectAudit } from './report.js';
 import { auditFindings } from './findings.js';
 import { writeBaseline, BASELINE_REL } from './baseline.js';
 import { runCheck, formatCheckMd } from './check.js';
+import { checkToSarif } from './sarif.js';
 import { readIgnores, addIgnore, removeIgnore, IGNORES_REL, splitIgnored } from './ignores.js';
 import { appendHistory, readHistory } from './history.js';
 import { planFixes, applyFixes } from './fix.js';
@@ -99,6 +100,8 @@ Options:
   --baseline             Write .codebase-chat/baseline.json (findings + score snapshot)
   --strict               With --check: exit 1 when the verdict is red
   --json                 With --check/--doctor: print the report as JSON
+  --sarif <path>         With --check: also write the actionable findings as
+                         SARIF 2.1.0 (GitHub code scanning / upload-sarif)
   --doctor               Diagnose the install: node, index cache, LLM keys, MCP clients
   --ignore <id|prefix>   Silence a finding with a reason (--reason "…") — e.g.
                          sec:innerHTML:src/x.ts covers every such finding there
@@ -183,6 +186,7 @@ async function main() {
       dry: { type: 'boolean', default: false },
       strict: { type: 'boolean', default: false },
       json: { type: 'boolean', default: false },
+      sarif: { type: 'string' },
       watch: { type: 'boolean', short: 'w', default: false },
       embed: { type: 'boolean', short: 'e', default: false },
       maxTokens: { type: 'string' },
@@ -424,6 +428,12 @@ fi
     const report = await runCheck(project, { base: values.diff ?? 'HEAD', lang });
     const abs = await findProjectRoot(project);
     await appendHistory(abs, { ts: new Date().toISOString(), base: report.base, head: report.head, verdict: report.verdict, score: report.score, changed: report.changedFiles.length, added: report.diff.added.length, resolved: report.diff.resolved.length });
+    if (values.sarif) {
+      let version: string | undefined;
+      try { version = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version; } catch { /* optional */ }
+      writeFileSync(values.sarif, checkToSarif(report, version), 'utf8');
+      console.error(lang === 'en' ? `SARIF written to ${values.sarif}` : `SARIF écrit dans ${values.sarif}`);
+    }
     if (values.json) console.log(JSON.stringify(report, null, 2));
     else console.log(process.stdout.isTTY ? renderAnswerTerminal(formatCheckMd(report, lang)) : formatCheckMd(report, lang));
     exit(values.strict && report.verdict === 'red' ? 1 : 0);
