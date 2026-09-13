@@ -154,6 +154,7 @@ h2.coll::before{content:'▾';font-size:11px;color:var(--dim);transition:transfo
 section.collapsed h2.coll::before{transform:rotate(-90deg)}
 section.collapsed .sbody{display:none}
 section:not(.collapsed) .sbody{margin-top:14px}
+.sbody{overflow-x:auto}
 h3{margin:16px 0 8px;font-size:14px;color:var(--txt);font-weight:600}
 p{margin:7px 0}ul{margin:7px 0;padding-left:20px}li{margin:4px 0}li::marker{color:var(--dim)}li.sub{color:var(--dim);font-size:13px;margin-left:14px}
 code{font-family:"Cascadia Code",Consolas,ui-monospace,monospace;color:var(--code);background:#ffffff0f;padding:1px 6px;border-radius:4px;font-size:12.5px}

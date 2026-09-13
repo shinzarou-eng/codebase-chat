@@ -103,10 +103,9 @@ Every answer from `codebase_chat` arrives with `[source: file:line]` receipts yo
 | --- | :-: | :-: | :-: |
 | Sees your **whole** repo, not one file | ❌ | ✅ | ✅ |
 | `[source: file:line]` citations | ❌ | ~ | ✅ |
-| Code stays on your machine | ❌ | ❌ | ✅ |
+| Repo never uploaded — model sees only relevant excerpts | ❌ | ❌ | ✅ |
 | Inside Claude / Cursor / Windsurf | ❌ | ~ | ✅ |
-| Deterministic health score, no LLM | ❌ | ❌ | ✅ |
-| Deterministic report, zero model (`--no-llm`) | ❌ | ❌ | ✅ |
+| Fully offline analysis — `--no-llm` report & `--ui` dashboard, zero model | ❌ | ❌ | ✅ |
 | Free — no API key, no account | ~ | ❌ | ✅ |
 
 ## How it works

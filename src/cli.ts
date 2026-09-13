@@ -84,7 +84,8 @@ Options:
   -i, --index            Force re-index the project
   -t, --stats            Print indexing stats
   -H, --health           Deterministic static analysis (cycles, dead code, dupes, complexity)
-  --impact <file>        Blast radius — which files transitively depend on <file>
+  --impact [file]        Blast radius — which files transitively depend on <file>;
+                         bare --impact = every file changed vs HEAD
   -d, --diff <ref>       Scope --ask/--search/--health to files changed vs a git ref
   --prompt <mode>        Print the full LLM prompt (banner + instructions) for a
                          report mode: intelligence, report, audit, tasks, ceo,
@@ -113,7 +114,10 @@ Environment:
 }
 
 async function main() {
+  // Bare `--impact` (no value) → impact of uncommitted changes vs HEAD.
+  const argv = process.argv.slice(2).map(a => (a === '--impact' ? '--impact=' : a));
   const { values } = parseArgs({
+    args: argv,
     options: {
       project: { type: 'string', short: 'p', default: '.' },
       ask: { type: 'string', short: 'a' },
@@ -234,7 +238,32 @@ async function main() {
     exit(0);
   }
 
-  if (values.impact) {
+  if (values.impact !== undefined) {
+    if (!values.impact) {
+      // Bare --impact: blast radius of files changed vs HEAD.
+      const abs = await findProjectRoot(project);
+      const s = await getChangedFiles(abs, 'HEAD');
+      if (!s.ok || !s.files.size) {
+        console.log(lang === 'en'
+          ? 'No changed files (or not a git repo) — pass --impact <file>.'
+          : 'Aucun fichier modifié (ou pas un repo git) — passe --impact <fichier>.');
+        exit(s.ok ? 0 : 1);
+      }
+      console.log(lang === 'en'
+        ? `Changed files vs HEAD: ${s.files.size}`
+        : `Fichiers modifiés vs HEAD : ${s.files.size}`);
+      let any = false;
+      for (const f of [...s.files].sort()) {
+        const r = await analyzeImpact(project, f);
+        if (!r.ok) continue;
+        any = true;
+        console.log('\n' + formatImpactReport(r.report, lang));
+      }
+      if (!any) console.log(lang === 'en'
+        ? 'None of the changed files are indexed code files.'
+        : 'Aucun des fichiers modifiés n\u2019est un fichier de code indexé.');
+      exit(0);
+    }
     const r = await analyzeImpact(project, values.impact);
     if (!r.ok) {
       console.log(lang === 'en'

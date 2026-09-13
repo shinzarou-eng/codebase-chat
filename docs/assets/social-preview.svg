@@ -21,7 +21,7 @@
   <g transform="translate(520, 320)">
     <text x="0" y="-58" fill="#f0f0f0" font-family="Segoe UI, system-ui, sans-serif" font-size="70" font-weight="600" letter-spacing="-1">dsh-codebase-chat</text>
     <text x="0" y="8" fill="#4cc2ff" font-family="Segoe UI, system-ui, sans-serif" font-size="30" font-weight="400" letter-spacing="-0.3">Multi-language codebase intelligence</text>
-    <text x="0" y="52" fill="#a3a3a3" font-family="Segoe UI, system-ui, sans-serif" font-size="20" font-weight="400">100% local · deterministic audit · FR / EN</text>
+    <text x="0" y="52" fill="#a3a3a3" font-family="Segoe UI, system-ui, sans-serif" font-size="20" font-weight="400">local-first indexing · deterministic audit · FR / EN</text>
 
     <!-- Fluent chips -->
     <g transform="translate(0, 92)" font-family="Segoe UI, system-ui, sans-serif" font-size="14" font-weight="600" text-anchor="middle">

@@ -13,6 +13,7 @@ import { findProjectRoot } from './project.js';
 import { parseReportMd, DASH_CSS, scoreGauge, reportToHtml } from './ui.js';
 import { computeStats } from './stats.js';
 import { fmtCost, CALL_INPUT_TOKENS, CALL_OUTPUT_TOKENS } from './pricing.js';
+import { getChangedFiles } from './diff.js';
 
 type Lang = 'fr' | 'en';
 
@@ -119,17 +120,23 @@ pre.big{max-height:60vh}
 .dim-s{color:var(--dim);font-size:12px}
 .fitbar{display:inline-block;width:90px;height:6px;background:#ffffff14;border-radius:3px;overflow:hidden;vertical-align:middle;margin-right:8px}
 .fitbar i{display:block;height:100%;background:var(--acc);border-radius:3px}
+a.fref{color:inherit;text-decoration:none;cursor:pointer}
+a.fref:hover code,a.fref:hover{color:var(--acc)}
+.chips{display:flex;flex-wrap:wrap;gap:4px;padding:4px 10px 8px}
+.chips .lbl{width:100%;font-size:10.5px;color:var(--dim);letter-spacing:.04em;padding:2px 0}
+.chip2{background:#ffffff0d;border:1px solid var(--line);color:var(--txt);padding:3px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-family:Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.chip2:hover{border-color:var(--acc);color:var(--acc)}
 .hidden{display:none!important}
 @media(max-width:860px){aside{position:static;width:auto}body{display:block}main{margin:0}.top{flex-wrap:wrap}.searchwrap input{width:120px}}
 </style></head><body>
 <aside>
-<div class="brand"><div class="mk">◆</div><div><div class="nm" title="${esc(absPath)}">${esc(project)}</div><div class="lc">${IC.lock} ${t('100% local — rien ne sort', '100% local — nothing leaves')}</div></div></div>
+<div class="brand"><div class="mk">◆</div><div><div class="nm" title="${esc(absPath)}">${esc(project)}</div><div class="lc">${IC.lock} ${t('analyse locale — aucun envoi automatique', 'local analysis — no automatic upload')}</div></div></div>
 <div class="grp">${t('Analyses', 'Analysis')}</div>
 <button class="act" data-a="audit">${IC.audit}${t('Audit complet', 'Deep audit')}</button>
 <button class="act" data-a="health">${IC.health}${t('Santé du code', 'Code health')}</button>
 <button class="act" data-a="stats">${IC.stats}${t('Statistiques', 'Statistics')}</button>
 <button class="act" data-a="impact">${IC.impact}${t('Impact d\'un fichier', 'File impact')}</button>
-<div id="impactBox" class="mini hidden"><input type="text" id="ifile" list="fileList" placeholder="src/store.ts" autocomplete="off"><datalist id="fileList"></datalist><button class="act" id="igo">${IC.play}${t('Analyser', 'Analyze')}</button></div>
+<div id="impactBox" class="mini hidden"><input type="text" id="ifile" list="fileList" placeholder="src/store.ts" autocomplete="off"><datalist id="fileList"></datalist><button class="act" id="igo">${IC.play}${t('Analyser', 'Analyze')}</button><div class="chips" id="chgChips"></div></div>
 <div class="grp">${t('Prompt pour un LLM', 'Prompt for an LLM')}</div>
 <div class="mini"><select id="mode">${PROMPT_MODES.map(m => `<option>${m}</option>`).join('')}</select>
 <input type="text" id="q" placeholder="${t('question / fichier / focus', 'question / file / focus')}">
@@ -181,7 +188,11 @@ async function call(url) {
   loading(); setActive(url); mdView = false;
   try {
     const r = await fetch(url); const j = await r.json();
-    if (j.error) { out.innerHTML = '<div class="err">' + escH(j.error) + '</div>'; return; }
+    if (j.error) {
+      out.innerHTML = '<div class="err">' + escH(j.error) + '</div>'
+        + (j.candidates ? '<div class="chips">' + j.candidates.map(f => '<a class="fref chip2" data-f="' + escH(f) + '" href="#">' + escH(f) + '</a>').join('') + '</div>' : '');
+      return;
+    }
     curMd = j.md || ''; curHtml = j.standalone || '';
     document.getElementById('promptOut').classList.add('hidden');
     if (j.nav && j.nav.length) {
@@ -189,17 +200,18 @@ async function call(url) {
       navList.innerHTML = j.nav.map(n => '<a href="#' + escH(n.id) + '">' + escH(n.title) + '</a>').join('');
     } else { navGrp.style.display = 'none'; navList.innerHTML = ''; }
     out.innerHTML = (j.hero || '') + (j.intro || '') + (j.body || j.text || '');
-    filter(); spy();
+    linkify(); filter(); spy();
   } catch (e) { out.innerHTML = '<div class="err">' + escH(e.message) + '</div>'; }
 }
 function setActive(url) {
   document.querySelectorAll('button.act[data-a]').forEach(b => b.classList.toggle('on', url.includes('/api/' + b.dataset.a)));
 }
 const impactBox = document.getElementById('impactBox');
+const runImpact = f => call('/api/impact?file=' + encodeURIComponent(f) + qp());
 document.querySelectorAll('button.act[data-a]').forEach(b => b.onclick = () => {
   const a = b.dataset.a;
   impactBox.classList.toggle('hidden', a !== 'impact');
-  if (a === 'impact') loadFiles();
+  if (a === 'impact') { loadFiles(); loadChanged(); }
   if (a === 'audit') call('/api/audit?x=1' + qp());
   if (a === 'health') call('/api/health?x=1' + qp());
   if (a === 'stats') call('/api/stats?x=1' + qp());
@@ -209,18 +221,45 @@ out.addEventListener('click', e => {
   const h = e.target.closest('h2.coll');
   if (h) h.parentElement.classList.toggle('collapsed');
 });
-// Impact file autocomplete
-let filesLoaded = false;
+// File references → impact navigation (result rows, changed chips, <code> paths)
+document.addEventListener('click', e => {
+  const a = e.target.closest('a.fref');
+  if (a && a.dataset.f) { e.preventDefault(); runImpact(a.dataset.f); }
+});
+// Turn <code>src/x.ts</code> mentions into impact links
+function linkify() {
+  out.querySelectorAll('code').forEach(c => {
+    if (c.closest('a.fref')) return;
+    const s = c.textContent.trim();
+    if (/^[\w@.\-\\/]+\.[a-z0-9]{1,5}$/i.test(s) && (s.includes('/') || s.includes('\\\\'))) {
+      const a = document.createElement('a');
+      a.className = 'fref'; a.dataset.f = s; a.href = '#'; a.title = '${t('Voir l\u2019impact', 'See impact')}';
+      c.replaceWith(a); a.appendChild(c);
+    }
+  });
+}
+// Impact file autocomplete + changed-file chips
+let filesLoaded = false, changedLoaded = false;
 async function loadFiles() {
   if (filesLoaded) return; filesLoaded = true;
   const r = await fetch('/api/files?x=1' + qp()); const j = await r.json();
   document.getElementById('fileList').innerHTML = (j.files || []).map(f => '<option value="' + f + '">').join('');
 }
+async function loadChanged() {
+  if (changedLoaded) return; changedLoaded = true;
+  const el = document.getElementById('chgChips');
+  try {
+    const r = await fetch('/api/changed?x=1' + qp()); const j = await r.json();
+    el.innerHTML = j.ok && j.files.length
+      ? '<span class="lbl">${t('MODIFIÉS vs HEAD — cliquer pour analyser', 'CHANGED vs HEAD — click to analyse')}</span>' + j.files.slice(0, 15).map(f => '<a class="fref chip2" data-f="' + escH(f) + '" href="#">' + escH(f) + '</a>').join('')
+      : '';
+  } catch {}
+}
 document.getElementById('ifile').addEventListener('focus', loadFiles);
 document.getElementById('ifile').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('igo').click(); });
 document.getElementById('igo').onclick = () => {
   const f = document.getElementById('ifile').value.trim();
-  if (f) call('/api/impact?file=' + encodeURIComponent(f) + qp());
+  if (f) runImpact(f);
 };
 // Prompt generator
 document.getElementById('gen').onclick = async () => {
@@ -318,6 +357,11 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
         json(res, { files: Object.keys(index.files).sort() });
         return;
       }
+      if (u.pathname === '/api/changed') {
+        const s = await getChangedFiles(target, 'HEAD');
+        json(res, { ok: s.ok, files: [...s.files].sort(), error: s.error });
+        return;
+      }
       if (u.pathname === '/api/health') {
         const report = await analyzeProject(await findProjectRoot(target).catch(() => target));
         const md = formatHealthReportMd(report, reqLang);
@@ -330,12 +374,29 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
         if (!file) { json(res, { error: 'file param required' }, 400); return; }
         const r = await analyzeImpact(target, file);
         if (!r.ok) {
-          json(res, { error: r.candidates.length ? `Ambiguous — candidates: ${r.candidates.join(', ')}` : `No code file matches "${file}"` });
+          json(res, {
+            error: r.candidates.length
+              ? (reqLang === 'en' ? `Ambiguous — pick a candidate:` : `Ambigu — choisis un candidat :`)
+              : (reqLang === 'en' ? `No code file matches "${file}"` : `Aucun fichier de code ne correspond à "${file}"`),
+            candidates: r.candidates,
+          });
           return;
         }
-        const md = formatImpactReportMd(r.report, reqLang);
-        const p = parseReportMd(md, project);
-        json(res, { body: p.body || `<p>${p.intro}</p>`, md });
+        const rep = r.report;
+        const tt = (fr: string, en: string) => (reqLang === 'en' ? en : fr);
+        const riskLabel = { low: tt('FAIBLE', 'LOW'), medium: tt('MOYEN', 'MEDIUM'), high: tt('ÉLEVÉ', 'HIGH') }[rep.risk];
+        const riskCls = { low: 'sev-ok', medium: 'sev-med', high: 'sev-crit' }[rep.risk];
+        const tags = [rep.isEntry ? tt('point d\u2019entrée', 'entry point') : '', rep.inCycle ? tt('dans un cycle de dépendances', 'in a dependency cycle') : ''].filter(Boolean).join(' · ');
+        const depRows = rep.dependents.map(d =>
+          `<tr><td>${d.depth}</td><td><a class="fref" data-f="${esc(d.file)}" href="#"><code>${esc(d.file)}</code></a></td></tr>`).join('')
+          || `<tr><td colspan="2" class="dim-s">${tt('Aucun — rien n\u2019importe ce fichier.', 'None — nothing imports this file.')}</td></tr>`;
+        const body = `<section><h2>${tt('Analyse d\u2019impact', 'Impact analysis')}</h2>
+<p><strong>${tt('Cible', 'Target')} :</strong> <code>${esc(rep.target)}</code>${tags ? ` — <span class="dim-s">${esc(tags)}</span>` : ''}</p>
+<div class="kpis"><div class="kpi"><div class="kv">${rep.directCount}</div><div class="kl">${tt('dépendants directs', 'direct dependents')}</div></div><div class="kpi"><div class="kv">${rep.dependents.length}/${rep.totalFiles}</div><div class="kl">${tt('rayon d\u2019impact', 'blast radius')}</div></div><div class="kpi"><div class="kv">${Math.round(rep.percent * 100)}%</div><div class="kl">${tt('du codebase', 'of codebase')}</div></div></div>
+<p><strong>${tt('Risque', 'Risk')} :</strong> <span class="sev ${riskCls}">${riskLabel}</span> &nbsp;·&nbsp; <strong>${tt('Symboles exportés', 'Exports')} :</strong> ${rep.exportedSymbols.length ? rep.exportedSymbols.map(s => `<code>${esc(s.name)}</code>`).join(', ') : '—'}</p>
+<h3>${tt('Fichiers dépendants — cliquer pour naviguer', 'Dependent files — click to navigate')}</h3>
+<table><tr><th>${tt('Profondeur', 'Depth')}</th><th>${tt('Fichier', 'File')}</th></tr>${depRows}</table></section>`;
+        json(res, { body, md: formatImpactReportMd(rep, reqLang) });
         return;
       }
       if (u.pathname === '/api/stats') {

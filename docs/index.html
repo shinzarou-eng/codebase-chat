@@ -399,7 +399,7 @@
           <p class="text-lg md:text-xl text-[#a3a3a3] max-w-2xl mx-auto mb-10 leading-relaxed font-light reveal reveal-3" data-i18n-html="hero.sub">
             Chat, search, explain, refactor, audit — and generate board-ready reports.
             Every claim carries a source citation, a confidence score, and a severity label.
-            <span class="text-white font-normal">Local-first. French &amp; English. Works fully offline.</span>
+            <span class="text-white font-normal">Your code is indexed locally — you pick the model. Fully offline mode included.</span>
           </p>
 
           <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 reveal reveal-3">
@@ -458,7 +458,7 @@
             <p class="kicker mb-4" data-i18n="pw.kicker">Start here</p>
             <h2 class="text-3xl sm:text-[2.6rem] font-bold tracking-tight mb-4" data-i18n="pw.title">What is this, exactly?</h2>
             <p class="text-[#a3a3a3] max-w-2xl mx-auto" data-i18n="pw.lead">In plain words — no jargon required.</p>
-            <p class="mt-6 text-[14px] text-[#a3a3a3] max-w-2xl mx-auto leading-relaxed" data-i18n="pw.intro">Point it at a folder of code on your computer. Ask questions in plain language — "How does login work?", "Is there a hardcoded password?", "What should I fix first?" — in French or English. Every answer cites the exact file and line it came from, so you can verify it in seconds. Nothing is uploaded anywhere.</p>
+            <p class="mt-6 text-[14px] text-[#a3a3a3] max-w-2xl mx-auto leading-relaxed" data-i18n="pw.intro">Point it at a folder of code on your computer. Ask questions in plain language — "How does login work?", "Is there a hardcoded password?", "What should I fix first?" — in French or English. Every answer cites the exact file and line it came from, so you can verify it in seconds. Your repo is never uploaded — only the relevant excerpts reach whichever model you choose.</p>
           </div>
 
           <div class="grid md:grid-cols-3 gap-5 mb-10">
@@ -618,7 +618,7 @@
                   <div class="mt-2"><span class="cursor-blink">▍</span></div>
                 </div>
               </div>
-              <p class="mt-3 text-[11px] font-mono text-[#7d7d7d] text-center" data-i18n="pipe.termCap">stylized view of a real pipeline run — nothing leaves the machine</p>
+              <p class="mt-3 text-[11px] font-mono text-[#7d7d7d] text-center" data-i18n="pipe.termCap">stylized view of a real run — indexing &amp; retrieval stay on your machine; only the assembled prompt reaches the model</p>
             </div>
           </div>
         </div>
@@ -1030,7 +1030,7 @@
             </details>
             <details class="card rounded-md p-5 group on-scroll">
               <summary class="font-semibold text-white cursor-pointer list-none flex justify-between items-center text-[15px]"><span data-i18n="faq.q2">Does it send my code to the cloud?</span><span class="text-[#a3a3a3] group-open:rotate-180 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
-              <p class="text-[#a3a3a3] mt-3 text-sm leading-relaxed" data-i18n-html="faq.a2">No. Indexing, retrieval, and prompt building all run on your machine. In prompt-only mode nothing leaves your machine — the host model reads the assembled context — and the <code class="font-mono text-[#4cc2ff]">--no-llm</code> report is computed locally end to end, zero network.</p>
+              <p class="text-[#a3a3a3] mt-3 text-sm leading-relaxed" data-i18n-html="faq.a2">Your repo is never uploaded. Indexing, retrieval and prompt building run on your machine — the tool itself makes no upload. When you ask for an answer, only the assembled prompt (the relevant excerpts, not the whole codebase) reaches whichever model you picked: your IDE's host model, an API key with <code class="font-mono text-[#4cc2ff]">--call</code>, or a local model like Ollama. For zero network end to end, <code class="font-mono text-[#4cc2ff]">--no-llm</code> and <code class="font-mono text-[#4cc2ff]">--ui</code> compute the report locally.</p>
             </details>
             <details class="card rounded-md p-5 group on-scroll">
               <summary class="font-semibold text-white cursor-pointer list-none flex justify-between items-center text-[15px]"><span data-i18n="faq.q3">Do I need an API key?</span><span class="text-[#a3a3a3] group-open:rotate-180 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
@@ -1065,7 +1065,7 @@
               <div class="absolute" style="width: 55%; height: 90%; left: -8%; top: -25%; background: radial-gradient(closest-side, rgba(76,194,255,0.10), transparent 70%); filter: blur(50px)"></div>
             </div>
             <h2 class="relative text-3xl sm:text-[2.9rem] font-bold tracking-tight mb-4" data-i18n="cta.title">Ready to understand your codebase?</h2>
-            <p class="relative text-[#a3a3a3] mb-10 max-w-lg mx-auto" data-i18n="cta.sub">One install. Fourteen tools. Zero cloud upload.</p>
+            <p class="relative text-[#a3a3a3] mb-10 max-w-lg mx-auto" data-i18n="cta.sub">One install. Fourteen tools. Your repo is never uploaded.</p>
             <div class="relative inline-flex items-center gap-3 rounded-md bg-[#1a1a1a] border border-white/10 px-4 py-3 mb-8 font-mono text-[13.5px] text-[#f0f0f0]">
               <span class="text-[#6ccb5f]">$</span> <span id="code-cta">npx dsh-codebase-chat-mcp setup</span>
               <button onclick="copyCode('code-cta', this)" class="px-2.5 py-1 rounded-md text-[11px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 text-[#a3a3a3] transition" data-i18n="btn.copy">Copy</button>
@@ -1143,7 +1143,7 @@
           new: "NOUVEAU",
           badge: "v0.28 — dashboard --ui + audit déterministe --no-llm",
           title: 'Votre code,<br><span class="gradient-text-anim">entièrement compris.</span>',
-          sub: 'Chattez, recherchez, expliquez, refactorez, auditez — et générez des rapports prêts pour le comité. Chaque affirmation s\u2019appuie sur une citation de source, un score de confiance et un niveau de sévérité. <span class="text-white font-normal">Local-first. Français &amp; anglais. Fonctionne 100 % hors-ligne.</span>',
+          sub: 'Chattez, recherchez, expliquez, refactorez, auditez — et générez des rapports prêts pour le comité. Chaque affirmation s\u2019appuie sur une citation de source, un score de confiance et un niveau de sévérité. <span class="text-white font-normal">Votre code est indexé localement — vous choisissez le modèle. Mode hors-ligne complet inclus.</span>',
           cta1: "Commencer",
           cta2: "Voir sur GitHub",
           works: "Fonctionne partout où vous codez",
@@ -1156,9 +1156,9 @@
           kicker: "Par où commencer",
           title: "C\u2019est quoi, exactement ?",
           lead: "En termes simples — sans jargon.",
-          intro: "Pointez-le vers un dossier de code sur votre ordinateur. Posez des questions en langage clair — « Comment fonctionne la connexion ? », « Y a-t-il un mot de passe codé en dur ? », « Que devrais-je réparer en premier ? » — en français ou en anglais. Chaque réponse cite exactement le fichier et la ligne d\u2019où elle vient : vous pouvez vérifier en quelques secondes. Rien n\u2019est envoyé sur internet.",
+          intro: "Pointez-le vers un dossier de code sur votre ordinateur. Posez des questions en langage clair — « Comment fonctionne la connexion ? », « Y a-t-il un mot de passe codé en dur ? », « Que devrais-je réparer en premier ? » — en français ou en anglais. Chaque réponse cite exactement le fichier et la ligne d\u2019où elle vient : vous pouvez vérifier en quelques secondes. Votre dépôt n\u2019est jamais envoyé — seuls les extraits pertinents atteignent le modèle que vous avez choisi.",
           c1t: "Pointez-le vers un dossier",
-          c1b: "Donnez-lui n\u2019importe quel projet de votre ordinateur. Il lit le code et en construit une carte — rien n\u2019est envoyé nulle part.",
+          c1b: "Donnez-lui n\u2019importe quel projet de votre ordinateur. Il lit le code et en construit une carte — l\u2019index ne quitte jamais votre disque.",
           c2t: "Posez des questions en langage clair",
           c2b: "« Comment fonctionne la connexion ? », « Y a-t-il un mot de passe codé en dur ? », « Que devrais-je réparer en premier ? » — en français ou en anglais.",
           c3t: "Des réponses avec preuves",
@@ -1179,7 +1179,7 @@
         pipe: {
           kicker: "Comment ça marche",
           title: "Du code désordonné aux décisions claires",
-          sub: "Quatre étapes — tout sur votre machine, avant que quoi que ce soit n\u2019atteigne un modèle d\u2019IA.",
+          sub: "Quatre étapes — tout sur votre machine, avant que le prompt assemblé n\u2019atteigne le modèle que vous avez choisi.",
           s1t: "Indexation",
           s1b: "Parsing AST réel (Babel + tree-sitter) qui cartographie chaque fonction, classe et import en JS/TS, Python, Go, Rust, Java, C# et PHP — une fois, puis seulement ce qui a changé.",
           s2t: "Extraction",
@@ -1188,7 +1188,7 @@
           s3b: "Emballe le code pertinent dans un briefing pour l\u2019IA — avec citations, en français ou en anglais.",
           s4t: "Décision",
           s4b: 'Vous obtenez une réponse vérifiable — chaque affirmation pointe vers <code class="font-mono text-xs text-[#4cc2ff]">[source: fichier:ligne]</code>.',
-          termCap: "vue stylisée d'un run réel — rien ne quitte la machine"
+          termCap: "vue stylisée d'un run réel — indexation & recherche sur votre machine ; seul le prompt assemblé atteint le modèle"
         },
         feat: {
           kicker: "Fonctionnalités",
@@ -1329,7 +1329,7 @@
           q1: "Je ne suis pas développeur — puis-je quand même l\u2019utiliser ?",
           a1: "Oui. Installez-le, pointez-le vers un dossier de projet et posez des questions en langage clair. Les rapports sont écrits pour des humains — fondateurs, managers, designers et développeurs — pas seulement pour la personne qui a écrit le code.",
           q2: "Est-ce qu\u2019il envoie mon code dans le cloud ?",
-          a2: "Non. L\u2019indexation, la recherche et la construction du prompt tournent sur votre machine. En mode prompt-only rien ne quitte votre machine — le modèle hôte lit le contexte assemblé — et le rapport <code class=\"font-mono text-[#4cc2ff]\">--no-llm</code> est calculé localement de bout en bout, zéro réseau.",
+          a2: "Votre dépôt n\u2019est jamais envoyé. Indexation, recherche et construction du prompt tournent sur votre machine — l\u2019outil lui-même n\u2019envoie rien. Quand vous demandez une réponse, seul le prompt assemblé (les extraits pertinents, pas tout le code) atteint le modèle que vous avez choisi : modèle de l\u2019IDE, clé API via <code class=\"font-mono text-[#4cc2ff]\">--call</code>, ou modèle local type Ollama. Pour du zéro réseau de bout en bout, <code class=\"font-mono text-[#4cc2ff]\">--no-llm</code> et <code class=\"font-mono text-[#4cc2ff]\">--ui</code> calculent le rapport localement.",
           q3: "Ai-je besoin d\u2019une clé API ?",
           a3: 'Non — trois façons d\u2019obtenir une sortie : le modèle hôte (<code class="font-mono text-[#4cc2ff]">promptOnly</code>, meilleure qualité — pipez-le vers un modèle local type Ollama pour du hors-ligne), une clé <code class="font-mono text-[#4cc2ff]">DEEPSEEK_API_KEY</code>/<code class="font-mono text-[#4cc2ff]">OPENAI_API_KEY</code> pour les appels directs (<code class="font-mono text-[#4cc2ff]">--call</code>), ou le rapport déterministe (<code class="font-mono text-[#4cc2ff]">--no-llm</code>) — aucun modèle du tout. Dans DeepSeek Harness, le plugin utilise votre modèle configuré.',
           q4: "Puis-je l\u2019utiliser avec Claude, Cursor ou Windsurf ?",
@@ -1343,7 +1343,7 @@
         },
         cta: {
           title: "Prêt à comprendre votre codebase ?",
-          sub: "Une installation. Quatorze outils. Zéro envoi dans le cloud.",
+          sub: "Une installation. Quatorze outils. Votre dépôt n\u2019est jamais envoyé.",
           btn1: "Commencer",
           btn2: "Star sur GitHub"
         },
