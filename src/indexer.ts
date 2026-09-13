@@ -192,6 +192,16 @@ export async function getIndex(projectPath: string, progress?: (message: string)
       }
     }
     if (!stale) {
+      // Same walk as buildIndex: catch files added or deleted since indexing.
+      const walk = await getWalkOptions(absProject);
+      const current = new Set<string>();
+      for await (const fullPath of walkFiles(absProject, walk.skipDirs, walk.skipFiles, walk.ignoreGlobs)) {
+        current.add(relative(absProject, fullPath).split(sep).join('/'));
+      }
+      const indexed = Object.keys(existing.files);
+      stale = current.size !== indexed.length || indexed.some(f => !current.has(f));
+    }
+    if (!stale) {
       progress?.('Loaded index from cache');
       return existing;
     }
