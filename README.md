@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://shinzarou-eng.github.io/dsh-codebase-chat">
-    <img src="https://raw.githubusercontent.com/shinzarou-eng/dsh-codebase-chat/main/docs/assets/social-preview.png" alt="dsh-codebase-chat — Your codebase, fully understood" width="100%">
+    <img src="https://raw.githubusercontent.com/shinzarou-eng/dsh-codebase-chat/main/docs/assets/social-preview.png?v=2" alt="dsh-codebase-chat — Your codebase, fully understood" width="100%">
   </a>
 </p>
 
