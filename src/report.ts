@@ -29,7 +29,7 @@ function bar(score: number): string {
 // Every finding is a real file:line hit — grep-grade evidence, no guessing.
 
 export type { Finding, SmellScan, GitStats } from './report-types.js';
-import type { Finding, SmellScan, GitStats } from './report-types.js';
+import type { AuditData, Finding, SmellScan, GitStats } from './report-types.js';
 
 const SMELL_PATS: [string, RegExp][] = [
   // The (?:) no-ops keep this pattern table from matching its own source.
@@ -454,8 +454,13 @@ function detectInfra(indexPaths: Set<string>): string[] {
   return [...new Set(found)];
 }
 
-export async function buildDeterministicReport(projectPath: string, lang: 'fr' | 'en' = 'fr'): Promise<string> {
-  const en = lang === 'en';
+/** True when a file has a dedicated test file (foo.ts ↔ foo.test.ts / foo.spec.ts). */
+export function hasDedicatedTest(testBases: Set<string>, file: string): boolean {
+  return testBases.has(basename(file).replace(/\.[^.]+$/, '').toLowerCase());
+}
+
+/** All deterministic audit computations — no rendering, no language. */
+export async function collectAudit(projectPath: string): Promise<AuditData> {
   const [index, graph, health] = await Promise.all([
     getIndex(projectPath),
     collectImportGraph(projectPath),
@@ -541,13 +546,19 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
         .sort((a, b) => b.churn * b.score - a.churn * a.score)
         .slice(0, 5)
     : [];
-  const untestedRisk = riskFiles.filter(r =>
-    !testBases.has(basename(r.file).replace(/\.[^.]+$/, '').toLowerCase()));
+  const untestedRisk = riskFiles.filter(r => !hasDedicatedTest(testBases, r.file));
   const topChurn = git
     ? [...git.churn.entries()]
         .filter(([f]) => !/lock|\.min\.|dist\/|generated/i.test(f))
         .sort((a, b) => b[1] - a[1]).slice(0, 8)
     : [];
+
+  return { index, graph, health, name, pkg, langs, deps, devDeps, scripts, symbols, hubs, entryPoints, leaves, testFiles, srcFiles, testRatio, largest, docs, smells, sec, secTotals, hasTests, git, infra, env, deadDeps, missing, lockDrift, fnComplex, dupNames, asyncNoAwait, maxDepth, cfg, longFns, brokenEntries, deepRel, shape, readme, commitQ, typedFiles, typedPct, staleHubs, sensitive, docCov, docPct, riskFiles, untestedRisk, testBases, topChurn };
+}
+
+export function renderAuditMd(data: AuditData, lang: 'fr' | 'en' = 'fr'): string {
+  const en = lang === 'en';
+  const { index, graph, health, name, pkg, langs, deps, devDeps, scripts, symbols, hubs, entryPoints, leaves, testFiles, testRatio, largest, docs, smells, sec, secTotals, hasTests, git, infra, env, deadDeps, missing, lockDrift, fnComplex, dupNames, asyncNoAwait, maxDepth, cfg, longFns, brokenEntries, deepRel, shape, readme, commitQ, typedFiles, typedPct, staleHubs, sensitive, docCov, docPct, riskFiles, untestedRisk, testBases, topChurn } = data;
 
   const t = en
     ? {
@@ -704,7 +715,7 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
     if (riskFiles.length) {
       out.push(`**${t.gitRisk}** :`, '');
       for (const r of riskFiles) {
-        const tested = testBases.has(basename(r.file).replace(/\.[^.]+$/, '').toLowerCase());
+        const tested = hasDedicatedTest(testBases, r.file);
         out.push(`- \`${r.file}\` — churn ${r.churn} × ${en ? 'complexity' : 'complexité'} ${r.score}${tested ? '' : (en ? ' · ⚠️ no test' : ' · ⚠️ sans test')}`);
       }
       out.push('');
@@ -773,4 +784,8 @@ export async function buildDeterministicReport(projectPath: string, lang: 'fr' |
   out.push(`_${en ? 'Made with passion by shinzarou-eng' : 'Fait avec passion par shinzarou-eng'} — dsh-codebase-chat · ${en ? 'deterministic mode' : 'mode déterministe'}_`);
 
   return out.join('\n');
+}
+
+export async function buildDeterministicReport(projectPath: string, lang: 'fr' | 'en' = 'fr'): Promise<string> {
+  return renderAuditMd(await collectAudit(projectPath), lang);
 }

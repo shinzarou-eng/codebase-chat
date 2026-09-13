@@ -1,7 +1,7 @@
 import { basename } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { collectImportGraph, looksLikeEntry, parseExports } from './analysis.js';
+import { collectImportGraph, looksLikeEntry, parseExports, type ImportGraph } from './analysis.js';
 
 export interface ImpactDependent { file: string; depth: number; }
 
@@ -50,8 +50,8 @@ function resolveTarget(codeFiles: string[], query: string): { target?: string; c
  * Blast-radius analysis: which files break if `query` changes. Reverse BFS on
  * the local import graph — deterministic, no LLM.
  */
-export async function analyzeImpact(projectPath: string, query: string): Promise<ImpactResult> {
-  const g = await collectImportGraph(projectPath);
+export async function analyzeImpact(projectPath: string, query: string, graph?: ImportGraph): Promise<ImpactResult> {
+  const g = graph ?? await collectImportGraph(projectPath);
   const { target, candidates } = resolveTarget(g.codeFiles, query);
   if (!target) return { ok: false, query, candidates };
 
