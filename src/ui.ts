@@ -2,7 +2,7 @@
 // self-contained, zero-dependency dark dashboard. Shared by the CLI `--ui`
 // flag (served on localhost) and the MCP `codebase_deep_audit` ui:// resource.
 
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 function inline(s: string): string {
   return esc(s)

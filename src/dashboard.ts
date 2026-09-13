@@ -22,7 +22,7 @@ import { appendHistory, readHistory } from './history.js';
 
 type Lang = 'fr' | 'en';
 
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 const PROMPT_MODES = ['intelligence', 'audit', 'report', 'ceo', 'tasks', 'player', 'crea', 'chat', 'search', 'explain', 'refactor', 'git', 'build'];
 
@@ -355,7 +355,7 @@ async function loadFiles() {
   const p = proj;
   const r = await fetch('/api/files?x=1' + qp()); const j = await r.json();
   if (p !== proj) return;
-  document.getElementById('fileList').innerHTML = (j.files || []).map(f => '<option value="' + f + '">').join('');
+  document.getElementById('fileList').innerHTML = (j.files || []).map(f => '<option value="' + escH(f) + '">').join('');
 }
 async function loadChanged() {
   if (changedLoaded) return; changedLoaded = true;
