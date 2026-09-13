@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased — correctness & DSH parity
+## 0.29.0 / mcp 0.10.0 — local dashboard, verified fixes & 18 tools
+
+**New**
+
+- `--ui` — launches a Fluent web dashboard on `127.0.0.1`: run deep audit / health / stats / impact, ask a question and copy the built prompt, switch projects, filter by severity or text, collapse sections, export `.md`/`.html`, "My changes" view with one-click baseline — all clicks, no terminal, fully local, FR/EN.
+- `codebase_fix` / `--fix` — verified mechanical repairs where the fix is unambiguous: undocumented env vars appended to `.env.example`, dead deps removed, unused exports un-exported, console/debugger lines deleted. Each fix re-checks itself; `dry` previews without writing.
+- `codebase_deep_audit` — deterministic MCP tool running the full 9-section, ~30-metric audit; `ui: true` also returns a `ui://` HTML dashboard resource for MCP-UI clients.
+- Rich `--stats` — exact `o200k`/`cl100k` token counts, per-model-family estimates (DeepSeek, Claude, Gemini, Llama), context-window fit, estimated cost per `--call`, top files, extension distribution. Shared `src/stats.ts` engine powers CLI + dashboard.
+- Ignores, check history, symbol-level impact, suggested tests, SARIF export for PR annotations, pre-commit hook + self-audit gate in CI (`--check --strict`).
+- `setup` also installs the `/codebase` skill for compatible agents; intent-first `/codebase` menu and `/codebase help` reference.
+
+**Correctness & DSH parity**
 
 **Fixes**
 
@@ -22,14 +33,6 @@
 - `collectAudit` no longer walks+reads the project twice (analyzeProject re-ran the import-graph collection internally).
 - `collectImportGraph` reads files in parallel; `getIndex` freshness stats run in parallel.
 - `buildIndex` reuses token counts and embeddings for chunks whose content survived a file edit (was: whole file re-tokenized).
-
-## Unreleased — local dashboard & token stats
-
-**New**
-
-- `--ui` — launches a Fluent web dashboard on `127.0.0.1`: run audit / health / stats / impact, ask a question and copy the built prompt, switch projects, filter by severity or text, collapse sections, export `.md`/`.html` — all clicks, no terminal, fully local, FR/EN.
-- `codebase_deep_audit` (mcp 0.9.1) — deterministic MCP tool running the full ~30-analysis audit; `ui: true` also returns a `ui://` HTML dashboard resource for MCP-UI clients.
-- Rich `--stats` — exact `o200k`/`cl100k` token counts, per-model-family estimates (DeepSeek, Claude, Gemini, Llama), context-window fit, top files by tokens, extension distribution. Shared `src/stats.ts` engine powers both CLI and dashboard.
 
 ## 0.28.0 / mcp 0.9.0 — `--no-llm` report, ultra edition
 

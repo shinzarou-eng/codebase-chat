@@ -9,6 +9,16 @@ Want to influence priorities? [Open an issue](https://github.com/shinzarou-eng/d
 
 ## ✅ Shipped
 
+### v0.29 — Verified workflow: check, fix, ignore, doctor
+
+- `codebase_check` / `--check` — verify changed files vs a git ref, delta vs committed baseline, `--strict` red verdict for CI, SARIF export for PR annotations, pre-commit hook
+- `codebase_fix` / `--fix` — verified mechanical repairs (dead deps, unused exports, env docs, console/debugger) with `dry` preview
+- `codebase_ignore` — silence findings with justification in `.codebase-chat/ignores.json`
+- `codebase_doctor` / `--doctor` — install & environment diagnostic
+- `codebase_deep_audit` MCP tool + `ui://` dashboard resource; `--no-llm` deep audit from CLI
+- `/codebase` skill for agents, intent-first menu, `/codebase help`
+- Dashboard "My changes" view, severity filters, one-click baseline; audit memoization (≈50× faster repeat calls)
+
 ### v0.28 — Local dashboard, deep audit & token stats
 
 - `--ui` — Fluent web dashboard on localhost: audit, health, stats, impact, ask-a-question, severity filters, FR/EN toggle, `.md`/`.html` export, project switching — all clicks, no terminal

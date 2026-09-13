@@ -127,18 +127,17 @@ Same thing from an IDE: `/codebase check [ref]` and `/codebase doctor` (MCP tool
 
 `/codebase-apply` writes safely — **dry-run** · **`.dsh-backups/`** before overwrite · **protected paths** · never outside the project.
 
-## The 16 tools
+## The 18 tools
 
 | Understand | Decide | Act | Explore |
 | --- | --- | --- | --- |
 | `codebase_chat` | `codebase_intelligence` | `codebase_refactor` | `codebase_player` |
 | `codebase_search` | `codebase_audit` | `codebase_tasks` | `codebase_crea` |
-| `codebase_explain` | `codebase_report` | | |
-| `codebase_health` | `codebase_ceo` | | |
-| `codebase_impact` | `codebase_deep_audit` | | |
-| `codebase_check` | `codebase_doctor` | | |
+| `codebase_explain` | `codebase_report` | `codebase_fix` | `codebase_doctor` |
+| `codebase_health` | `codebase_ceo` | `codebase_ignore` | |
+| `codebase_impact` | `codebase_deep_audit` | `codebase_check` | |
 
-Five tools run **fully deterministic — no model, no key, works offline**: `codebase_health`, `codebase_impact`, `codebase_check` (changes vs a git ref, diffed vs `.codebase-chat/baseline.json`), `codebase_doctor` (install diagnostic), and `codebase_deep_audit` (9 sections, ~30 metrics: git churn, bus factor, secrets, deps, per-function complexity).
+Seven tools run **fully deterministic — no model, no key, works offline**: `codebase_health`, `codebase_impact`, `codebase_check` (changes vs a git ref, diffed vs `.codebase-chat/baseline.json`), `codebase_doctor` (install diagnostic), `codebase_ignore` (silence a finding with a justification, committed to `.codebase-chat/ignores.json`), `codebase_fix` (verified mechanical repairs — `dry: true` previews), and `codebase_deep_audit` (9 sections, ~30 metrics: git churn, bus factor, secrets, deps, per-function complexity).
 
 Same engine, three surfaces: **MCP tools** in your IDE, **slash commands** in DeepSeek Harness, **CLI flags** anywhere. Every tool takes `lang` (`fr`/`en`), `embed`, `promptOnly`, `maxTokens`.
 
@@ -317,7 +316,7 @@ Then restart `dsh --profile web`.
 
 | | |
 | --- | --- |
-| **Shipped** | tree-sitter AST (7 languages), deterministic health score + `--no-llm` deep audit, `--ui` local dashboard (Fluent, bilingual, exports), `codebase_deep_audit` MCP tool + `ui://` resource, token/context stats, MCP setup wizard, `.codebase-chat.json`, `--diff` scoping, `--watch` mode |
+| **Shipped** | tree-sitter AST (7 languages), deterministic health score + `--no-llm` deep audit, `--ui` local dashboard (Fluent, bilingual, exports), `codebase_check`/`--fix`/`--ignore`/`--doctor` verified workflow + baseline & CI gate, `codebase_deep_audit` MCP tool + `ui://` resource, token/context stats, MCP setup wizard, `.codebase-chat.json`, `--diff` scoping, `--watch` mode |
 | **Next** | GitHub Issues export from TASKS.md, prompt language packs (ES/DE/PT) |
 | **Planned** | VS Code extension, HTTP/SSE transport, PR review mode |
 | **Exploring** | multi-repo workspaces, shared team index cache, CI bot |

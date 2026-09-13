@@ -517,7 +517,7 @@
       <section class="border-y border-white/[0.05] bg-white/[0.015]">
         <div class="max-w-5xl mx-auto px-6 py-12 grid grid-cols-2 sm:grid-cols-4 gap-8 text-center">
           <div class="on-scroll">
-            <div class="text-[2rem] font-extrabold tracking-tight gradient-text">14</div>
+            <div class="text-[2rem] font-extrabold tracking-tight gradient-text">18</div>
             <div class="text-[13px] text-[#7d7d7d] mt-1" data-i18n="stats.tools">MCP tools exposed</div>
           </div>
           <div class="on-scroll">
@@ -737,7 +737,7 @@
                 </div>
               </div>
               <ul class="space-y-2.5 text-[13.5px] text-[#a3a3a3]">
-                <li class="flex gap-2.5"><span class="text-[#6ccb5f]">✓</span><span data-i18n="pkg.p2l1">14 tools over stdio — works in Cursor, Claude, Windsurf</span></li>
+                <li class="flex gap-2.5"><span class="text-[#6ccb5f]">✓</span><span data-i18n="pkg.p2l1">18 tools over stdio — works in Cursor, Claude, Windsurf</span></li>
                 <li class="flex gap-2.5"><span class="text-[#6ccb5f]">✓</span><span data-i18n-html="pkg.p2l2"><strong class="text-white font-medium">Prompt-only mode</strong> — no API key needed, the host model answers</span></li>
                 <li class="flex gap-2.5"><span class="text-[#6ccb5f]">✓</span><span data-i18n="pkg.p2l3">Optional direct LLM calls via DeepSeek / OpenAI-compatible API</span></li>
                 <li class="flex gap-2.5"><span class="text-[#6ccb5f]">✓</span><span data-i18n="pkg.p2l4">Local multilingual embeddings for semantic retrieval</span></li>
@@ -782,6 +782,10 @@
                   <tr><td class="font-mono text-[#4cc2ff]">codebase_health</td><td data-i18n-html="tools.r12"><span class="text-[#6ccb5f] font-medium">Deterministic</span> static analysis — cycles, dead code, duplication, complexity, health score. No LLM needed</td></tr>
                   <tr><td class="font-mono text-[#4cc2ff]">codebase_impact</td><td data-i18n-html="tools.r13"><span class="text-[#6ccb5f] font-medium">Deterministic</span> blast radius — which files transitively depend on a target. No LLM needed</td></tr>
                   <tr><td class="font-mono text-[#4cc2ff]">codebase_deep_audit</td><td data-i18n-html="tools.r14"><span class="text-[#6ccb5f] font-medium">Deterministic</span> full audit — ~30 analyses: git churn, bus factor, secrets, deps, per-function complexity. Pass <code class="font-mono text-xs">ui: true</code> for an HTML dashboard resource</td></tr>
+                  <tr><td class="font-mono text-[#4cc2ff]">codebase_check</td><td data-i18n-html="tools.r15"><span class="text-[#6ccb5f] font-medium">Deterministic</span> verify changes vs a git ref + committed baseline — blast radius, complexity, findings delta</td></tr>
+                  <tr><td class="font-mono text-[#4cc2ff]">codebase_fix</td><td data-i18n-html="tools.r16"><span class="text-[#6ccb5f] font-medium">Deterministic</span> mechanical repairs where the fix is unambiguous — dead deps, unused exports, console/debugger lines, undocumented env vars. <code class="font-mono text-xs">dry: true</code> previews</td></tr>
+                  <tr><td class="font-mono text-[#4cc2ff]">codebase_ignore</td><td data-i18n-html="tools.r17"><span class="text-[#6ccb5f] font-medium">Deterministic</span> silence a finding with a justification — written to <code class="font-mono text-xs">.codebase-chat/ignores.json</code>, commit it</td></tr>
+                  <tr><td class="font-mono text-[#4cc2ff]">codebase_doctor</td><td data-i18n-html="tools.r18"><span class="text-[#6ccb5f] font-medium">Deterministic</span> install &amp; environment diagnostic — node, index cache, keys, tree-sitter, baseline staleness</td></tr>
                 </tbody>
               </table>
             </div>
@@ -815,7 +819,7 @@
             <span data-i18n-html="demo.l1"><strong class="text-[#a3a3a3]">CLI</strong> — index → stats → search → health → ask</span>
             <span data-i18n-html="demo.l5"><strong class="text-[#a3a3a3]">Real chat</strong> — real MCP session on a 422-file codebase: 324 circular deps found, cited answers</span>
             <span data-i18n-html="demo.l4"><strong class="text-[#a3a3a3]">PR review</strong> — real git repo, planted circular dep caught by <code class="font-mono text-[#4cc2ff]">--diff HEAD</code> + live <code class="font-mono text-[#4cc2ff]">--watch</code></span>
-            <span data-i18n-html="demo.l2"><strong class="text-[#a3a3a3]">MCP</strong> — real stdio session, 14 tools, no API key</span>
+            <span data-i18n-html="demo.l2"><strong class="text-[#a3a3a3]">MCP</strong> — real stdio session, 18 tools, no API key</span>
             <span data-i18n-html="demo.l3"><strong class="text-[#a3a3a3]">FR</strong> — symbol fallback + French prompts</span>
             <span data-i18n-html="demo.l6"><strong class="text-[#a3a3a3]">Dashboard</strong> — <code class="font-mono text-[#4cc2ff]">--ui</code> opens the Fluent web app: audit, health, stats, ask — all clicks, no terminal</span>
           </div>
@@ -1065,7 +1069,7 @@
               <div class="absolute" style="width: 55%; height: 90%; left: -8%; top: -25%; background: radial-gradient(closest-side, rgba(76,194,255,0.10), transparent 70%); filter: blur(50px)"></div>
             </div>
             <h2 class="relative text-3xl sm:text-[2.9rem] font-bold tracking-tight mb-4" data-i18n="cta.title">Ready to understand your codebase?</h2>
-            <p class="relative text-[#a3a3a3] mb-10 max-w-lg mx-auto" data-i18n="cta.sub">One install. Fourteen tools. Your repo is never uploaded.</p>
+            <p class="relative text-[#a3a3a3] mb-10 max-w-lg mx-auto" data-i18n="cta.sub">One install. Eighteen tools. Your repo is never uploaded.</p>
             <div class="relative inline-flex items-center gap-3 rounded-md bg-[#1a1a1a] border border-white/10 px-4 py-3 mb-8 font-mono text-[13.5px] text-[#f0f0f0]">
               <span class="text-[#6ccb5f]">$</span> <span id="code-cta">npx dsh-codebase-chat-mcp setup</span>
               <button onclick="copyCode('code-cta', this)" class="px-2.5 py-1 rounded-md text-[11px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 text-[#a3a3a3] transition" data-i18n="btn.copy">Copy</button>
@@ -1220,7 +1224,7 @@
           p1l4: "Application sûre : sauvegarde, dry-run, rollback",
           p1l5: 'Config par projet — <code class="font-mono text-xs text-[#4cc2ff]">.codebase-chat.json</code>',
           p2sub: "Serveur MCP autonome",
-          p2l1: "14 outils via stdio — fonctionne dans Cursor, Claude, Windsurf",
+          p2l1: "18 outils via stdio — fonctionne dans Cursor, Claude, Windsurf",
           p2l2: '<strong class="text-white font-medium">Mode prompt-only</strong> — aucune clé API requise, le modèle hôte répond',
           p2l3: "Appels LLM directs optionnels via API DeepSeek / compatible OpenAI",
           p2l4: "Embeddings multilingues locaux pour la recherche sémantique",
@@ -1246,6 +1250,10 @@
           r12: 'Analyse statique <span class="text-[#6ccb5f] font-medium">déterministe</span> — cycles, code mort, duplication, complexité, score de santé. Aucun LLM requis',
           r13: 'Rayon d\u2019impact <span class="text-[#6ccb5f] font-medium">déterministe</span> — quels fichiers dépendent de la cible, transitivement. Aucun LLM requis',
           r14: 'Audit complet <span class="text-[#6ccb5f] font-medium">déterministe</span> — ~30 analyses : churn git, bus factor, secrets, deps, complexité par fonction. <code class="font-mono text-xs">ui: true</code> renvoie une ressource dashboard HTML',
+          r15: 'Vérifie vos changements <span class="text-[#6ccb5f] font-medium">déterministe</span> — rayon d\u2019impact, complexité, delta des findings vs la baseline commitée',
+          r16: 'Réparations mécaniques <span class="text-[#6ccb5f] font-medium">déterministes</span> là où le fix est sans ambiguïté — deps mortes, exports inutilisés, console/debugger, env non documentées. <code class="font-mono text-xs">dry: true</code> pour prévisualiser',
+          r17: 'Silence un finding <span class="text-[#6ccb5f] font-medium">déterministe</span> avec justification — écrit dans <code class="font-mono text-xs">.codebase-chat/ignores.json</code>, à commiter',
+          r18: 'Diagnostic d\u2019installation <span class="text-[#6ccb5f] font-medium">déterministe</span> — node, cache d\u2019index, clés, tree-sitter, fraîcheur de la baseline',
           foot: 'Tous les outils acceptent <code class="font-mono text-[#4cc2ff]">projectPath</code>, <code class="font-mono text-[#4cc2ff]">lang</code> (fr/en), <code class="font-mono text-[#4cc2ff]">embed</code>, <code class="font-mono text-[#4cc2ff]">promptOnly</code> et <code class="font-mono text-[#4cc2ff]">diff</code>.'
         },
         demo: {
@@ -1259,7 +1267,7 @@
           l1: '<strong class="text-[#a3a3a3]">CLI</strong> — index → stats → recherche → santé → question',
           l4: '<strong class="text-[#a3a3a3]">Revue de PR</strong> — vrai repo git, cycle planté détecté par <code class="font-mono text-[#4cc2ff]">--diff HEAD</code> + <code class="font-mono text-[#4cc2ff]">--watch</code> en direct',
           l5: '<strong class="text-[#a3a3a3]">Chat réel</strong> — vraie session MCP sur un codebase de 422 fichiers : 324 cycles détectés, réponses citées',
-          l2: '<strong class="text-[#a3a3a3]">MCP</strong> — vraie session stdio, 14 outils, sans clé API',
+          l2: '<strong class="text-[#a3a3a3]">MCP</strong> — vraie session stdio, 18 outils, sans clé API',
           l3: '<strong class="text-[#a3a3a3]">FR</strong> — fallback de symboles + prompts en français',
           tabDash: "Dashboard",
           l6: '<strong class="text-[#a3a3a3]">Dashboard</strong> — <code class="font-mono text-[#4cc2ff]">--ui</code> ouvre l\u2019app web Fluent : audit, santé, stats, questions — tout au clic, sans terminal',
@@ -1343,7 +1351,7 @@
         },
         cta: {
           title: "Prêt à comprendre votre codebase ?",
-          sub: "Une installation. Quatorze outils. Votre dépôt n\u2019est jamais envoyé.",
+          sub: "Une installation. Dix-huit outils. Votre dépôt n\u2019est jamais envoyé.",
           btn1: "Commencer",
           btn2: "Star sur GitHub"
         },
