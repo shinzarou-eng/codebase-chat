@@ -132,68 +132,71 @@ export function parseReportMd(md: string, fallbackTitle = 'Report'): ParsedRepor
   };
 }
 
-/** Shared dashboard stylesheet — violet "Linear-grade" dark theme. */
+/** Shared dashboard stylesheet — premium "Linear-grade" dark theme. */
 export const DASH_CSS = `
-:root{--bg:#1f1f1f;--card:#2b2b2b;--card2:#333333;--line:#ffffff14;--line2:#ffffff24;--txt:#f0f0f0;--dim:#a3a3a3;--acc:#4cc2ff;--acc2:#8fd3ff;--ok:#6ccb5f;--warn:#fce100;--bad:#ff99a4;--code:#9cdcfe}
+:root{--bg:#0b0b10;--card:#131318;--card2:#17171f;--line:#ffffff0d;--line2:#ffffff1f;--txt:#ececf1;--dim:#8b8b96;--acc:#8b7cf6;--acc2:#b3a5ff;--ok:#4ade80;--warn:#facc15;--bad:#fb7185;--code:#a5b4fc}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.6 "Segoe UI Variable","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-nav{position:fixed;inset:0 auto 0 0;width:230px;padding:24px 16px;border-right:1px solid var(--line);overflow:auto;background:#1b1b1b}
-nav b{display:block;color:var(--acc);margin-bottom:14px;font-size:13px;letter-spacing:.04em}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(1000px 500px at 70% -10%,rgba(139,124,246,.09),transparent 60%),radial-gradient(800px 400px at 0% 110%,rgba(139,124,246,.05),transparent 60%)}
+nav{position:fixed;inset:0 auto 0 0;width:230px;padding:24px 16px;border-right:1px solid var(--line);overflow:auto;background:rgba(13,13,19,.85);backdrop-filter:blur(12px);z-index:1}
+nav b{display:block;margin-bottom:14px;font-size:13px;letter-spacing:.04em;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
 nav a{display:block;color:var(--dim);text-decoration:none;padding:5px 9px;border-radius:6px;font-size:13px;transition:background .1s}
-nav a:hover{background:#ffffff0d;color:var(--txt)}
-main{margin-left:230px;max-width:1120px;padding:32px 40px}
+nav a:hover{background:#ffffff08;color:var(--txt)}
+main{margin-left:230px;max-width:1120px;padding:32px 40px;position:relative;z-index:1}
 header.hero{margin-bottom:28px}
-header.hero h1{font-size:24px;margin:0 0 4px;font-weight:600;letter-spacing:-.01em}
+header.hero h1{font-size:26px;margin:0 0 4px;font-weight:650;letter-spacing:-.02em;background:linear-gradient(180deg,#fff,#b9b9c9);-webkit-background-clip:text;background-clip:text;color:transparent}
 header.hero .sub{color:var(--dim);font-size:12px}
 .score{display:flex;align-items:center;gap:20px;margin:14px 0}
-section{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:22px 26px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+section{background:linear-gradient(180deg,#15151c,#121218);border:1px solid var(--line);border-radius:14px;padding:22px 26px;margin-bottom:16px;box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 8px 24px rgba(0,0,0,.35);position:relative}
+section::before{content:'';position:absolute;top:0;left:24px;right:24px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);pointer-events:none}
 section:hover{border-color:var(--line2)}
-h2{margin:0 0 12px;font-size:15px;color:var(--txt);font-weight:600}
+h2{margin:0 0 12px;font-size:15px;color:var(--txt);font-weight:600;letter-spacing:-.01em}
 h2.coll{cursor:pointer;user-select:none;display:flex;align-items:center;gap:9px;margin-bottom:0}
 h2.coll::before{content:'▾';font-size:11px;color:var(--dim);transition:transform .15s}
 section.collapsed h2.coll::before{transform:rotate(-90deg)}
 section.collapsed .sbody{display:none}
 section:not(.collapsed) .sbody{margin-top:14px}
 .sbody{overflow-x:auto}
-h3{margin:16px 0 8px;font-size:14px;color:var(--txt);font-weight:600}
-p{margin:7px 0}ul{margin:7px 0;padding-left:20px}li{margin:4px 0}li::marker{color:var(--dim)}li.sub{color:var(--dim);font-size:13px;margin-left:14px}
-code{font-family:"Cascadia Code",Consolas,ui-monospace,monospace;color:var(--code);background:#ffffff0f;padding:1px 6px;border-radius:4px;font-size:12.5px}
-pre{background:#1a1a1a;border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow:auto;font-family:"Cascadia Code",Consolas,ui-monospace,monospace;font-size:12.5px;white-space:pre-wrap}
+h3{margin:16px 0 8px;font-size:14px;color:var(--txt);font-weight:600;letter-spacing:-.005em}
+p{margin:7px 0}ul{margin:7px 0;padding-left:20px}li{margin:4px 0}li::marker{color:var(--acc)}li.sub{color:var(--dim);font-size:13px;margin-left:14px}
+code{font-family:"Cascadia Code",Consolas,ui-monospace,monospace;color:var(--code);background:rgba(139,124,246,.08);border:1px solid rgba(139,124,246,.12);padding:1px 6px;border-radius:5px;font-size:12.5px}
+pre{background:#0d0d13;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font-family:"Cascadia Code",Consolas,ui-monospace,monospace;font-size:12.5px;white-space:pre-wrap}
 table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13px}
-th{text-align:left;color:var(--dim);font-weight:600;font-size:11.5px;padding:9px 12px;border-bottom:1px solid var(--line)}
-td{padding:9px 12px;border-bottom:1px solid #ffffff09;vertical-align:top}
+th{text-align:left;color:var(--dim);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:9px 12px;border-bottom:1px solid var(--line)}
+td{padding:9px 12px;border-bottom:1px solid #ffffff06;vertical-align:top}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:#ffffff08}
+tr:hover td{background:#ffffff05}
 strong{color:var(--txt)}em{color:var(--dim)}hr{border:none;border-top:1px solid var(--line);margin:14px 0}
-a{color:var(--acc)}
-.sev{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.03em;padding:2px 9px;border-radius:4px;vertical-align:middle}
-.sev-crit{background:rgba(255,153,164,.15);color:var(--bad)}
-.sev-high{background:rgba(255,185,140,.14);color:#ffb98c}
-.sev-med{background:rgba(252,225,0,.12);color:var(--warn)}
-.sev-info{background:rgba(76,194,255,.13);color:var(--acc)}
-.sev-ok{background:rgba(108,203,95,.14);color:var(--ok)}
+a{color:var(--acc2)}
+.sev{display:inline-block;font-size:10.5px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;padding:2px 9px;border-radius:20px;vertical-align:middle}
+.sev-crit{background:rgba(251,113,133,.13);color:var(--bad)}
+.sev-high{background:rgba(251,146,60,.12);color:#fdba74}
+.sev-med{background:rgba(250,204,21,.1);color:var(--warn)}
+.sev-info{background:rgba(139,124,246,.14);color:var(--acc2)}
+.sev-ok{background:rgba(74,222,128,.12);color:var(--ok)}
 .mb{display:inline-flex;align-items:center;gap:10px;vertical-align:middle}
-.mb i{display:inline-block;width:120px;height:6px;background:#ffffff12;border-radius:4px;overflow:hidden}
-.mb u{display:block;height:100%;background:linear-gradient(90deg,#ff99a4,#fce100,#6ccb5f);border-radius:4px}
+.mb i{display:inline-block;width:120px;height:5px;background:#ffffff10;border-radius:4px;overflow:hidden}
+.mb u{display:block;height:100%;background:linear-gradient(90deg,#fb7185,#facc15,#4ade80);border-radius:4px}
 .mb b{font-size:13px;font-weight:600}
-.donut .bg{fill:none;stroke:#ffffff12;stroke-width:10}
-.donut .fg{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dasharray 1s ease}
+.donut .bg{fill:none;stroke:#ffffff0d;stroke-width:9}
+.donut .fg{fill:none;stroke-width:9;stroke-linecap:round;transition:stroke-dasharray 1s ease;filter:drop-shadow(0 0 6px rgba(139,124,246,.25))}
 html{scroll-behavior:smooth}
+::selection{background:rgba(139,124,246,.3)}
 ::-webkit-scrollbar{width:10px;height:10px}
-::-webkit-scrollbar-thumb{background:#ffffff1a;border-radius:6px;border:2px solid var(--bg)}
-::-webkit-scrollbar-thumb:hover{background:#ffffff2e}
+::-webkit-scrollbar-thumb{background:#ffffff14;border-radius:6px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:#ffffff26}
 ::-webkit-scrollbar-track{background:transparent}
 @media(max-width:800px){nav{display:none}main{margin:0;padding:18px}}
 `;
 
 export function scoreGauge(score: number | null, grade: string | null = null): string {
   if (score === null) return '';
-  const color = score >= 70 ? '#6ccb5f' : score >= 50 ? '#fce100' : '#ff99a4';
+  const color = score >= 70 ? '#4ade80' : score >= 50 ? '#facc15' : '#fb7185';
   const circ = 2 * Math.PI * 52;
   return `<div class="score"><svg class="donut" width="120" height="120" viewBox="0 0 120 120">
 <circle class="bg" cx="60" cy="60" r="52"/>
 <circle class="fg" cx="60" cy="60" r="52" stroke="${color}" stroke-dasharray="${(score / 100 * circ).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 60 60)"/>
-<text x="60" y="58" text-anchor="middle" dominant-baseline="middle" fill="${color}" font-size="30" font-weight="600">${score}</text>
+<text x="60" y="58" text-anchor="middle" dominant-baseline="middle" fill="${color}" font-size="30" font-weight="650">${score}</text>
 ${grade ? `<text x="60" y="84" text-anchor="middle" fill="var(--dim)" font-size="13">${grade}</text>` : ''}
 </svg></div>`;
 }
