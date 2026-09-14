@@ -25,13 +25,13 @@
 ## Installation
 
 ```bash
-dsh plugin --profile web add codebase-chat
+npx codebase-chat-mcp setup
 ```
 
-or as a standalone MCP server / CLI:
+or as a DeepSeek Harness plugin:
 
 ```bash
-npx codebase-chat-mcp setup
+dsh plugin --profile web add codebase-chat
 ```
 
 The wizard detects **Claude, Cursor, Windsurf, VS Code, Zed, Gemini CLI, Kiro, Cline and Roo Code**, asks how you want answers (host model or API key), writes the MCP config, done.
@@ -164,13 +164,20 @@ Same engine, three surfaces: **MCP tools** in your IDE, **slash commands** in De
 <summary><strong>Install — all paths</strong></summary>
 <br>
 
-**DeepSeek Harness plugin**
+**MCP server — manual config**
 
-```bash
-dsh plugin --profile web add codebase-chat
+```json
+{
+  "mcpServers": {
+    "codebase-chat": {
+      "command": "npx",
+      "args": ["codebase-chat-mcp"]
+    }
+  }
+}
 ```
 
-Then restart `dsh web` → `http://127.0.0.1:3080` → **Codebase Pro** button.
+Without `DEEPSEEK_API_KEY` / `OPENAI_API_KEY` the server runs `promptOnly`. Set either key for direct-LLM calls — see [`mcp/README.md`](mcp/README.md).
 
 **CLI**
 
@@ -185,27 +192,20 @@ npx codebase-chat --project C:\my-app --prompt intelligence --no-llm  # determin
 npx codebase-chat --project C:\my-app --ui   # interactive HTML dashboard on localhost — no LLM
 ```
 
+**DeepSeek Harness plugin**
+
+```bash
+dsh plugin --profile web add codebase-chat
+```
+
+Then restart `dsh web` → `http://127.0.0.1:3080` → **Codebase Pro** button.
+
 **From source**
 
 ```bash
 git clone https://github.com/shinzarou-eng/codebase-chat.git
 cd codebase-chat && pnpm install && pnpm build
 ```
-
-**Manual MCP config**
-
-```json
-{
-  "mcpServers": {
-    "codebase-chat": {
-      "command": "npx",
-      "args": ["codebase-chat-mcp"]
-    }
-  }
-}
-```
-
-Without `DEEPSEEK_API_KEY` / `OPENAI_API_KEY` the server runs `promptOnly`. Set either key for direct-LLM calls — see [`mcp/README.md`](mcp/README.md).
 
 </details>
 
