@@ -1,9 +1,9 @@
 {
-  "name": "dsh-codebase-chat-mcp",
+  "name": "codebase-chat-mcp",
   "version": "0.10.1",
-  "description": "Standalone MCP server for dsh-codebase-chat — codebase intelligence tools for Cursor, Claude, Windsurf and any MCP client. Works without DeepSeek Harness.",
+  "description": "Standalone MCP server for codebase-chat — codebase intelligence tools for Cursor, Claude, Windsurf and any MCP client. Works without DeepSeek Harness.",
   "author": "shinzarou-eng",
-  "mcpName": "io.github.shinzarou-eng/dsh-codebase-chat",
+  "mcpName": "io.github.shinzarou-eng/codebase-chat",
   "keywords": [
     "mcp",
     "model-context-protocol",
@@ -20,12 +20,12 @@
   ],
   "type": "module",
   "bin": {
-    "dsh-codebase-chat-mcp": "index.mjs"
+    "codebase-chat-mcp": "index.mjs"
   },
   "main": "index.mjs",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/shinzarou-eng/dsh-codebase-chat.git"
+    "url": "git+https://github.com/shinzarou-eng/codebase-chat.git"
   },
   "scripts": {
     "start": "node index.mjs"
@@ -40,7 +40,7 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "dsh-codebase-chat": "workspace:^"
+    "codebase-chat": "workspace:^"
   },
   "engines": {
     "node": ">=20"

@@ -1,4 +1,4 @@
-# UX Playthrough Report — dsh-codebase-chat
+# UX Playthrough Report — codebase-chat
 
 _Rapport généré via `codebase_player` (MCP) + analyse manuelle des points de contact. Le "user journey" d'un outil développeur = découverte → installation → premier appel → lecture des résultats._
 
@@ -10,7 +10,7 @@ _Rapport généré via `codebase_player` (MCP) + analyse manuelle des points de 
 Le point d'entrée est le README avec une commande unique en première position `[source: README.md:28]` :
 
 ```
-npx dsh-codebase-chat-mcp setup
+npx codebase-chat-mcp setup
 ```
 
 La promesse est claire dès le haut de page, et le transcript terminal réel montre le résultat avant même l'installation `[source: README.md:47-82]`. Le site `docs/index.html` présente les 13 outils en table + onglets démo `[source: docs/index.html:782-786]`.
@@ -62,7 +62,7 @@ L'utilisateur demande en langage naturel ("scanne ce repo"). Les tools détermin
 | F3 | **Idem pour le mode de réponse** — `mode === "2"` et `mode === "3"` sont testés, toute autre valeur (`"99"`, `"abc"`) tombe silencieusement en prompt-only. Pas de validation ni de re-prompt. | Moyenne | `mcp/setup.mjs:220-230` |
 | F4 | **Clé API saisie en clair** — `ask("  Clef API DeepSeek/OpenAI : ")` affiche la clé tapée en clair dans le terminal. Pas de masquage, pas de validation de format (`sk-…`), pas de rappel qu'elle sera stockée en clair dans le JSON du client. | Moyenne | `mcp/setup.mjs:225` |
 | F5 | **Pas de vérification post-install** — après "[ok]", le seul feedback est "Redemarre le client". Si le serveur ne démarre pas (node absent, npx introuvable), l'utilisateur le découvre dans l'IDE sans diagnostic. Aucun `--check`/`doctor` ne valide l'installation. | Haute | `mcp/setup.mjs:233-244` |
-| F6 | **Aide en exit code 1** — `npx dsh-codebase-chat` sans arguments imprime l'aide mais sort avec `exit(1)`. Scripts/CI lisant `$?` voient un échec pour un usage normal. | Basse | `src/cli.ts:326-327` |
+| F6 | **Aide en exit code 1** — `npx codebase-chat` sans arguments imprime l'aide mais sort avec `exit(1)`. Scripts/CI lisant `$?` voient un échec pour un usage normal. | Basse | `src/cli.ts:326-327` |
 | F7 | **Latence de sortie perceptible** — `exit()` repose sur un timer unref'd de 2 s ; sur certaines configurations le process peut paraître "pendre" avant de se fermer. | Basse | `src/cli.ts:20-26` |
 
 ---

@@ -1,21 +1,21 @@
 ---
 description: "Codebase intelligence — audit, santé, impact, rapports (menu si aucun argument)"
 argument-hint: "[outil] [args] — ex: /codebase check HEAD~1"
-allowed-tools: mcp__dsh-codebase-chat
+allowed-tools: mcp__codebase-chat
 ---
 
-Tu es la commande `/codebase` du serveur MCP **dsh-codebase-chat** (outils `mcp__dsh-codebase-chat__codebase_*`).
+Tu es la commande `/codebase` du serveur MCP **codebase-chat** (outils `mcp__codebase-chat__codebase_*`).
 
 Arguments : `$ARGUMENTS`
 
 Règles :
 - `$ARGUMENTS` vide → affiche le menu ci-dessous tel quel et demande lequel lancer. Ne rien exécuter.
 - Premier mot = `help` | `aide` | `?` | `--help` → affiche l'aide complète en fin de fichier, telle quelle. Ne rien exécuter.
-- Premier mot = outil ou alias → appelle `mcp__dsh-codebase-chat__codebase_<outil>` avec le mapping ci-dessous. `projectPath` = répertoire courant sauf indication contraire.
+- Premier mot = outil ou alias → appelle `mcp__codebase-chat__codebase_<outil>` avec le mapping ci-dessous. `projectPath` = répertoire courant sauf indication contraire.
 - Outil inconnu → affiche le menu.
 
 Robustesse :
-- Tool MCP absent ou serveur non connecté → bascule sur le CLI équivalent : `npx dsh-codebase-chat --check` | `--health` | `--impact <f>` | `--search <q>` | `--doctor`. Si rien n'est installé → propose `npx dsh-codebase-chat-mcp-setup`.
+- Tool MCP absent ou serveur non connecté → bascule sur le CLI équivalent : `npx codebase-chat --check` | `--health` | `--impact <f>` | `--search <q>` | `--doctor`. Si rien n'est installé → propose `npx codebase-chat-mcp-setup`.
 - Tool demandé inconnu du serveur (ex. `codebase_check`) → version trop vieille : le dire et suggérer de mettre à jour / recharger.
 - Verdict `check` rouge → enchaîne proactivement : `impact` sur le fichier le plus risqué + `explain` sur le finding bloquant.
 - Résultat déterministe → présente le verdict et les raisons tels quels, sans les réécrire.
@@ -76,7 +76,7 @@ Robustesse :
 
 ## /codebase help — aide complète
 
-`/codebase` est le point d'entrée des 18 outils du serveur MCP **dsh-codebase-chat** : analyse statique locale, indexation et rapports. Deux familles :
+`/codebase` est le point d'entrée des 18 outils du serveur MCP **codebase-chat** : analyse statique locale, indexation et rapports. Deux familles :
 
 - **Déterministe** — analyse du code réel, aucune clé API, résultats reproductibles et audités.
 - **LLM** — construit un prompt contextualisé sur ton projet (mode `promptOnly`) ou appelle un modèle si une clé est configurée.

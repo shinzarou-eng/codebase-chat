@@ -203,14 +203,14 @@
 
 **Bug fixes**
 
-- Published `package.json` declared `dsh-codebase-chat` as `workspace:^` — npm publish does not rewrite the workspace protocol, so `npx dsh-codebase-chat-mcp` failed to resolve the dependency. Now pinned to `^0.21.0`.
+- Published `package.json` declared `codebase-chat` as `workspace:^` — npm publish does not rewrite the workspace protocol, so `npx codebase-chat-mcp` failed to resolve the dependency. Now pinned to `^0.21.0`.
 - Setup wizard reads piped stdin correctly (queued lines instead of racing on `close`).
 
 ## mcp 0.6.0 — `setup` wizard
 
 **New**
 
-- `npx dsh-codebase-chat-mcp setup` — interactive wizard that detects installed MCP clients (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code) and writes the `dsh-codebase-chat` server entry for you. Merges into existing `mcpServers`/`servers`, backs up each config file (`.bak`), optional API key, defaults to prompt-only mode. Zero added dependencies.
+- `npx codebase-chat-mcp setup` — interactive wizard that detects installed MCP clients (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code) and writes the `codebase-chat` server entry for you. Merges into existing `mcpServers`/`servers`, backs up each config file (`.bak`), optional API key, defaults to prompt-only mode. Zero added dependencies.
 
 ## 0.21.0 — Tree-sitter multi-language extraction
 
@@ -291,8 +291,8 @@
 
 ## 0.16.0 — npm publication and GitHub Pages
 
-- Published `dsh-codebase-chat@0.16.0` to npm.
-- Published `dsh-codebase-chat-mcp@0.2.2` to npm.
+- Published `codebase-chat@0.16.0` to npm.
+- Published `codebase-chat-mcp@0.2.2` to npm.
 - Fixed MCP `bin` path for npm 11.
 - Professional README with badges, feature table, install instructions, MCP config, and command reference.
 - New GitHub Pages landing site (`docs/index.html`) with Tailwind CSS.

@@ -1,6 +1,6 @@
 # demo-petstore
 
-A small Express API used to demonstrate `dsh-codebase-chat`.
+A small Express API used to demonstrate `codebase-chat`.
 
 It intentionally contains a few issues so audits have something to find:
 
@@ -11,8 +11,8 @@ It intentionally contains a few issues so audits have something to find:
 Try:
 
 ```bash
-npx dsh-codebase-chat --project demo-project --stats
-npx dsh-codebase-chat --project demo-project --search "jwt token"
-npx dsh-codebase-chat --project demo-project --file src/auth.ts
-npx dsh-codebase-chat --project demo-project --ask "is there a hardcoded secret?" --lang en
+npx codebase-chat --project demo-project --stats
+npx codebase-chat --project demo-project --search "jwt token"
+npx codebase-chat --project demo-project --file src/auth.ts
+npx codebase-chat --project demo-project --ask "is there a hardcoded secret?" --lang en
 ```

@@ -245,11 +245,11 @@ body.zen .wrap{max-width:880px;padding-top:48px}
 </div>
 </main>
 <div class="statusbar">
-<span class="sitem">${IC.audit} dsh-codebase-chat</span>
+<span class="sitem">${IC.audit} codebase-chat</span>
 <span class="sitem" title="${esc(absPath)}" style="max-width:320px">${esc(absPath)}</span>
 <span class="sitem" id="sbView"></span>
 <span class="sitem" id="sbMsg" style="opacity:.85">ready</span>
-<span class="sright"><span class="sitem kb" id="sbCmd" title="${t('Palette de commandes', 'Command palette')}">⌘K</span><span class="sitem">${IC.lock} ${t('local — aucun envoi automatique', 'local — no automatic upload')}</span><span class="sitem"><code>npx dsh-codebase-chat --ui</code></span></span>
+<span class="sright"><span class="sitem kb" id="sbCmd" title="${t('Palette de commandes', 'Command palette')}">⌘K</span><span class="sitem">${IC.lock} ${t('local — aucun envoi automatique', 'local — no automatic upload')}</span><span class="sitem"><code>npx codebase-chat --ui</code></span></span>
 </div>
 <div class="pal hidden" id="pal"><div class="palbox"><input type="text" id="palIn" placeholder="${t('Tape une commande…', 'Type a command…')}" aria-label="${t('Palette de commandes', 'Command palette')}" autocomplete="off"><div id="palList"></div><div class="palfoot"><span><kbd>↑↓</kbd> ${t('naviguer', 'navigate')}</span><span><kbd>↵</kbd> ${t('exécuter', 'run')}</span><span><kbd>esc</kbd> ${t('fermer', 'close')}</span><span style="margin-left:auto"><kbd>1-5</kbd> ${t('vues', 'views')} · <kbd>z</kbd> zen</span></div></div></div>
 <script>

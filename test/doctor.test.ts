@@ -20,7 +20,7 @@ describe('doctor', () => {
       const dir = await tmp();
       const r = await runDoctor(dir, 'en');
       const labels = r.items.map(i => i.label);
-      for (const l of ['Node.js', 'dsh-codebase-chat', 'Project', 'Index', 'Config', 'LLM', 'Baseline', 'Integrations'])
+      for (const l of ['Node.js', 'codebase-chat', 'Project', 'Index', 'Config', 'LLM', 'Baseline', 'Integrations'])
         expect(labels).toContain(l);
       expect(r.items.find(i => i.label === 'Node.js')?.status).toBe('ok');
       expect(r.items.find(i => i.label === 'Project')?.status).toBe('warn');

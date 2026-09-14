@@ -1,14 +1,14 @@
 {
-  "name": "dsh-codebase-chat",
+  "name": "codebase-chat",
   "version": "0.29.1",
   "description": "Multi-language codebase intelligence for DeepSeek Harness and MCP-compatible IDEs: chat, search, audit, refactor, and board-ready reports from local code.",
-  "homepage": "https://shinzarou-eng.github.io/dsh-codebase-chat",
+  "homepage": "https://shinzarou-eng.github.io/codebase-chat",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/shinzarou-eng/dsh-codebase-chat.git"
+    "url": "git+https://github.com/shinzarou-eng/codebase-chat.git"
   },
   "bugs": {
-    "url": "https://github.com/shinzarou-eng/dsh-codebase-chat/issues"
+    "url": "https://github.com/shinzarou-eng/codebase-chat/issues"
   },
   "type": "module",
   "packageManager": "pnpm@11.24.0",
@@ -18,7 +18,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "dsh-codebase-chat": "./dist/cli.js"
+    "codebase-chat": "./dist/cli.js"
   },
   "exports": {
     ".": {

@@ -67,7 +67,7 @@ export function getCacheDir(): string {
     || process.env.LOCALAPPDATA
     || process.env.APPDATA
     || join(homedir(), '.cache');
-  return join(base, 'dsh-codebase-chat-cache');
+  return join(base, 'codebase-chat-cache');
 }
 
 export function cacheFilePath(absProject: string): string {

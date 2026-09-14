@@ -69,24 +69,24 @@ function exit(code: number): never {
 
 function printHelp() {
   console.log(`
-dsh-codebase-chat CLI
+codebase-chat CLI
 
 Usage:
-  npx dsh-codebase-chat --project <path> --ask "Explain auth flow"
-  npx dsh-codebase-chat --project <path> --search "rate limiting"
-  npx dsh-codebase-chat --project <path> --file src/auth.ts
-  npx dsh-codebase-chat --project <path> --index
-  npx dsh-codebase-chat --project <path> --stats
-  npx dsh-codebase-chat --project <path> --health
-  npx dsh-codebase-chat --project <path> --impact src/store.ts
-  npx dsh-codebase-chat --project <path> --health --diff main
-  npx dsh-codebase-chat --project <path> --check [--diff main] [--strict]
-  npx dsh-codebase-chat --project <path> --baseline
-  npx dsh-codebase-chat --project <path> --doctor
-  npx dsh-codebase-chat --project <path> --watch
-  npx dsh-codebase-chat --project <path> --prompt intelligence
-  npx dsh-codebase-chat --project <path> --prompt intelligence --call   # answered via DEEPSEEK_API_KEY
-  npx dsh-codebase-chat --project <path> --prompt intelligence --no-llm # deterministic report, zero model
+  npx codebase-chat --project <path> --ask "Explain auth flow"
+  npx codebase-chat --project <path> --search "rate limiting"
+  npx codebase-chat --project <path> --file src/auth.ts
+  npx codebase-chat --project <path> --index
+  npx codebase-chat --project <path> --stats
+  npx codebase-chat --project <path> --health
+  npx codebase-chat --project <path> --impact src/store.ts
+  npx codebase-chat --project <path> --health --diff main
+  npx codebase-chat --project <path> --check [--diff main] [--strict]
+  npx codebase-chat --project <path> --baseline
+  npx codebase-chat --project <path> --doctor
+  npx codebase-chat --project <path> --watch
+  npx codebase-chat --project <path> --prompt intelligence
+  npx codebase-chat --project <path> --prompt intelligence --call   # answered via DEEPSEEK_API_KEY
+  npx codebase-chat --project <path> --prompt intelligence --no-llm # deterministic report, zero model
 
 Options:
   -p, --project <path>   Project directory (default: current directory)
@@ -350,16 +350,16 @@ async function main() {
     }
     const hooksDir = join(gitDir, 'hooks');
     const hookPath = join(hooksDir, 'pre-commit');
-    const MARK = 'dsh-codebase-chat pre-commit hook';
+    const MARK = 'codebase-chat pre-commit hook';
     const script = `#!/bin/sh
 # ${MARK} — verifies changed files (impact + new findings vs baseline).
 # Skip once with: git commit --no-verify
-if command -v dsh-codebase-chat >/dev/null 2>&1; then
-  dsh-codebase-chat --check --strict
+if command -v codebase-chat >/dev/null 2>&1; then
+  codebase-chat --check --strict
 elif [ -f "dist/cli.js" ]; then
   node dist/cli.js --check --strict
 else
-  npx --no-install dsh-codebase-chat --check --strict
+  npx --no-install codebase-chat --check --strict
 fi
 `;
     if (values.hook === 'install') {
@@ -380,7 +380,7 @@ fi
         rmSync(hookPath);
         console.log(lang === 'en' ? 'Hook removed.' : 'Hook retiré.');
       } else {
-        console.log(lang === 'en' ? 'No dsh-codebase-chat hook installed.' : 'Aucun hook dsh-codebase-chat installé.');
+        console.log(lang === 'en' ? 'No codebase-chat hook installed.' : 'Aucun hook codebase-chat installé.');
       }
       exit(0);
     }

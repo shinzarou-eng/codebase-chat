@@ -8,9 +8,9 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, buildDeterministicReport, reportToHtml, runCheck, formatCheckMd, runDoctor, formatDoctorMd, addIgnore, removeIgnore, readIgnores, appendHistory, collectAudit, auditFindings, splitIgnored, planFixes, applyFixes } from "dsh-codebase-chat";
+import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, buildDeterministicReport, reportToHtml, runCheck, formatCheckMd, runDoctor, formatDoctorMd, addIgnore, removeIgnore, readIgnores, appendHistory, collectAudit, auditFindings, splitIgnored, planFixes, applyFixes } from "codebase-chat";
 
-// `dsh-codebase-chat-mcp setup` runs the interactive client-config wizard
+// `codebase-chat-mcp setup` runs the interactive client-config wizard
 // instead of starting the MCP server.
 if (process.argv[2] === "setup") {
   const { runSetup } = await import("./setup.mjs");
@@ -138,7 +138,7 @@ async function buildPrompt(name, args) {
 }
 
 const server = new Server(
-  { name: "dsh-codebase-chat-mcp", version: VERSION },
+  { name: "codebase-chat-mcp", version: VERSION },
   { capabilities: { tools: {}, prompts: {} } }
 );
 
@@ -242,7 +242,7 @@ async function handleFix(project, args) {
 }
 
 // MCP prompts — surface each tool as a user-invocable slash command
-// (Claude Code: /mcp__dsh-codebase-chat-mcp__<name>).
+// (Claude Code: /mcp__codebase-chat-mcp__<name>).
 const ARG_DESC = {
   file: "File to analyze (relative path or name)",
   id: "Finding id or prefix (e.g. sec:innerHTML:src/x.ts)",
@@ -363,7 +363,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const content = [{ type: "text", text }];
       if (args?.ui === true && reportToHtml) {
         const html = reportToHtml(text, { project: project.split(/[\\/]/).pop() || "project", generated: new Date().toISOString().slice(0, 10) });
-        content.push({ type: "resource", resource: { uri: `ui://dsh-codebase-chat/deep-audit`, mimeType: "text/html", text: html } });
+        content.push({ type: "resource", resource: { uri: `ui://codebase-chat/deep-audit`, mimeType: "text/html", text: html } });
       }
       return { content };
     }
@@ -418,7 +418,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (wantsPrompt) {
       const header = apiKey
         ? ""
-        : `> **dsh-codebase-chat** · \`${projectName}\` · prompt-only mode (no API key) — the context below is for the host model to answer.\n\n---\n\n`;
+        : `> **codebase-chat** · \`${projectName}\` · prompt-only mode (no API key) — the context below is for the host model to answer.\n\n---\n\n`;
       const note = noMatch
         ? (args?.lang === "en"
           ? `> No code chunk matches "${args?.query ?? ""}" — the context below holds the file tree only.\n\n`

@@ -45,7 +45,7 @@ export async function runDoctor(projectPath: string, lang: 'fr' | 'en'): Promise
   add('Node.js', nodeMajor >= 20 ? 'ok' : 'fail',
     `v${process.versions.node}${nodeMajor < 20 ? (en ? ' — requires >= 20' : ' — >= 20 requis') : ''}`);
 
-  add('dsh-codebase-chat', 'ok', `v${pkgVersion()}`);
+  add('codebase-chat', 'ok', `v${pkgVersion()}`);
 
   // Project / git
   const abs = await findProjectRoot(resolveProjectPath(projectPath));
@@ -118,7 +118,7 @@ export async function runDoctor(projectPath: string, lang: 'fr' | 'en'): Promise
   const clients: string[] = [];
   for (const c of mcpClientPaths(home)) {
     try {
-      if (existsSync(c.path) && (await readFile(c.path, 'utf8')).includes('dsh-codebase-chat')) clients.push(c.id);
+      if (existsSync(c.path) && (await readFile(c.path, 'utf8')).includes('codebase-chat')) clients.push(c.id);
     } catch { /* unreadable — skip */ }
   }
   add(en ? 'Integrations' : 'Intégrations', existsSync(cmd) || clients.length ? 'ok' : 'warn',
@@ -136,7 +136,7 @@ export function formatDoctorMd(r: DoctorReport, lang: 'fr' | 'en'): string {
     '|---|---|---|',
     ...r.items.map(i => `| ${icon[i.status]} | ${i.label} | ${i.detail} |`),
     '', '---',
-    `_${en ? 'Made with passion by shinzarou-eng' : 'Fait avec passion par shinzarou-eng'} — dsh-codebase-chat · ${en ? 'deterministic mode' : 'mode déterministe'}_`,
+    `_${en ? 'Made with passion by shinzarou-eng' : 'Fait avec passion par shinzarou-eng'} — codebase-chat · ${en ? 'deterministic mode' : 'mode déterministe'}_`,
   ];
   return out.join('\n');
 }

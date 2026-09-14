@@ -1,9 +1,9 @@
 # Roadmap
 
-This document tracks where **dsh-codebase-chat** is going. It is organized by horizon —
+This document tracks where **codebase-chat** is going. It is organized by horizon —
 not by date — and updated as work ships. Items move from *Exploring* → *Planned* → *Next* → *Shipped*.
 
-Want to influence priorities? [Open an issue](https://github.com/shinzarou-eng/dsh-codebase-chat/issues) or pick up an item marked `help wanted`.
+Want to influence priorities? [Open an issue](https://github.com/shinzarou-eng/codebase-chat/issues) or pick up an item marked `help wanted`.
 
 ---
 

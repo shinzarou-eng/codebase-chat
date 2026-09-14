@@ -31,7 +31,7 @@ async function main() {
 
   out('→ initialize');
   await call({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'cursor', version: '1.0' } } });
-  out('← server ready: dsh-codebase-chat-mcp');
+  out('← server ready: codebase-chat-mcp');
   send({ jsonrpc: '2.0', method: 'notifications/initialized' });
   await wait(150);
 

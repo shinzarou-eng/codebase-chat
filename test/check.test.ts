@@ -120,7 +120,7 @@ describe('runCheck', () => {
       const sarif = JSON.parse(checkToSarif(r, '0.0.0'));
       expect(sarif.version).toBe('2.1.0');
       const run = sarif.runs[0];
-      expect(run.tool.driver.name).toBe('dsh-codebase-chat');
+      expect(run.tool.driver.name).toBe('codebase-chat');
       const evalRes = run.results.find((x: any) => x.ruleId === 'sec:eval');
       expect(evalRes.level).toBe('error');
       expect(evalRes.locations[0].physicalLocation.artifactLocation.uri).toBe('src/b.ts');

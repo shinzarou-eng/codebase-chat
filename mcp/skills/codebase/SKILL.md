@@ -1,11 +1,11 @@
 ---
 name: codebase
-description: Codebase intelligence via the dsh-codebase-chat MCP server — check your changes, deep audit, health, impact, search, explain, doctor. Use when the user types /codebase or asks to verify changes, audit the codebase, see the blast radius of a file, search or explain code, or diagnose the install.
+description: Codebase intelligence via the codebase-chat MCP server — check your changes, deep audit, health, impact, search, explain, doctor. Use when the user types /codebase or asks to verify changes, audit the codebase, see the blast radius of a file, search or explain code, or diagnose the install.
 ---
 
 # /codebase — codebase intelligence
 
-Les outils sont les tools MCP du serveur `dsh-codebase-chat` (`codebase_*`). Appelle-les via `mcp_call_tool` avec `server_name: "dsh-codebase-chat"`. `projectPath` = répertoire courant sauf indication contraire.
+Les outils sont les tools MCP du serveur `codebase-chat` (`codebase_*`). Appelle-les via `mcp_call_tool` avec `server_name: "codebase-chat"`. `projectPath` = répertoire courant sauf indication contraire.
 
 Règles :
 - `/codebase` sans argument → affiche le menu ci-dessous tel quel et demande lequel lancer. Ne rien exécuter.
@@ -14,7 +14,7 @@ Règles :
 - Outil inconnu → affiche le menu.
 
 Robustesse :
-- Serveur `dsh-codebase-chat` absent de la session → bascule sur le CLI équivalent via exec : `node <repo>/dist/cli.js --check` | `--health` | `--impact <f>` | `--search <q>` | `--doctor` (build : `pnpm build`). Si aucun repo local → dis-le et propose `npx dsh-codebase-chat-mcp-setup`.
+- Serveur `codebase-chat` absent de la session → bascule sur le CLI équivalent via exec : `node <repo>/dist/cli.js --check` | `--health` | `--impact <f>` | `--search <q>` | `--doctor` (build : `pnpm build`). Si aucun repo local → dis-le et propose `npx codebase-chat-mcp-setup`.
 - Tool demandé absent de la liste (ex. `codebase_check` inconnu) → le serveur est une vieille version : dis-le, propose de recharger la session MCP ou de mettre à jour le package, puis `codebase_doctor`.
 - Verdict `check` rouge → enchaîne proactivement : `codebase_impact` sur le fichier le plus risqué + `codebase_explain` sur le finding bloquant, pour aider à corriger.
 - Résultat d'un tool déterministe → présente le verdict et les raisons tels quels, sans les réécrire ni les édulcorer.
@@ -53,7 +53,7 @@ Robustesse :
 
 ## /codebase help — aide complète
 
-`/codebase` est le point d'entrée des 18 outils du serveur MCP **dsh-codebase-chat** : analyse statique locale, indexation et rapports. Deux familles :
+`/codebase` est le point d'entrée des 18 outils du serveur MCP **codebase-chat** : analyse statique locale, indexation et rapports. Deux familles :
 
 - **Déterministe** — analyse du code réel, aucune clé API, résultats reproductibles et audités.
 - **LLM** — construit un prompt contextualisé sur ton projet (mode `promptOnly`) ou appelle un modèle si une clé est configurée.

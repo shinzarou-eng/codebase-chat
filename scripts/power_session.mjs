@@ -19,7 +19,7 @@ const cache = mkdtempSync(join(tmpdir(), 'dsh-power-cache-'));
 const env = { ...process.env, CODEBASE_CACHE_DIR: cache, DEEPSEEK_API_KEY: '', OPENAI_API_KEY: '' };
 
 const out = (s) => console.log(s);
-const show = (s) => s.split(dir).join(DISPLAY).split(ROOT).join('~/dsh-codebase-chat');
+const show = (s) => s.split(dir).join(DISPLAY).split(ROOT).join('~/codebase-chat');
 const git = (a) => execFileSync('git', ['-C', dir, ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 const cli = (args) => {
   const r = spawnSync('node', [CLI, ...args], { cwd: dir, env, encoding: 'utf8' });
@@ -58,12 +58,12 @@ async function main() {
   out(show(git(['status', '--short']).trimEnd()));
   await wait(150);
 
-  out('$ npx dsh-codebase-chat --diff HEAD --health --lang en');
+  out('$ npx codebase-chat --diff HEAD --health --lang en');
   const health = cli(['--diff', 'HEAD', '--health', '--lang', 'en']);
   out(show(health));
   await wait(150);
 
-  out('$ npx dsh-codebase-chat --diff HEAD --ask "review this change" --lang en');
+  out('$ npx codebase-chat --diff HEAD --ask "review this change" --lang en');
   const ask = cli(['--diff', 'HEAD', '--ask', 'review this change', '--lang', 'en']);
   const askLines = ask.split('\n');
   out(show(askLines.slice(0, 14).join('\n')));
@@ -71,7 +71,7 @@ async function main() {
   await wait(150);
 
   // --- watch: real spawn, real file touch, real incremental rebuild ---
-  out('$ npx dsh-codebase-chat --watch --lang en');
+  out('$ npx codebase-chat --watch --lang en');
   const watcher = spawn('node', [CLI, '--watch', '--lang', 'en'], { cwd: dir, env });
   let wbuf = '';
   let sawRefresh = false;

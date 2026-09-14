@@ -16,7 +16,7 @@ export function checkToSarif(r: CheckReport, toolVersion?: string): string {
 
   const rules = [...new Map(results.map(f => [f.rule, f.rule])).values()]
     .sort()
-    .map(id => ({ id, name: id, shortDescription: { text: `dsh-codebase-chat rule ${id}` } }));
+    .map(id => ({ id, name: id, shortDescription: { text: `codebase-chat rule ${id}` } }));
 
   const location = (f: AuditFinding) => f.file
     ? [{
@@ -33,9 +33,9 @@ export function checkToSarif(r: CheckReport, toolVersion?: string): string {
     runs: [{
       tool: {
         driver: {
-          name: 'dsh-codebase-chat',
+          name: 'codebase-chat',
           ...(toolVersion ? { version: toolVersion } : {}),
-          informationUri: 'https://github.com/shinzarou-eng/dsh-codebase-chat',
+          informationUri: 'https://github.com/shinzarou-eng/codebase-chat',
           rules,
         },
       },

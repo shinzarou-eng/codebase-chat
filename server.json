@@ -1,16 +1,16 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.shinzarou-eng/dsh-codebase-chat",
+  "name": "io.github.shinzarou-eng/codebase-chat",
   "description": "Local-first codebase intelligence: cited answers, audits, reports. EN/FR.",
   "version": "0.10.0",
   "repository": {
-    "url": "https://github.com/shinzarou-eng/dsh-codebase-chat",
+    "url": "https://github.com/shinzarou-eng/codebase-chat",
     "source": "github"
   },
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "dsh-codebase-chat-mcp",
+      "identifier": "codebase-chat-mcp",
       "version": "0.10.0",
       "transport": {
         "type": "stdio"

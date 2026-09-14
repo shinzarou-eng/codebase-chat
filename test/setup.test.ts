@@ -12,21 +12,21 @@ describe("setup wizard", () => {
 
   it("mergeConfig adds server under mcpServers without touching others", () => {
     const existing = { mcpServers: { other: { command: "foo" } }, theme: "dark" };
-    const out = mergeConfig(existing, { command: "npx", args: ["-y", "dsh-codebase-chat-mcp"] }, "mcpServers");
-    expect(out.mcpServers["dsh-codebase-chat"].command).toBe("npx");
+    const out = mergeConfig(existing, { command: "npx", args: ["-y", "codebase-chat-mcp"] }, "mcpServers");
+    expect(out.mcpServers["codebase-chat"].command).toBe("npx");
     expect(out.mcpServers.other.command).toBe("foo");
     expect(out.theme).toBe("dark");
   });
 
   it("mergeConfig handles missing/empty config", () => {
     const out = mergeConfig(null, { command: "npx" }, "mcpServers");
-    expect(out.mcpServers["dsh-codebase-chat"]).toEqual({ command: "npx" });
+    expect(out.mcpServers["codebase-chat"]).toEqual({ command: "npx" });
   });
 
   it("mergeConfig vscode format uses servers + stdio type", () => {
     const out = mergeConfig({}, { command: "npx" }, "vscodeServers");
-    expect(out.servers["dsh-codebase-chat"].type).toBe("stdio");
-    expect(out.servers["dsh-codebase-chat"].command).toBe("npx");
+    expect(out.servers["codebase-chat"].type).toBe("stdio");
+    expect(out.servers["codebase-chat"].command).toBe("npx");
   });
 
   it("mergeConfig zed format uses context_servers with command.path/args/env", () => {
@@ -35,8 +35,8 @@ describe("setup wizard", () => {
       { command: "npx", args: ["-y", "pkg"], env: { DEEPSEEK_API_KEY: "sk-x" } },
       "zedContextServers"
     );
-    expect(out.context_servers["dsh-codebase-chat"].command.path).toBe("npx");
-    expect(out.context_servers["dsh-codebase-chat"].command.env).toEqual({ DEEPSEEK_API_KEY: "sk-x" });
+    expect(out.context_servers["codebase-chat"].command.path).toBe("npx");
+    expect(out.context_servers["codebase-chat"].command.env).toEqual({ DEEPSEEK_API_KEY: "sk-x" });
     expect(out.context_servers.other.command.path).toBe("x");
   });
 

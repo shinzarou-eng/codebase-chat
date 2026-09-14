@@ -1,7 +1,7 @@
 {
   "name": "demo-petstore",
   "version": "1.0.0",
-  "description": "Demo project for dsh-codebase-chat — a small petstore API with intentional issues",
+  "description": "Demo project for codebase-chat — a small petstore API with intentional issues",
   "type": "module",
   "main": "src/app.ts",
   "scripts": {

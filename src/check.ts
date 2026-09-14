@@ -237,6 +237,6 @@ export function formatCheckMd(r: CheckReport, lang: 'fr' | 'en'): string {
     for (const f of r.ignored) out.push(`- ${SEV_ICON[f.severity]} \`${f.rule}\`${f.file ? ` — \`${f.file}\`` : ''}`);
   }
   out.push('', '---');
-  out.push(`_${en ? 'Made with passion by shinzarou-eng' : 'Fait avec passion par shinzarou-eng'} — dsh-codebase-chat · ${en ? 'deterministic mode' : 'mode déterministe'}_`);
+  out.push(`_${en ? 'Made with passion by shinzarou-eng' : 'Fait avec passion par shinzarou-eng'} — codebase-chat · ${en ? 'deterministic mode' : 'mode déterministe'}_`);
   return out.join('\n');
 }

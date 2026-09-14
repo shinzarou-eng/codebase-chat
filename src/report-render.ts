@@ -179,7 +179,7 @@ export function renderAuditMd(data: AuditData, lang: 'fr' | 'en' = 'fr'): string
   for (const r of recommendations(health, hasTests, smells, sec, git, infra, riskFiles, { sensitive, envUndoc: env.undocumented, deadDeps, tsStrict: cfg.tsStrict, untestedRisk: untestedRisk.map(r => r.file), brokenEntries, deepRel: deepRel.length, deepNest: shape.deepNest.map(d => d.file), commitConv: commitQ?.conventionalPct ?? null, missingDeps: missing, lockDrift, secTotals }, lang)) out.push(`| ${SEV_ICON[r.severity]} ${r.severity} | ${r.text} |`);
   out.push('');
   out.push('---');
-  out.push(`_${en ? 'Made with passion by shinzarou-eng' : 'Fait avec passion par shinzarou-eng'} — dsh-codebase-chat · ${en ? 'deterministic mode' : 'mode déterministe'}_`);
+  out.push(`_${en ? 'Made with passion by shinzarou-eng' : 'Fait avec passion par shinzarou-eng'} — codebase-chat · ${en ? 'deterministic mode' : 'mode déterministe'}_`);
 
   return out.join('\n');
 }

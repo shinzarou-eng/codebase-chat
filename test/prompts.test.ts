@@ -67,6 +67,6 @@ describe('prompts', () => {
 
   it('brandSignature carries the package version', () => {
     const s = brandSignature('fr');
-    expect(s).toMatch(/dsh-codebase-chat\*?\*? v\d+\.\d+\.\d+/);
+    expect(s).toMatch(/codebase-chat\*?\*? v\d+\.\d+\.\d+/);
   });
 });

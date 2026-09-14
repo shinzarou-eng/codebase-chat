@@ -1,19 +1,19 @@
 <p align="center">
-  <a href="https://shinzarou-eng.github.io/dsh-codebase-chat">
-    <img src="https://raw.githubusercontent.com/shinzarou-eng/dsh-codebase-chat/main/docs/assets/social-preview.png?v=3" alt="dsh-codebase-chat — Your codebase, fully understood" width="100%">
+  <a href="https://shinzarou-eng.github.io/codebase-chat">
+    <img src="https://raw.githubusercontent.com/shinzarou-eng/codebase-chat/main/docs/assets/social-preview.png?v=3" alt="codebase-chat — Your codebase, fully understood" width="100%">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/dsh-codebase-chat"><img src="https://img.shields.io/npm/v/dsh-codebase-chat?logo=npm&label=plugin&color=4cc2ff&labelColor=232323" alt="npm plugin"></a>
-  <a href="https://www.npmjs.com/package/dsh-codebase-chat-mcp"><img src="https://img.shields.io/npm/v/dsh-codebase-chat-mcp?logo=npm&label=mcp&color=4cc2ff&labelColor=232323" alt="npm mcp"></a>
-  <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shinzarou-eng/dsh-codebase-chat?color=a3a3a3&labelColor=232323" alt="license"></a>
+  <a href="https://www.npmjs.com/package/codebase-chat"><img src="https://img.shields.io/npm/v/codebase-chat?logo=npm&label=plugin&color=4cc2ff&labelColor=232323" alt="npm plugin"></a>
+  <a href="https://www.npmjs.com/package/codebase-chat-mcp"><img src="https://img.shields.io/npm/v/codebase-chat-mcp?logo=npm&label=mcp&color=4cc2ff&labelColor=232323" alt="npm mcp"></a>
+  <a href="https://github.com/shinzarou-eng/codebase-chat/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shinzarou-eng/codebase-chat?color=a3a3a3&labelColor=232323" alt="license"></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20-6ccb5f?logo=nodedotjs&labelColor=232323" alt="node >= 20"></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-4cc2ff?labelColor=232323" alt="MCP compatible"></a>
 </p>
 
 <p align="center">
-  <a href="https://shinzarou-eng.github.io/dsh-codebase-chat"><strong>Website</strong></a> ·
+  <a href="https://shinzarou-eng.github.io/codebase-chat"><strong>Website</strong></a> ·
   <a href="mcp/README.md">MCP docs</a> ·
   <a href="ROADMAP.md">Roadmap</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
@@ -25,13 +25,13 @@
 ## Installation
 
 ```bash
-dsh plugin --profile web add dsh-codebase-chat
+dsh plugin --profile web add codebase-chat
 ```
 
 or as a standalone MCP server / CLI:
 
 ```bash
-npx dsh-codebase-chat-mcp setup
+npx codebase-chat-mcp setup
 ```
 
 The wizard detects **Claude, Cursor, Windsurf, VS Code, Zed, Gemini CLI, Kiro, Cline and Roo Code**, asks how you want answers (host model or API key), writes the MCP config, done.
@@ -41,14 +41,14 @@ or get a **fully offline** answer with the deterministic report (`--no-llm`) —
 Other paths — DeepSeek Harness plugin · CLI · from source · manual config: **[Reference](#reference)**.
 
 <p align="center">
-  <img src="docs/assets/demo-conv.gif" alt="dsh-codebase-chat real MCP session on a 422-file codebase" width="840"><br>
+  <img src="docs/assets/demo-conv.gif" alt="codebase-chat real MCP session on a 422-file codebase" width="840"><br>
   <em>Real MCP session on a real 422-file codebase — <code>codebase_health</code> finds 324 circular deps, <code>codebase_chat</code> answers with <code>[source: file:line]</code> receipts · <a href="docs/assets/demo-power.gif">PR review (--diff + --watch)</a> · <a href="docs/assets/demo.gif">CLI tour</a> · <a href="docs/assets/demo-mcp.gif">MCP stdio</a> · <a href="docs/assets/demo-fr.gif">French mode</a> · <a href="docs/assets/dashboard.png">--ui dashboard</a></em>
 </p>
 
 ## Local dashboard — `--ui`
 
 ```bash
-npx dsh-codebase-chat --ui    # → http://127.0.0.1:<port> — no LLM, nothing leaves your machine
+npx codebase-chat --ui    # → http://127.0.0.1:<port> — no LLM, nothing leaves your machine
 ```
 
 <p align="center">
@@ -69,9 +69,9 @@ _What a real session looks like_ —
 Run on this repository — the exact text the tools return:
 
 ```console
-$ npx dsh-codebase-chat --project . --health
+$ npx codebase-chat --project . --health
 
-== STATIC ANALYSIS — dsh-codebase-chat ==
+== STATIC ANALYSIS — codebase-chat ==
 Health score: 52/100 (D) · 33 files analyzed · 65 local imports
 
 ● Circular dependencies (0)
@@ -98,15 +98,15 @@ Health score: 52/100 (D) · 33 files analyzed · 65 local imports
 ```
 
 ```console
-$ npx dsh-codebase-chat --project . --search "health score computation"
+$ npx codebase-chat --project . --search "health score computation"
 
 --- src/analysis.ts :: formatHealthReportMd (FUNCTION) [source: src/analysis.ts:285-353] ---
 --- src/analysis.ts :: analyzeProject       (FUNCTION) [source: src/analysis.ts:149-232] ---
 --- src/analysis.ts :: HealthReport         (TYPE)     [source: src/analysis.ts:15-26]   ---
 
-$ npx dsh-codebase-chat --project . --ask "how is the index cached?"
+$ npx codebase-chat --project . --ask "how is the index cached?"
 
-> dsh-codebase-chat · prompt-only mode (no API key)
+> codebase-chat · prompt-only mode (no API key)
 > Chunks: 81 · Tokens: 59,934 → handed to the host model
 > Cite every technical claim with [source: relative/path:line].
 ```
@@ -117,17 +117,17 @@ Every answer from `codebase_chat` arrives with `[source: file:line]` receipts yo
 ## Verify your changes
 
 ```console
-$ npx dsh-codebase-chat --baseline        # snapshot findings + score to .codebase-chat/baseline.json (commit it)
-$ npx dsh-codebase-chat --check           # impact + findings on files changed vs HEAD, diffed vs the baseline
-$ npx dsh-codebase-chat --check --strict  # exit 1 on a red verdict — drop into CI
-$ npx dsh-codebase-chat --doctor          # diagnose the install: node, index cache, keys, MCP clients
+$ npx codebase-chat --baseline        # snapshot findings + score to .codebase-chat/baseline.json (commit it)
+$ npx codebase-chat --check           # impact + findings on files changed vs HEAD, diffed vs the baseline
+$ npx codebase-chat --check --strict  # exit 1 on a red verdict — drop into CI
+$ npx codebase-chat --doctor          # diagnose the install: node, index cache, keys, MCP clients
 ```
 
 Same thing from an IDE: `/codebase check [ref]` and `/codebase doctor` (MCP tools `codebase_check` / `codebase_doctor`).
 
 ## Why it wins
 
-| | Paste into a chat | Hosted assistant | **dsh-codebase-chat** |
+| | Paste into a chat | Hosted assistant | **codebase-chat** |
 | --- | :-: | :-: | :-: |
 | Sees your **whole** repo, not one file | ❌ | ✅ | ✅ |
 | `[source: file:line]` citations | ❌ | ~ | ✅ |
@@ -167,7 +167,7 @@ Same engine, three surfaces: **MCP tools** in your IDE, **slash commands** in De
 **DeepSeek Harness plugin**
 
 ```bash
-dsh plugin --profile web add dsh-codebase-chat
+dsh plugin --profile web add codebase-chat
 ```
 
 Then restart `dsh web` → `http://127.0.0.1:3080` → **Codebase Pro** button.
@@ -175,21 +175,21 @@ Then restart `dsh web` → `http://127.0.0.1:3080` → **Codebase Pro** button.
 **CLI**
 
 ```bash
-npx dsh-codebase-chat --project C:\my-app --ask "how is auth handled?"
-npx dsh-codebase-chat --project C:\my-app --health   # offline, no LLM
-npx dsh-codebase-chat --project C:\my-app --health --diff main   # only what changed
-npx dsh-codebase-chat --project C:\my-app --watch    # index stays hot while you code
-npx dsh-codebase-chat --project C:\my-app --prompt intelligence   # same banner brief the IDE gets — pipe to any LLM
-npx dsh-codebase-chat --project C:\my-app --prompt intelligence --call    # DeepSeek/OpenAI answers directly (API key)
-npx dsh-codebase-chat --project C:\my-app --prompt intelligence --no-llm  # deterministic report — zero model, zero key
-npx dsh-codebase-chat --project C:\my-app --ui   # interactive HTML dashboard on localhost — no LLM
+npx codebase-chat --project C:\my-app --ask "how is auth handled?"
+npx codebase-chat --project C:\my-app --health   # offline, no LLM
+npx codebase-chat --project C:\my-app --health --diff main   # only what changed
+npx codebase-chat --project C:\my-app --watch    # index stays hot while you code
+npx codebase-chat --project C:\my-app --prompt intelligence   # same banner brief the IDE gets — pipe to any LLM
+npx codebase-chat --project C:\my-app --prompt intelligence --call    # DeepSeek/OpenAI answers directly (API key)
+npx codebase-chat --project C:\my-app --prompt intelligence --no-llm  # deterministic report — zero model, zero key
+npx codebase-chat --project C:\my-app --ui   # interactive HTML dashboard on localhost — no LLM
 ```
 
 **From source**
 
 ```bash
-git clone https://github.com/shinzarou-eng/dsh-codebase-chat.git
-cd dsh-codebase-chat && pnpm install && pnpm build
+git clone https://github.com/shinzarou-eng/codebase-chat.git
+cd codebase-chat && pnpm install && pnpm build
 ```
 
 **Manual MCP config**
@@ -197,9 +197,9 @@ cd dsh-codebase-chat && pnpm install && pnpm build
 ```json
 {
   "mcpServers": {
-    "dsh-codebase-chat": {
+    "codebase-chat": {
       "command": "npx",
-      "args": ["dsh-codebase-chat-mcp"]
+      "args": ["codebase-chat-mcp"]
     }
   }
 }
@@ -291,7 +291,7 @@ Point it at a folder of code. Ask questions like a human — *"How does login wo
 ```
 ├── lib/            DeepSeek Harness plugin (index.js) + Codebase Pro UI (client.js)
 ├── src/            TypeScript engine — indexer, extractor, retriever, tokenizer, context, CLI
-├── mcp/            Standalone MCP server package (dsh-codebase-chat-mcp)
+├── mcp/            Standalone MCP server package (codebase-chat-mcp)
 ├── test/           Vitest suites (extractor, retriever, tasks pipeline)
 ├── docs/           Landing page (GitHub Pages) + assets
 └── dist/           Build output (tsup)
@@ -345,10 +345,10 @@ Then restart `dsh --profile web`.
 ---
 
 <p align="center">
-  <strong>If this project helps you — <a href="https://github.com/shinzarou-eng/dsh-codebase-chat">star it on GitHub</a> ⭐</strong>
+  <strong>If this project helps you — <a href="https://github.com/shinzarou-eng/codebase-chat">star it on GitHub</a> ⭐</strong>
   <br><br>
-  <a href="https://shinzarou-eng.github.io/dsh-codebase-chat">Website</a> ·
-  <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/issues">Issues</a> ·
+  <a href="https://shinzarou-eng.github.io/codebase-chat">Website</a> ·
+  <a href="https://github.com/shinzarou-eng/codebase-chat/issues">Issues</a> ·
   <a href="SUPPORT.md">Support</a> ·
   <a href="SECURITY.md">Security</a>
   <br><br>

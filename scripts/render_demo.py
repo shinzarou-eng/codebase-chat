@@ -57,40 +57,40 @@ DISPLAY_PATH = "~/demo-petstore"
 DEMOS = {
     "demo": {
         "prompt": "demo-petstore $ ",
-        "title": "dsh-codebase-chat — demo-petstore",
+        "title": "codebase-chat — demo-petstore",
         "steps": [
-            ("npx dsh-codebase-chat --index", [CLI, "--index"], DEMO_ABS),
-            ("npx dsh-codebase-chat --stats", [CLI, "--stats"], DEMO_ABS),
-            ("npx dsh-codebase-chat --search 'jwt token' --lang en",
+            ("npx codebase-chat --index", [CLI, "--index"], DEMO_ABS),
+            ("npx codebase-chat --stats", [CLI, "--stats"], DEMO_ABS),
+            ("npx codebase-chat --search 'jwt token' --lang en",
              [CLI, "--search", "jwt token", "--lang", "en"], DEMO_ABS),
-            ("npx dsh-codebase-chat --health --lang en",
+            ("npx codebase-chat --health --lang en",
              [CLI, "--health", "--lang", "en"], DEMO_ABS),
-            ("npx dsh-codebase-chat --ask 'is there a hardcoded secret?' --lang en",
+            ("npx codebase-chat --ask 'is there a hardcoded secret?' --lang en",
              [CLI, "--ask", "is there a hardcoded secret?", "--lang", "en"], DEMO_ABS),
         ],
     },
     "demo-fr": {
         "prompt": "demo-petstore $ ",
-        "title": "dsh-codebase-chat — mode français",
+        "title": "codebase-chat — mode français",
         "steps": [
-            ("npx dsh-codebase-chat --file login --lang fr",
+            ("npx codebase-chat --file login --lang fr",
              [CLI, "--file", "login", "--lang", "fr"], DEMO_ABS),
-            ("npx dsh-codebase-chat --ask 'comment est gérée l authentification ?'",
+            ("npx codebase-chat --ask 'comment est gérée l authentification ?'",
              [CLI, "--ask", "comment est gérée l'authentification ?", "--lang", "fr"], DEMO_ABS),
         ],
     },
     "demo-mcp": {
         "prompt": "mcp-client $ ",
-        "title": "dsh-codebase-chat-mcp — real stdio session",
+        "title": "codebase-chat-mcp — real stdio session",
         "steps": [
-            ("npx dsh-codebase-chat-mcp", [os.path.join(ROOT, "scripts", "mcp_session.mjs")], ROOT),
+            ("npx codebase-chat-mcp", [os.path.join(ROOT, "scripts", "mcp_session.mjs")], ROOT),
         ],
     },
     # session: a driver script that runs REAL commands and prints a transcript
     # ($ command + real output lines). Replayed with typing animation.
     "demo-power": {
         "prompt": "demo-petstore $ ",
-        "title": "dsh-codebase-chat — diff-aware review + live watch",
+        "title": "codebase-chat — diff-aware review + live watch",
         "session": os.path.join(ROOT, "scripts", "power_session.mjs"),
     },
     # real MCP conversation on a real 400+ file codebase — every tool call is
@@ -98,7 +98,7 @@ DEMOS = {
     # with the cited context (promptOnly mode — what an IDE actually does).
     "demo-conv": {
         "prompt": "",
-        "title": "dsh-codebase-chat — real MCP session on a 422-file codebase",
+        "title": "codebase-chat — real MCP session on a 422-file codebase",
         "session": os.path.join(ROOT, "scripts", "conv_session.mjs"),
     },
 }
@@ -119,7 +119,7 @@ def run_real(argv, cache_dir, cwd):
     lines = (proc.stdout + proc.stderr).splitlines()
     # never leak local absolute paths or the real folder name into the public GIF
     return [l.replace(DEMO_ABS, DISPLAY_PATH)
-             .replace(ROOT, "~/dsh-codebase-chat")
+             .replace(ROOT, "~/codebase-chat")
              .replace("demo-project", "demo-petstore") for l in lines]
 
 

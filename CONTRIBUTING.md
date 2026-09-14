@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for considering contributing to `dsh-codebase-chat`.
+Thanks for considering contributing to `codebase-chat`.
 
 ## Before you start
 
@@ -11,8 +11,8 @@ Thanks for considering contributing to `dsh-codebase-chat`.
 ## Setup
 
 ```bash
-git clone https://github.com/shinzarou-eng/dsh-codebase-chat.git
-cd dsh-codebase-chat
+git clone https://github.com/shinzarou-eng/codebase-chat.git
+cd codebase-chat
 pnpm install
 ```
 

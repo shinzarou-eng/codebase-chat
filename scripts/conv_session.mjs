@@ -57,7 +57,7 @@ async function main() {
   // ---- handshake : real JSON-RPC over stdio ----
   out('→ initialize {"protocolVersion":"2024-11-05","clientInfo":{"name":"cursor"}}');
   await call({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'cursor', version: '1.0' } } });
-  out('← server ready · stdio transport · dsh-codebase-chat-mcp');
+  out('← server ready · stdio transport · codebase-chat-mcp');
   send({ jsonrpc: '2.0', method: 'notifications/initialized' });
   const list = await call({ jsonrpc: '2.0', id: 98, method: 'tools/list', params: {} });
   const names = (list.result?.tools || []).map((t) => t.name);

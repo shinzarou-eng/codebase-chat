@@ -17,7 +17,7 @@ describe("dashboard server", () => {
 
     const home = await fetch(base + "/").then(r => r.text());
     expect(home).toContain("<!doctype html>");
-    expect(home).toContain("dsh-codebase-chat");
+    expect(home).toContain("codebase-chat");
 
     const audit = await fetch(base + "/api/audit?lang=en").then(r => r.json());
     expect(audit.md).toContain("Deterministic report");

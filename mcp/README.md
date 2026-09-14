@@ -1,18 +1,18 @@
-# dsh-codebase-chat-mcp
+# codebase-chat-mcp
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/shinzarou-eng/dsh-codebase-chat/main/docs/assets/logo.svg" width="80" height="80" alt="dsh-codebase-chat logo">
+  <img src="https://raw.githubusercontent.com/shinzarou-eng/codebase-chat/main/docs/assets/logo.svg" width="80" height="80" alt="codebase-chat logo">
 </p>
 
 <p align="center">
-  <strong>Standalone MCP server for dsh-codebase-chat.</strong><br>
+  <strong>Standalone MCP server for codebase-chat.</strong><br>
   Works with Windsurf, Cursor, Claude, and any MCP-compatible IDE — without DeepSeek Harness.
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/dsh-codebase-chat-mcp"><img src="https://img.shields.io/npm/v/dsh-codebase-chat-mcp?logo=npm&color=4cc2ff&labelColor=232323" alt="npm"></a>
-  <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/releases"><img src="https://img.shields.io/github/v/release/shinzarou-eng/dsh-codebase-chat?logo=github&color=4cc2ff&labelColor=232323" alt="release"></a>
-  <a href="https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shinzarou-eng/dsh-codebase-chat?color=a3a3a3&labelColor=232323" alt="license"></a>
+  <a href="https://www.npmjs.com/package/codebase-chat-mcp"><img src="https://img.shields.io/npm/v/codebase-chat-mcp?logo=npm&color=4cc2ff&labelColor=232323" alt="npm"></a>
+  <a href="https://github.com/shinzarou-eng/codebase-chat/releases"><img src="https://img.shields.io/github/v/release/shinzarou-eng/codebase-chat?logo=github&color=4cc2ff&labelColor=232323" alt="release"></a>
+  <a href="https://github.com/shinzarou-eng/codebase-chat/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shinzarou-eng/codebase-chat?color=a3a3a3&labelColor=232323" alt="license"></a>
 </p>
 
 ---
@@ -40,25 +40,25 @@ In prompt mode your code never leaves your machine at all.
 ## Installation
 
 ```bash
-npm install -g dsh-codebase-chat-mcp
+npm install -g codebase-chat-mcp
 
 # Or run without installing
-npx dsh-codebase-chat-mcp
+npx codebase-chat-mcp
 ```
 
 ### Quick setup (recommended)
 
 ```bash
-npx dsh-codebase-chat-mcp setup
+npx codebase-chat-mcp setup
 ```
 
-The wizard detects installed MCP clients (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Zed, Gemini CLI, Kiro, Cline, Roo Code), lets you pick which ones to configure, asks how you want answers (prompt-only host model or direct API key), and writes the `dsh-codebase-chat` server entry for you — preserving your existing `mcpServers` and backing up each config file (`.bak`). It always prints a manual entry at the end for any other MCP client. No API key needed for prompt-only mode.
+The wizard detects installed MCP clients (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Zed, Gemini CLI, Kiro, Cline, Roo Code), lets you pick which ones to configure, asks how you want answers (prompt-only host model or direct API key), and writes the `codebase-chat` server entry for you — preserving your existing `mcpServers` and backing up each config file (`.bak`). It always prints a manual entry at the end for any other MCP client. No API key needed for prompt-only mode.
 
 ### From source
 
 ```bash
-git clone https://github.com/shinzarou-eng/dsh-codebase-chat.git
-cd dsh-codebase-chat/mcp
+git clone https://github.com/shinzarou-eng/codebase-chat.git
+cd codebase-chat/mcp
 pnpm install
 ```
 
@@ -96,9 +96,9 @@ Add to your MCP config:
 ```json
 {
   "mcpServers": {
-    "dsh-codebase-chat": {
+    "codebase-chat": {
       "command": "npx",
-      "args": ["dsh-codebase-chat-mcp"],
+      "args": ["codebase-chat-mcp"],
       "env": {
         "DEEPSEEK_API_KEY": "sk-...",
         "CODEBASE_MODEL": "deepseek-chat"
@@ -113,10 +113,10 @@ On Windows with a local clone you can also use the absolute path:
 ```json
 {
   "mcpServers": {
-    "dsh-codebase-chat": {
+    "codebase-chat": {
       "command": "node",
       "args": [
-        "C:\\Users\\YOU\\dsh-codebase-chat\\mcp\\index.mjs"
+        "C:\\Users\\YOU\\codebase-chat\\mcp\\index.mjs"
       ],
       "env": {
         "DEEPSEEK_API_KEY": "sk-..."
@@ -182,4 +182,4 @@ By default the server uses `stdio` (MCP standard). SSE/HTTP transport can be add
 
 ## License
 
-[MIT](https://github.com/shinzarou-eng/dsh-codebase-chat/blob/main/LICENSE) — Built and maintained by [shinzarou-eng](https://github.com/shinzarou-eng).
+[MIT](https://github.com/shinzarou-eng/codebase-chat/blob/main/LICENSE) — Built and maintained by [shinzarou-eng](https://github.com/shinzarou-eng).

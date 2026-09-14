@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 // Interactive setup wizard: detects installed MCP clients and writes the
-// dsh-codebase-chat server entry into their config files. Zero dependencies —
-// safe to run via `npx dsh-codebase-chat-mcp setup`.
+// codebase-chat server entry into their config files. Zero dependencies —
+// safe to run via `npx codebase-chat-mcp setup`.
 import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir, platform } from "node:os";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 
-const PKG = "dsh-codebase-chat-mcp";
-const SERVER_NAME = "dsh-codebase-chat";
+const PKG = "codebase-chat-mcp";
+const SERVER_NAME = "codebase-chat";
 
 const isWin = platform() === "win32";
 const isMac = platform() === "darwin";

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://shinzarou-eng.github.io/dsh-codebase-chat/sitemap.xml
+Sitemap: https://shinzarou-eng.github.io/codebase-chat/sitemap.xml

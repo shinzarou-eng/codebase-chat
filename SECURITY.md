@@ -9,9 +9,9 @@
 
 ## Reporting a vulnerability
 
-If you discover a security issue in `dsh-codebase-chat`, please open a private vulnerability report at:
+If you discover a security issue in `codebase-chat`, please open a private vulnerability report at:
 
-https://github.com/shinzarou-eng/dsh-codebase-chat/security/advisories
+https://github.com/shinzarou-eng/codebase-chat/security/advisories
 
 Do **not** open a public issue for security bugs.
 
@@ -26,6 +26,6 @@ We will respond within 5 business days and release a patch as soon as possible.
 
 ## Design notes
 
-- `dsh-codebase-chat` only reads files from the project path you provide.
+- `codebase-chat` only reads files from the project path you provide.
 - It does not upload your code to a cloud service.
 - Report files may include relative file paths; no absolute system paths are exposed by default.

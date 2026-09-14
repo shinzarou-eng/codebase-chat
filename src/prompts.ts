@@ -181,9 +181,9 @@ export function buildAuditPrompt(context: string, projectName: string, focus = "
 export function brandSignature(lang = "fr"): string {
   const d = new Date().toISOString().slice(0, 10);
   if (lang === "en") {
-    return `\n\n---\n\n> ✨ *Report by **dsh-codebase-chat** v${promptVersion()} — Codebase Analysis — ${d}*\n> 🔗 *Built for DeepSeek Harness. Extensible to any agent or Node.js IDE.*`;
+    return `\n\n---\n\n> ✨ *Report by **codebase-chat** v${promptVersion()} — Codebase Analysis — ${d}*\n> 🔗 *Built for DeepSeek Harness. Extensible to any agent or Node.js IDE.*`;
   }
-  return `\n\n---\n\n> ✨ *Rapport par **dsh-codebase-chat** v${promptVersion()} — Analyse de Codebase — ${d}*\n> 🔗 *Conçu pour DeepSeek Harness. Extensible à tout agent ou IDE Node.js.*`;
+  return `\n\n---\n\n> ✨ *Rapport par **codebase-chat** v${promptVersion()} — Analyse de Codebase — ${d}*\n> 🔗 *Conçu pour DeepSeek Harness. Extensible à tout agent ou IDE Node.js.*`;
 }
 
 export function buildAsciiBanner(projectName: string, modeLabel: string, tagline = ""): string {
