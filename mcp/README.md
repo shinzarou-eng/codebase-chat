@@ -19,7 +19,7 @@
 
 ## What it does
 
-This package exposes the same codebase intelligence tools as the DeepSeek Harness plugin, but as a standalone **Model Context Protocol (MCP)** server. It scans a local project, builds a sourced prompt, and either:
+This package exposes the same codebase intelligence tools as the main `codebase-chat` package, but as a standalone **Model Context Protocol (MCP)** server. It scans a local project, builds a sourced prompt, and either:
 
 - returns the prompt to the **host model** (Cursor, Claude, Windsurf…) — the default when no API key is configured, or with `promptOnly: true`; or
 - calls a DeepSeek / OpenAI-compatible API itself when `DEEPSEEK_API_KEY` or `OPENAI_API_KEY` is set.
