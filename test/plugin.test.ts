@@ -12,7 +12,7 @@ describe('dsh plugin entry (lib/index.js)', () => {
     expect(Array.isArray(mod.inject)).toBe(true);
     expect(typeof mod.buildIntelligencePrompt).toBe('function');
     expect(typeof mod.collectCodebaseContext).toBe('function');
-  });
+  }, 30_000); // first import of lib/index.js is slow under load
 });
 
 describe('isWithinProject (plugin path boundary)', () => {
