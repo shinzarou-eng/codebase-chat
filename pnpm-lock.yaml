@@ -52,8 +52,8 @@ importers:
         specifier: ^1.30.0
         version: 1.30.0(zod@4.6.1)
       codebase-chat:
-        specifier: workspace:^
-        version: link:..
+        specifier: ^0.30.0
+        version: 0.30.0
 
 packages:
 
@@ -715,6 +715,11 @@ packages:
 
   chownr@1.1.4:
     resolution: {integrity: sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg==}
+
+  codebase-chat@0.30.0:
+    resolution: {integrity: sha512-yEnexYmce4RnWGNKM3GvmVlYVlFCa8dLO7p0L7hUjuv9J9SnY/SkOvdHmJidHN0Z+rRezHfQY6OZ+Fj2PjVzmQ==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
@@ -2088,6 +2093,21 @@ snapshots:
       readdirp: 4.1.2
 
   chownr@1.1.4: {}
+
+  codebase-chat@0.30.0:
+    dependencies:
+      '@babel/parser': 8.0.5
+      '@babel/traverse': 8.0.5
+      '@babel/types': 8.0.5
+      '@xenova/transformers': 2.17.2
+      figlet: 1.11.4
+      gpt-tokenizer: 4.0.0
+      tree-sitter-wasms: 0.1.13
+      web-tree-sitter: 0.22.6
+    transitivePeerDependencies:
+      - bare-abort-controller
+      - bare-buffer
+      - react-native-b4a
 
   color-convert@2.0.1:
     dependencies:

@@ -7,4 +7,4 @@ allowBuilds:
   protobufjs: true
   sharp: true
 minimumReleaseAgeExclude:
-  - codebase-chat@0.16.0 || 0.21.0 || 0.22.0
+  - codebase-chat@0.16.0 || 0.21.0 || 0.22.0 || 0.30.0
