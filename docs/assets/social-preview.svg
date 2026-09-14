@@ -25,14 +25,17 @@
 
     <!-- Fluent chips -->
     <g transform="translate(0, 92)" font-family="Segoe UI, system-ui, sans-serif" font-size="14" font-weight="600" text-anchor="middle">
-      <rect x="0" y="0" width="150" height="34" rx="6" fill="#2b2b2b" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-      <text x="75" y="22" fill="#f0f0f0">DeepSeek Harness</text>
+      <rect x="0" y="0" width="218" height="34" rx="6" fill="rgba(76,194,255,0.13)" stroke="rgba(76,194,255,0.35)" stroke-width="1"/>
+      <text x="109" y="22" fill="#4cc2ff">Cursor · Claude · Windsurf</text>
 
-      <rect x="162" y="0" width="62" height="34" rx="6" fill="rgba(76,194,255,0.13)" stroke="rgba(76,194,255,0.35)" stroke-width="1"/>
-      <text x="193" y="22" fill="#4cc2ff">MCP</text>
+      <rect x="230" y="0" width="52" height="34" rx="6" fill="#2b2b2b" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+      <text x="256" y="22" fill="#f0f0f0">CLI</text>
 
-      <rect x="236" y="0" width="96" height="34" rx="6" fill="#2b2b2b" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-      <text x="284" y="22" fill="#f0f0f0">--no-llm</text>
+      <rect x="294" y="0" width="62" height="34" rx="6" fill="#2b2b2b" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+      <text x="325" y="22" fill="#f0f0f0">--ui</text>
+
+      <rect x="368" y="0" width="96" height="34" rx="6" fill="#2b2b2b" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+      <text x="416" y="22" fill="#f0f0f0">--no-llm</text>
     </g>
   </g>
 </svg>
