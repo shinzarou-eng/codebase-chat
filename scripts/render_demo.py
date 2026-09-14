@@ -22,20 +22,24 @@ OUT_DIR = os.path.join(ROOT, "docs", "assets")
 
 W, H = 1400, 780
 CHROME = 38
+STATUS = 26
 PAD = 14
 FPS = 30
 FONT_SIZE = 15
 
-BG = (10, 12, 16)
-CHROME_BG = (17, 20, 26)
-FG = (201, 209, 217)
-DIM = (95, 107, 122)
-GREEN = (95, 237, 131)
-BLUE = (124, 199, 255)
-PURPLE = (176, 140, 255)
-AMBER = (227, 179, 65)
-RED = (255, 123, 114)
-PROMPT_FG = (126, 231, 135)
+# VS Code dark palette — same DNA as the --ui dashboard
+BG = (30, 30, 30)          # #1e1e1e
+CHROME_BG = (37, 37, 38)   # #252526
+STATUS_BG = (0, 127, 212)  # #007fd4
+BORDER = (60, 60, 60)      # #3c3c3c
+FG = (212, 212, 212)       # #d4d4d4
+DIM = (128, 128, 128)      # #808080
+GREEN = (137, 209, 133)    # #89d185
+BLUE = (79, 193, 255)      # #4fc1ff
+PURPLE = (197, 134, 192)   # #c586c0
+AMBER = (215, 186, 125)    # #d7ba7d
+RED = (244, 135, 113)      # #f48771
+PROMPT_FG = (78, 201, 176) # #4ec9b0 teal
 
 FONT_PATH = r"C:\Windows\Fonts\CascadiaMono.ttf"
 if not os.path.exists(FONT_PATH):
@@ -47,7 +51,7 @@ font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
 line_h = font.getbbox("Mg")[3] + 7
 char_w = font.getlength("M")
 MAX_COLS = int((W - 2 * PAD) // char_w)
-MAX_ROWS = int((H - CHROME - 2 * PAD) // line_h)
+MAX_ROWS = int((H - CHROME - STATUS - 2 * PAD) // line_h)
 
 DEMO_ABS = os.path.join(ROOT, "demo-project")
 DISPLAY_PATH = "~/demo-petstore"
@@ -185,6 +189,7 @@ def render(screen_lines, title):
     img = Image.new("RGB", (W, H), BG)
     draw = ImageDraw.Draw(img)
     draw.rectangle([0, 0, W, CHROME], fill=CHROME_BG)
+    draw.line([0, CHROME, W, CHROME], fill=BORDER)
     for i, c in enumerate([(255, 95, 87), (254, 188, 46), (40, 200, 64)]):
         x = PAD + i * 22
         draw.ellipse([x, CHROME // 2 - 6, x + 12, CHROME // 2 + 6], fill=c)
@@ -196,6 +201,16 @@ def render(screen_lines, title):
     for text, color in visible:
         draw.text((PAD, y), text, font=font, fill=color)
         y += line_h
+
+    # Status bar — same signature as the --ui dashboard
+    sy = H - STATUS
+    draw.rectangle([0, sy, W, H], fill=STATUS_BG)
+    left = "◆ codebase-chat"
+    right = "local — no upload"
+    ty = sy + (STATUS - line_h) / 2 + 3
+    draw.text((PAD, ty), left, font=font, fill=(255, 255, 255))
+    rw = draw.textlength(right, font=font)
+    draw.text((W - rw - PAD, ty), right, font=font, fill=(255, 255, 255))
     return img
 
 
@@ -270,7 +285,7 @@ def main():
         if only and name not in only:
             continue
         # fresh cache dir → the demo shows real indexing work
-        cache_dir = tempfile.mkdtemp(prefix="dsh-demo-cache-")
+        cache_dir = tempfile.mkdtemp(prefix="codebase-demo-cache-")
         try:
             render_demo(name, spec, cache_dir)
         finally:

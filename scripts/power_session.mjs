@@ -12,10 +12,10 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CLI = join(ROOT, 'dist', 'cli.js');
 const SRC = join(ROOT, 'demo-project');
 
-const dir = join(mkdtempSync(join(tmpdir(), 'dsh-power-')), 'demo-petstore');
+const dir = join(mkdtempSync(join(tmpdir(), 'codebase-power-')), 'demo-petstore');
 mkdirSync(dir, { recursive: true });
 const DISPLAY = '~/demo-petstore';
-const cache = mkdtempSync(join(tmpdir(), 'dsh-power-cache-'));
+const cache = mkdtempSync(join(tmpdir(), 'codebase-power-cache-'));
 const env = { ...process.env, CODEBASE_CACHE_DIR: cache, DEEPSEEK_API_KEY: '', OPENAI_API_KEY: '' };
 
 const out = (s) => console.log(s);
