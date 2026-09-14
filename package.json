@@ -1,6 +1,6 @@
 {
   "name": "codebase-chat",
-  "version": "0.29.1",
+  "version": "0.30.0",
   "description": "Multi-language codebase intelligence for MCP-compatible IDEs, the CLI and DeepSeek Harness: chat, search, audit, refactor, and board-ready reports from local code.",
   "homepage": "https://shinzarou-eng.github.io/codebase-chat",
   "repository": {

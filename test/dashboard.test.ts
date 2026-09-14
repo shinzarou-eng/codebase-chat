@@ -37,6 +37,15 @@ describe("dashboard server", () => {
 
     const prompt = await fetch(base + "/api/prompt?mode=search&q=a.ts&lang=en").then(r => r.json());
     expect(prompt.prompt).toContain("src/a.ts");
+
+    const search = await fetch(base + "/api/search?q=export&lang=en").then(r => r.json());
+    expect(search.body).toContain("<section");
+    expect(search.chunks.length).toBeGreaterThan(0);
+    expect(search.chunks[0]).toHaveProperty("file");
+    expect(search.chunks[0]).toHaveProperty("startLine");
+    expect(search.md).toBeTruthy();
+    const badSearch = await fetch(base + "/api/search?q=").then(r => r.status);
+    expect(badSearch).toBe(400);
   }, 30000);
 
   it("injects the project path escaped into attributes", async () => {

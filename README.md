@@ -45,7 +45,7 @@ One command. The wizard detects **Cursor, Claude, Windsurf, VS Code, Zed, Gemini
 
 | In your IDE | In your terminal | Fully offline |
 | --- | --- | --- |
-| 18 MCP tools inside Cursor, Claude, Windsurf & more - answers land where you code | `npx codebase-chat` - index, search, health, check. Drop `--check --strict` into CI | `--no-llm` deterministic reports + `--ui` dashboard - no model, no key, no cloud |
+| 21 MCP tools inside Cursor, Claude, Windsurf & more - answers land where you code | `npx codebase-chat` - index, search, health, check. Drop `--check --strict` into CI | `--no-llm` deterministic reports + `--ui` dashboard - no model, no key, no cloud |
 
 Every claim comes with a citation. Every metric is computed from your code. Your repo is **never uploaded** - the model only sees the excerpts that matter.
 
@@ -139,7 +139,7 @@ From an IDE: `codebase_check` / `codebase_doctor` MCP tools, or `/codebase check
 
 Writes are safe by construction - **dry-run** · **`.dsh-backups/`** before overwrite · **protected paths** · never outside the project.
 
-Seven tools run **fully deterministic** - no model, no key, works offline: `health`, `impact`, `check`, `doctor`, `ignore`, `fix`, `deep_audit` (9 sections, ~30 metrics: git churn, bus factor, secrets, deps, per-function complexity).
+Ten tools run **fully deterministic** - no model, no key, works offline: `health`, `impact`, `check`, `doctor`, `ignore`, `fix`, `stats`, `history`, `baseline`, `deep_audit` (9 sections, ~30 metrics: git churn, bus factor, secrets, deps, per-function complexity).
 
 ## Reference
 

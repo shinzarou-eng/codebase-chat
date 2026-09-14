@@ -99,7 +99,8 @@ Options:
   --check                Verify your changes: impact, findings, delta vs baseline
   --baseline             Write .codebase-chat/baseline.json (findings + score snapshot)
   --strict               With --check: exit 1 when the verdict is red
-  --json                 With --check/--doctor: print the report as JSON
+  --json                 Machine-readable output: works with --check, --doctor,
+                         --health, --stats, --history and --search/--ask/--file
   --sarif <path>         With --check: also write the actionable findings as
                          SARIF 2.1.0 (GitHub code scanning / upload-sarif)
   --doctor               Diagnose the install: node, index cache, LLM keys, MCP clients
@@ -214,8 +215,13 @@ async function main() {
   }
 
   if (values.stats) {
-    const index = await getIndex(project, m => console.log(m));
+    // Progress on stderr keeps --json output parseable on stdout.
+    const index = await getIndex(project, m => (values.json ? console.error(m) : console.log(m)));
     const s = computeStats(index);
+    if (values.json) {
+      console.log(JSON.stringify(s, null, 2));
+      exit(0);
+    }
     const fmt = (n: number) => n.toLocaleString('en-US');
     console.log(`Project: ${s.projectPath}`);
     console.log(`Files:   ${s.files}  (${s.chunks} chunks, ${fmt(s.bytes)} bytes)`);
@@ -330,6 +336,10 @@ async function main() {
   if (values.history) {
     const abs = await findProjectRoot(project);
     const entries = await readHistory(abs);
+    if (values.json) {
+      console.log(JSON.stringify(entries, null, 2));
+      exit(0);
+    }
     if (!entries.length) {
       console.log(lang === 'en' ? 'No check history yet — run --check.' : 'Pas encore d\u2019historique — lance --check.');
     } else {
@@ -455,7 +465,7 @@ fi
       }
     }
     const report = await analyzeProject(project, scope);
-    console.log(formatHealthReport(report, lang));
+    console.log(values.json ? JSON.stringify(report, null, 2) : formatHealthReport(report, lang));
     exit(0);
   }
 
@@ -635,6 +645,16 @@ fi
     if (result.noMatch) console.error(lang === 'en'
       ? `No code chunk matches "${values.search}" — context holds the file tree only.`
       : `Aucun fragment ne correspond à « ${values.search} » — le contexte ne contient que l'arborescence.`);
+    if (values.json) {
+      console.log(JSON.stringify({
+        project: result.absProject,
+        noMatch: result.noMatch ?? false,
+        tokenCount: result.tokenCount,
+        diffFiles: result.diffFiles,
+        chunks: result.chunks.map(c => ({ file: c.relPath, startLine: c.startLine, endLine: c.endLine, kind: c.kind, name: c.name, tokens: c.tokens })),
+      }, null, 2));
+      exit(0);
+    }
     console.log(result.context);
     console.log(`\n--- Stats ---`);
     console.log(`Project: ${result.absProject}`);

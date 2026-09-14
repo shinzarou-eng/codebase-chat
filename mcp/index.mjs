@@ -8,7 +8,7 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, buildDeterministicReport, reportToHtml, runCheck, formatCheckMd, runDoctor, formatDoctorMd, addIgnore, removeIgnore, readIgnores, appendHistory, collectAudit, auditFindings, splitIgnored, planFixes, applyFixes } from "codebase-chat";
+import { buildContext, resolveProjectPath, findProjectRoot, analyzeProject, formatHealthReport, formatHealthReportMd, getChangedFiles, analyzeImpact, formatImpactReportMd, buildToolPrompt, buildDeterministicReport, reportToHtml, runCheck, formatCheckMd, runDoctor, formatDoctorMd, addIgnore, removeIgnore, readIgnores, appendHistory, readHistory, collectAudit, auditFindings, splitIgnored, planFixes, applyFixes, getIndex, computeStats, writeBaseline, fmtCost, CALL_INPUT_TOKENS, CALL_OUTPUT_TOKENS } from "codebase-chat";
 
 // `codebase-chat-mcp setup` runs the interactive client-config wizard
 // instead of starting the MCP server.
@@ -18,7 +18,7 @@ if (process.argv[2] === "setup") {
   process.exit(0);
 }
 
-const VERSION = "0.10.0";
+const VERSION = "0.11.0";
 
 const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || "";
 const baseUrl = process.env.DEEPSEEK_BASE_URL || process.env.OPENAI_BASE_URL || "https://api.deepseek.com/v1";
@@ -173,6 +173,9 @@ const TOOLS = [
   { name: "codebase_ignore", description: "Silence a finding with a justification (written to .codebase-chat/ignores.json — commit it). `id` may be a full finding id or a prefix like `sec:innerHTML:src/x.ts` covering every such finding in that file. Use action=list/remove to manage entries.", extra: { id: { type: "string", description: "Finding id or prefix (see codebase_check JSON output)" }, reason: { type: "string" }, action: { type: "string", enum: ["add", "remove", "list"] } }, required: ["id"], deterministic: true },
   { name: "codebase_fix", description: "Apply mechanical repairs for the rules where the fix is unambiguous — env-undoc (append to .env.example), dead-dep (remove from package.json), unused-export (delete or un-export), console/debugger lines (delete). Each fix re-checks: the finding disappears. Pass dry=true to preview without writing. Deterministic, no LLM call.", extra: { dry: { type: "boolean", description: "Preview the plan without writing (default: false — applies)" } }, deterministic: true },
   { name: "codebase_deep_audit", description: "Full deterministic audit (~30 analyses): git churn & bus factor, churn × complexity risk, dependency integrity (undeclared imports, dead deps, lockfile drift, broken package entries), per-function complexity, secrets & sensitive files, env-var coverage, config & README hygiene — all cited file:line. Returns findings directly — no LLM call. Set ui=true to also receive an interactive HTML dashboard (MCP-UI).", extra: { ui: { type: "boolean", description: "Also return a ui:// resource with an interactive HTML dashboard" } }, deterministic: true },
+  { name: "codebase_stats", description: "Index and token statistics: files, chunks, exact token counts per model family, context-window fit per model, estimated cost per call. Deterministic, no LLM call.", deterministic: true },
+  { name: "codebase_history", description: "Trend of past verification runs: verdict, score and finding deltas over time (from .codebase-chat/history.jsonl). Deterministic, no LLM call.", deterministic: true },
+  { name: "codebase_baseline", description: "Snapshot the current findings + score into .codebase-chat/baseline.json — the reference codebase_check diffs against. Commit it to share the baseline. Deterministic, no LLM call.", deterministic: true },
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -239,6 +242,67 @@ async function handleFix(project, args) {
     ? `\n\nRe-audit: ${gone}/${applied.length} finding(s) resolved.`
     : `\n\nRe-audit : ${gone}/${applied.length} finding(s) résolu(s).`;
   return text;
+}
+
+// Stats report - markdown mirror of the CLI --stats output.
+function formatStatsMd(s, lang) {
+  const en = lang === "en";
+  const fmt = (n) => n.toLocaleString("en-US");
+  const lines = [
+    `## ${en ? "Project statistics" : "Statistiques du projet"}`,
+    "",
+    `- ${en ? "Project" : "Projet"}: \`${s.projectPath}\``,
+    `- ${en ? "Files" : "Fichiers"}: **${s.files}** (${s.chunks} chunks, ${fmt(s.bytes)} bytes)`,
+    `- Tokens: **${fmt(s.o200k)}** (o200k) / **${fmt(s.cl100k)}** (cl100k) · ${fmt(s.terms)} ${en ? "terms" : "termes"}`,
+    `- ${en ? "Index cache" : "Cache d'index"}: \`${s.projectHash}\``,
+    "",
+    `### ${en ? "Tokens per model family" : "Tokens par famille de modèle"}`,
+    "",
+    "| " + (en ? "Model" : "Modèle") + " | Tokenizer | Tokens | " + (en ? "Accuracy" : "Précision") + " |",
+    "|---|---|---|---|",
+    ...s.models.map((m) => `| ${m.family} | \`${m.tokenizer}\` | ${m.exact ? "" : "~"}${fmt(m.tokens)} | ${m.exact ? "exact" : `est. - ${m.note}`} |`),
+    "",
+    `### ${en ? "Context windows - does the whole project fit?" : "Fenêtres de contexte - le projet entier y tient-il ?"}`,
+    "",
+    `| ${en ? "Model" : "Modèle"} | ${en ? "Window" : "Fenêtre"} | |`,
+    "|---|---|---|",
+    ...s.windows.map((w) => `| ${w.model} | ${fmt(w.window)} | ${w.fits ? `✅ fits (${w.usedPct}%)` : `❌ exceeds (${w.usedPct}%)`} |`),
+    "",
+    `### ${en ? `Estimated cost per call (≈${fmt(CALL_INPUT_TOKENS)} tok in + ≤${fmt(CALL_OUTPUT_TOKENS)} out)` : `Coût estimé par appel (≈${fmt(CALL_INPUT_TOKENS)} tok entrée + ≤${fmt(CALL_OUTPUT_TOKENS)} sortie)`}`,
+    "",
+    `| ${en ? "Model" : "Modèle"} | $/M (in/out) | ${en ? "Cost/call" : "Coût/appel"} |`,
+    "|---|---|---|",
+    ...s.costs.map((c) => `| ${c.label} | ${c.free ? "local" : `$${c.priceIn}/$${c.priceOut}`} | ${c.free ? "free" : `~${fmtCost(c.estCost)}`} |`),
+    "",
+    en ? "_Estimates only - caching, batch and intro tiers change the real bill._" : "_Estimations seulement - cache, batch et tarifs d'intro modifient la facture réelle._",
+  ];
+  return lines.join("\n");
+}
+
+async function handleStats(project, lang) {
+  const abs = await findProjectRoot(resolveProjectPath(project)).catch(() => project);
+  const s = computeStats(await getIndex(abs, () => {}));
+  return formatStatsMd(s, lang) + `\n\n<details><summary>JSON</summary>\n\n\`\`\`json\n${JSON.stringify(s, null, 2)}\n\`\`\`\n</details>`;
+}
+
+async function handleHistory(project, lang) {
+  const abs = await findProjectRoot(resolveProjectPath(project)).catch(() => project);
+  const entries = await readHistory(abs);
+  const en = lang === "en";
+  if (!entries.length) return en ? "No check history yet - run codebase_check." : "Pas encore d'historique - lance codebase_check.";
+  const V = { red: "🔴", yellow: "🟡", green: "🟢" };
+  return (en ? "## Check history (latest last)\n\n" : "## Historique des checks (le plus récent en bas)\n\n")
+    + entries.map((e) => `- \`${e.ts.slice(0, 16).replace("T", " ")}\` ${V[e.verdict]} score **${e.score}/100** - ${e.changed} file(s), +${e.added}/-${e.resolved} findings vs \`${e.base}\``).join("\n");
+}
+
+async function handleBaseline(project, lang) {
+  const abs = await findProjectRoot(resolveProjectPath(project)).catch(() => project);
+  const data = await collectAudit(abs);
+  const b = await writeBaseline(abs, data, auditFindings(data, lang));
+  const en = lang === "en";
+  return en
+    ? `Baseline written: \`.codebase-chat/baseline.json\` - **${b.findings.length}** findings, score **${b.score}/100**${b.head ? ` (HEAD ${b.head})` : ""}. Commit it to share the reference.`
+    : `Baseline écrite : \`.codebase-chat/baseline.json\` - **${b.findings.length}** findings, score **${b.score}/100**${b.head ? ` (HEAD ${b.head})` : ""}. Committe-la pour partager la référence.`;
 }
 
 // MCP prompts - surface each tool as a user-invocable slash command
@@ -315,6 +379,12 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
       text = await handleIgnore(project, args);
     } else if (tool.name === "codebase_fix") {
       text = await handleFix(project, args);
+    } else if (tool.name === "codebase_stats") {
+      text = await handleStats(project, lang);
+    } else if (tool.name === "codebase_history") {
+      text = await handleHistory(project, lang);
+    } else if (tool.name === "codebase_baseline") {
+      text = await handleBaseline(project, lang);
     }
     return { messages: [{ role: "user", content: { type: "text", text } }] };
   }
@@ -410,6 +480,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "codebase_fix") {
       const project = getProjectPath(args?.projectPath);
       return { content: [{ type: "text", text: await handleFix(project, args) }] };
+    }
+    if (name === "codebase_stats" || name === "codebase_history" || name === "codebase_baseline") {
+      const project = getProjectPath(args?.projectPath);
+      const lang = args?.lang === "en" ? "en" : "fr";
+      const text = name === "codebase_stats" ? await handleStats(project, lang)
+        : name === "codebase_history" ? await handleHistory(project, lang)
+        : await handleBaseline(project, lang);
+      return { content: [{ type: "text", text }] };
     }
     const { prompt, projectName, noMatch } = await buildPrompt(name, args);
     // Prompt mode: hand the assembled context+prompt back to the host model.

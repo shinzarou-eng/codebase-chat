@@ -198,6 +198,14 @@ li button.fact{margin-left:8px}
 /* ---------- zen mode ---------- */
 body.zen .top,body.zen .strip{display:none}
 body.zen .wrap{max-width:880px;padding-top:48px}
+/* ---------- search results ---------- */
+details.chunk{border:1px solid var(--line);border-radius:4px;margin:6px 0;background:var(--card);overflow:hidden}
+details.chunk summary{padding:8px 12px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px}
+details.chunk summary::-webkit-details-marker{display:none}
+details.chunk summary::before{content:'▸';color:var(--dim);font-size:10px;flex-shrink:0}
+details.chunk[open] summary{border-bottom:1px solid var(--line)}
+details.chunk[open] summary::before{content:'▾'}
+details.chunk pre{margin:0;padding:10px 12px;border:none;border-radius:0;max-height:320px;overflow:auto;font-size:11.5px}
 @media(max-width:960px){.top{height:auto;min-height:42px;flex-wrap:wrap;padding:4px 8px;gap:4px}.brand{border-right:none}.strip{top:auto;flex-wrap:wrap;padding:4px 8px}.projwrap{order:5;flex:1 1 100%}.projwrap input{width:100%;flex:1;min-width:0}.seg{overflow-x:auto;scrollbar-width:none;max-width:100%}.seg::-webkit-scrollbar{display:none}.seg .chip{padding:3px 8px;white-space:nowrap}.searchwrap{flex:1;min-width:110px}.searchwrap input{width:100%;min-width:0}.askrow{flex-direction:column;align-items:stretch}.askrow .aicon{display:none}.askrow select{width:100%}.btn-acc{justify-content:center}.wrap{padding:14px 14px 50px}.statusbar{gap:8px}.statusbar .sright{gap:8px}}
 </style></head><body>
 <header class="top">
@@ -207,6 +215,7 @@ body.zen .wrap{max-width:880px;padding-top:48px}
 <button class="nl" data-a="audit"><span class="it">${IC.audit}</span>${t('Audit complet', 'Deep audit')}</button>
 <button class="nl" data-a="health"><span class="it">${IC.health}</span>${t('Santé du code', 'Code health')}</button>
 <button class="nl" data-a="stats"><span class="it">${IC.stats}</span>${t('Statistiques', 'Statistics')}</button>
+<button class="nl" data-a="search"><span class="it">${IC.search}</span>${t('Recherche', 'Search')}</button>
 <button class="nl" data-a="impact"><span class="it">${IC.impact}</span>${t('Impact d\'un fichier', 'File impact')}</button>
 </div>
 <div class="spacer"></div>
@@ -240,6 +249,7 @@ body.zen .wrap{max-width:880px;padding-top:48px}
 <div class="hint">${t('Le prompt contient le code pertinent — colle-le dans ChatGPT, Claude ou Ollama.', 'The prompt carries the relevant code — paste it into ChatGPT, Claude or Ollama.')} <kbd>Ctrl</kbd>+<kbd>K</kbd> ${t('pour les commandes', 'for commands')} · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> ${t('pour générer', 'to build')}</div>
 </div>
 <div id="impactBar" class="ibar hidden"><span class="lbl">${IC.impact} ${t('Fichier à analyser', 'File to analyse')}</span><div class="irow"><input type="text" id="ifile" list="fileList" placeholder="src/store.ts" autocomplete="off"><datalist id="fileList"></datalist><button class="act go" id="igo">${IC.play}${t('Analyser', 'Analyze')}</button></div><div class="chips" id="chgChips"></div></div>
+<div id="searchBar" class="ibar hidden"><span class="lbl">${IC.search} ${t('Recherche dans le code', 'Code search')}</span><div class="irow"><input type="text" id="sq" placeholder="${t('ex : rate limiting, auth middleware', 'e.g. rate limiting, auth middleware')}" autocomplete="off"><button class="act go" id="sgo">${IC.play}${t('Chercher', 'Search')}</button></div><div class="chips"><span class="dim-s">${t('Même moteur de retrieval que les tools MCP - chaque résultat cite file:ligne.', 'Same retrieval engine as the MCP tools - every result cites file:line.')}</span></div></div>
 <div id="promptOut" class="hidden"><div class="prompthd"><h2>Prompt</h2><button id="copyBtn" class="act">${IC.copy}${t('Copier', 'Copy')}</button></div><pre id="promptPre" class="big"></pre></div>
 <div id="out"><div class="skel"><i></i><i></i><i></i><i></i></div></div>
 </div>
@@ -251,14 +261,14 @@ body.zen .wrap{max-width:880px;padding-top:48px}
 <span class="sitem" id="sbMsg" style="opacity:.85">ready</span>
 <span class="sright"><span class="sitem kb" id="sbCmd" title="${t('Palette de commandes', 'Command palette')}">⌘K</span><span class="sitem">${IC.lock} ${t('local — aucun envoi automatique', 'local — no automatic upload')}</span><span class="sitem"><code>npx codebase-chat --ui</code></span></span>
 </div>
-<div class="pal hidden" id="pal"><div class="palbox"><input type="text" id="palIn" placeholder="${t('Tape une commande…', 'Type a command…')}" aria-label="${t('Palette de commandes', 'Command palette')}" autocomplete="off"><div id="palList"></div><div class="palfoot"><span><kbd>↑↓</kbd> ${t('naviguer', 'navigate')}</span><span><kbd>↵</kbd> ${t('exécuter', 'run')}</span><span><kbd>esc</kbd> ${t('fermer', 'close')}</span><span style="margin-left:auto"><kbd>1-5</kbd> ${t('vues', 'views')} · <kbd>z</kbd> zen</span></div></div></div>
+<div class="pal hidden" id="pal"><div class="palbox"><input type="text" id="palIn" placeholder="${t('Tape une commande…', 'Type a command…')}" aria-label="${t('Palette de commandes', 'Command palette')}" autocomplete="off"><div id="palList"></div><div class="palfoot"><span><kbd>↑↓</kbd> ${t('naviguer', 'navigate')}</span><span><kbd>↵</kbd> ${t('exécuter', 'run')}</span><span><kbd>esc</kbd> ${t('fermer', 'close')}</span><span style="margin-left:auto"><kbd>1-6</kbd> ${t('vues', 'views')} · <kbd>z</kbd> zen</span></div></div></div>
 <script>
 const out = document.getElementById('out'), navList = document.getElementById('navList'), navGrp = document.getElementById('navGrp');
 let curMd = '', curHtml = '', proj = '${esc(absPath).replace(/'/g, "\\'").replace(/\\/g, '\\\\')}', sevFilter = '', mdView = false, seq = 0;
 const DEFAULT_PROJ = proj;
 const LANG = '${lang}';
 const qp = () => (proj ? '&project=' + encodeURIComponent(proj) : '') + '&lang=' + LANG;
-const pushUrl = (st) => history.pushState(st, '', '?view=' + st.view + (st.file ? '&file=' + encodeURIComponent(st.file) : '') + (proj !== DEFAULT_PROJ ? '&project=' + encodeURIComponent(proj) : ''));
+const pushUrl = (st) => history.pushState(st, '', '?view=' + st.view + (st.file ? '&file=' + encodeURIComponent(st.file) : '') + (st.q ? '&q=' + encodeURIComponent(st.q) : '') + (proj !== DEFAULT_PROJ ? '&project=' + encodeURIComponent(proj) : ''));
 const escH = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sbMsg = document.getElementById('sbMsg');
 const loading = () => { if (sbMsg) sbMsg.textContent = '${t('analyse…', 'analysing…')}'; out.innerHTML = '<div class="skel"><i></i><i></i><i></i><i></i></div><div class="spin" style="padding-top:6px;font-size:12px">${t('analyse en cours', 'analysing')}…</div>'; };
@@ -369,16 +379,30 @@ function setActive(url) {
   if (sbMsg) sbMsg.textContent = 'ready';
 }
 const impactBox = document.getElementById('impactBar');
+const searchBox = document.getElementById('searchBar');
 const runImpact = (f, push = true) => call('/api/impact?file=' + encodeURIComponent(f) + qp(), push ? { view: 'impact', file: f } : undefined);
+const runSearch = (q, push = true) => call('/api/search?q=' + encodeURIComponent(q) + qp(), push ? { view: 'search', q } : undefined);
+const searchEmpty = () => { out.innerHTML = '<div class="empty">${t('Tape une requête ci-dessus - chaque résultat cite file:ligne.', 'Type a query above - every result cites file:line.')}</div>'; };
 document.querySelectorAll('button.nl[data-a]').forEach(b => b.onclick = () => {
   const a = b.dataset.a;
   impactBox.classList.toggle('hidden', a !== 'impact');
+  searchBox.classList.toggle('hidden', a !== 'search');
   if (a === 'impact') { loadFiles(); loadChanged(); setActive('/api/impact'); }
+  if (a === 'search') {
+    const sqEl = document.getElementById('sq');
+    setActive('/api/search'); sqEl.focus();
+    if (sqEl.value.trim()) runSearch(sqEl.value.trim()); else searchEmpty();
+  }
   if (a === 'check') call('/api/check?x=1' + qp(), { view: 'check' });
   if (a === 'audit') call('/api/audit?x=1' + qp(), { view: 'audit' });
   if (a === 'health') call('/api/health?x=1' + qp(), { view: 'health' });
   if (a === 'stats') call('/api/stats?x=1' + qp(), { view: 'stats' });
 });
+document.getElementById('sgo').onclick = () => {
+  const q = document.getElementById('sq').value.trim();
+  if (q) runSearch(q);
+};
+document.getElementById('sq').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('sgo').click(); });
 // Collapsible sections
 out.addEventListener('click', e => {
   const h = e.target.closest('h2.coll');
@@ -454,7 +478,8 @@ const CMDS = [
   { i: '${IC.audit}', l: '${t('Audit complet', 'Deep audit')}', k: '2', run: () => goView('audit') },
   { i: '${IC.health}', l: '${t('Santé du code', 'Code health')}', k: '3', run: () => goView('health') },
   { i: '${IC.stats}', l: '${t('Statistiques', 'Statistics')}', k: '4', run: () => goView('stats') },
-  { i: '${IC.impact}', l: '${t('Impact d\u2019un fichier', 'File impact')}', k: '5', run: () => goView('impact') },
+  { i: '${IC.search}', l: '${t('Recherche dans le code', 'Code search')}', k: '5', run: () => goView('search') },
+  { i: '${IC.impact}', l: '${t('Impact d\u2019un fichier', 'File impact')}', k: '6', run: () => goView('impact') },
   { i: '${IC.chat}', l: '${t('Poser une question', 'Ask a question')}', run: () => { const a = document.getElementById('ask'); a.focus(); a.select(); } },
   { i: '${IC.wand}', l: '${t('Générer le prompt', 'Build prompt')}', run: () => document.getElementById('askBtn').click() },
   { i: '${IC.search}', l: '${t('Filtrer les résultats', 'Filter results')}', k: '/', run: () => document.getElementById('search').focus() },
@@ -506,7 +531,7 @@ document.addEventListener('keydown', e => {
   if (/input|textarea|select/i.test(document.activeElement.tagName)) return;
   if (e.key === '/') { e.preventDefault(); document.getElementById('search').focus(); return; }
   if (e.key.toLowerCase() === 'z') { e.preventDefault(); toggleZen(); return; }
-  if (/^[1-5]$/.test(e.key)) {
+  if (/^[1-6]$/.test(e.key)) {
     const b = document.querySelectorAll('button.nl[data-a]')[+e.key - 1];
     if (b) b.click();
   }
@@ -603,7 +628,15 @@ function route() {
   const pr = (p.get('project') || '').trim();
   if (pr && pr !== proj) { document.getElementById('proj').value = pr; setProj(pr); }
   const v = p.get('view') || 'audit', f = (p.get('file') || '').trim();
+  const q = (p.get('q') || '').trim();
   impactBox.classList.toggle('hidden', v !== 'impact');
+  searchBox.classList.toggle('hidden', v !== 'search');
+  if (v === 'search') {
+    setActive('/api/search');
+    document.getElementById('sq').value = q;
+    if (q) { runSearch(q, false); return; }
+    searchEmpty(); return;
+  }
   if (v === 'impact') {
     loadFiles(); loadChanged(); setActive('/api/impact');
     if (f) { runImpact(f, false); return; }
@@ -761,6 +794,29 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
 <p class="dim-s">${tt('Cache d\'index', 'Index cache')}: <code>${esc(s.projectHash)}</code> · <code>${esc(s.projectPath)}</code></p>
 </section>`;
         json(res, { body });
+        return;
+      }
+      if (u.pathname === '/api/search') {
+        const q = (u.searchParams.get('q') ?? '').trim();
+        if (!q) { json(res, { error: 'q param required' }, 400); return; }
+        const result = await buildContext({ project: target, query: q, searchQuery: q, lang: reqLang, maxTokens: 30_000 });
+        const tt = (fr: string, en: string) => (reqLang === 'en' ? en : fr);
+        const isCode = (p: string) => CODE_EXTS.has(extname(p).toLowerCase()) && !p.includes('.min.');
+        const cards = result.chunks.map(c => {
+          const loc = `${c.relPath}:${c.startLine}-${c.endLine}`;
+          const label = isCode(c.relPath)
+            ? `<a class="fref" data-f="${esc(c.relPath)}" href="#" title="${tt('Voir l\u2019impact', 'See impact')}"><code>${esc(loc)}</code></a>`
+            : `<code>${esc(loc)}</code>`;
+          const preview = c.content.split('\n');
+          const shown = preview.slice(0, 10).join('\n') + (preview.length > 10 ? '\n…' : '');
+          return `<details class="chunk"><summary>${label} <span class="sev sev-ok">${esc(c.kind)}</span>${c.name ? ` <code>${esc(c.name)}</code>` : ''} <span class="dim-s">${c.tokens} tok</span></summary><pre class="big">${esc(shown)}</pre></details>`;
+        }).join('');
+        const body = `<section><h2>${tt('Recherche', 'Search')} — <code>${esc(q)}</code></h2>
+<div class="kpis"><div class="kpi"><div class="kv">${result.chunks.length}</div><div class="kl">${tt('chunks pertinents', 'matching chunks')}</div></div><div class="kpi"><div class="kv">${result.tokenCount.toLocaleString('en-US')}</div><div class="kl">tokens</div></div><div class="kpi"><div class="kv">${new Set(result.chunks.map(c => c.relPath)).size}</div><div class="kl">${tt('fichiers', 'files')}</div></div></div>
+${result.noMatch ? `<p class="dim-s">${tt('Aucun chunk de code ne correspond — seule l\u2019arborescence a été retenue.', 'No code chunk matched - only the file tree was selected.')}</p>` : ''}
+${cards || `<p class="dim-s">${tt('Aucun résultat.', 'No results.')}</p>`}
+<p class="dim-s">${tt('Même retrieval que les tools MCP et le CLI - copier le rapport pour obtenir le contexte complet assemblé.', 'Same retrieval as the MCP tools and the CLI - copy the report for the full assembled context.')}</p></section>`;
+        json(res, { body, md: result.context, chunks: result.chunks.map(c => ({ file: c.relPath, startLine: c.startLine, endLine: c.endLine, kind: c.kind, name: c.name })) });
         return;
       }
       if (u.pathname === '/api/prompt') {

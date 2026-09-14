@@ -24,7 +24,7 @@ This package exposes the same codebase intelligence tools as the main `codebase-
 - returns the prompt to the **host model** (Cursor, Claude, Windsurf…) - the default when no API key is configured, or with `promptOnly: true`; or
 - calls a DeepSeek / OpenAI-compatible API itself when `DEEPSEEK_API_KEY` or `OPENAI_API_KEY` is set.
 
-Deterministic tools (`codebase_health`, `codebase_impact`, `codebase_deep_audit`, `codebase_check`, `codebase_doctor`, `codebase_ignore`, `codebase_fix`) need no model at all - same input, same output, fully offline.
+Deterministic tools (`codebase_health`, `codebase_impact`, `codebase_deep_audit`, `codebase_check`, `codebase_doctor`, `codebase_ignore`, `codebase_fix`, `codebase_stats`, `codebase_history`, `codebase_baseline`) need no model at all - same input, same output, fully offline.
 
 In prompt mode your code never leaves your machine at all.
 
@@ -150,8 +150,9 @@ On Windows with a local clone you can also use the absolute path:
 | `codebase_doctor` | **Deterministic** installation & environment diagnostic - node version, index cache, LLM keys, tree-sitter, baseline staleness, MCP client integrations. No LLM needed |
 | `codebase_ignore` | **Deterministic** silence a finding with a justification (`.codebase-chat/ignores.json` - commit it). `id` accepts a full id or a prefix; `action` = add / remove / list |
 | `codebase_fix` | **Deterministic** mechanical repairs where the fix is unambiguous - undocumented env vars, dead deps, unused exports, console/debugger lines. Each fix re-checks itself. `dry: true` previews without writing |
-| `codebase_check` | **Deterministic** change verification - blast radius, complexity and findings on files changed vs `base` (default `HEAD`), diffed against `.codebase-chat/baseline.json`. No LLM needed |
-| `codebase_doctor` | **Deterministic** install diagnostic - node, index cache, LLM key presence, tree-sitter, baseline staleness, MCP client integrations. No LLM needed |
+| `codebase_stats` | **Deterministic** index & token statistics - files, chunks, exact token counts per model family, context-window fit, estimated cost per call. No LLM needed |
+| `codebase_history` | **Deterministic** trend of past check runs - verdict, score and finding deltas over time. No LLM needed |
+| `codebase_baseline` | **Deterministic** write `.codebase-chat/baseline.json` - the findings + score snapshot `codebase_check` diffs against. No LLM needed |
 
 All tools accept:
 

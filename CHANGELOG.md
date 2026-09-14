@@ -4,6 +4,24 @@ All notable changes to **codebase-chat** (`codebase-chat` + `codebase-chat-mcp`)
 
 History before the rename (published as `dsh-codebase-chat` / `dsh-codebase-chat-mcp`, versions ≤ 0.28) lives in the git tags.
 
+## 0.30.0 / mcp 0.11.0 - Search view, JSON output & 3 new deterministic tools
+
+**Dashboard**
+
+- New **Search** view - query the retrieval engine directly, get matching chunks as expandable cards with `file:line` citations, kind badges and previews. One click jumps to the file's impact analysis. Copy/download buttons export the full assembled context.
+- View shortcuts extended to `1`–`6`; search added to the command palette.
+
+**MCP**
+
+- `codebase_stats` - index & token statistics: exact token counts per model family, context-window fit, estimated cost per call.
+- `codebase_history` - trend of past check runs (verdict + score over time).
+- `codebase_baseline` - write `.codebase-chat/baseline.json` from the current findings.
+- All three are fully deterministic - no model, no key, no network.
+
+**CLI**
+
+- `--json` now works with `--health`, `--stats`, `--history` and `--search`/`--ask`/`--file` - every surface is scriptable. Indexing progress moves to stderr so piped JSON stays clean.
+
 ## 0.29.1 - IDE-style dashboard, command palette & security hardening
 
 **Dashboard**

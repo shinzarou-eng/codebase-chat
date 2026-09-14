@@ -1,6 +1,6 @@
 {
   "name": "codebase-chat-mcp",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "description": "Standalone MCP server for codebase-chat — codebase intelligence tools for Cursor, Claude, Windsurf and any MCP client. Works without DeepSeek Harness.",
   "author": "shinzarou-eng",
   "mcpName": "io.github.shinzarou-eng/codebase-chat",

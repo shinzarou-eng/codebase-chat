@@ -68,4 +68,22 @@ describe('mcp server protocol', () => {
     const ignore = prompts.find((p) => p.name === 'ignore');
     expect(ignore?.arguments?.some((a) => a.name === 'reason')).toBe(true);
   }, 25_000);
+
+  it('tools/list exposes the deterministic stats/history/baseline tools', async () => {
+    const [, list] = await rpc([
+      { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
+    ]);
+    const names = (list.result?.tools ?? []).map((t) => t.name);
+    for (const n of ['codebase_stats', 'codebase_history', 'codebase_baseline'])
+      expect(names).toContain(n);
+  }, 25_000);
+
+  it('tools/call codebase_stats returns real stats without an LLM key', async () => {
+    const [, res] = await rpc([
+      { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'codebase_stats', arguments: { lang: 'en' } } },
+    ]);
+    const text = res.result?.content?.[0]?.text ?? '';
+    expect(text).toContain('Tokens per model family');
+    expect(res.isError).toBeUndefined();
+  }, 25_000);
 });
