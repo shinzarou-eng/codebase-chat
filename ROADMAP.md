@@ -9,6 +9,12 @@ Want to influence priorities? [Open an issue](https://github.com/shinzarou-eng/c
 
 ## ✅ Shipped
 
+### Relaunch — `codebase-chat`
+
+- Renamed `dsh-codebase-chat` → **`codebase-chat`** / **`codebase-chat-mcp`** — MCP-first positioning; DeepSeek Harness stays a supported integration, not the identity
+- New repository [`shinzarou-eng/codebase-chat`](https://github.com/shinzarou-eng/codebase-chat) — clean history, GitHub Pages site, IDE-styled demos & social preview, topics + homepage configured
+- Old npm packages unpublished — single canonical install path: `npx codebase-chat-mcp setup`
+
 ### v0.29 — Verified workflow: check, fix, ignore, doctor
 
 - `codebase_check` / `--check` — verify changed files vs a git ref, delta vs committed baseline, `--strict` red verdict for CI, SARIF export for PR annotations, pre-commit hook
@@ -64,10 +70,11 @@ Want to influence priorities? [Open an issue](https://github.com/shinzarou-eng/c
 
 ---
 
-## 🔜 Next — engine depth
+## 🔜 Next — engine depth & distribution
 
 Things actively being worked on or fully specced.
 
+- **Distribution** — `codebase-chat` / `codebase-chat-mcp` on npm, official MCP Registry entry, community listings (awesome-mcp-servers, Glama)
 - **GitHub Issues export** — turn a `TASKS.md` sprint into real issues in one command
 - **Prompt language packs** — ES, DE, PT (community-friendly format)
 
