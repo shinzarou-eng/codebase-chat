@@ -802,7 +802,9 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
         const result = await buildContext({ project: target, query: q, searchQuery: q, lang: reqLang, maxTokens: 30_000 });
         const tt = (fr: string, en: string) => (reqLang === 'en' ? en : fr);
         const isCode = (p: string) => CODE_EXTS.has(extname(p).toLowerCase()) && !p.includes('.min.');
-        const cards = result.chunks.map(c => {
+        const MAX_CARDS = 60;
+        const shown = result.chunks.slice(0, MAX_CARDS);
+        const cards = shown.map(c => {
           const loc = `${c.relPath}:${c.startLine}-${c.endLine}`;
           const label = isCode(c.relPath)
             ? `<a class="fref" data-f="${esc(c.relPath)}" href="#" title="${tt('Voir l\u2019impact', 'See impact')}"><code>${esc(loc)}</code></a>`
@@ -814,6 +816,7 @@ export async function startDashboard(projectPath: string, lang: Lang): Promise<{
         const body = `<section><h2>${tt('Recherche', 'Search')} — <code>${esc(q)}</code></h2>
 <div class="kpis"><div class="kpi"><div class="kv">${result.chunks.length}</div><div class="kl">${tt('chunks pertinents', 'matching chunks')}</div></div><div class="kpi"><div class="kv">${result.tokenCount.toLocaleString('en-US')}</div><div class="kl">tokens</div></div><div class="kpi"><div class="kv">${new Set(result.chunks.map(c => c.relPath)).size}</div><div class="kl">${tt('fichiers', 'files')}</div></div></div>
 ${result.noMatch ? `<p class="dim-s">${tt('Aucun chunk de code ne correspond — seule l\u2019arborescence a été retenue.', 'No code chunk matched - only the file tree was selected.')}</p>` : ''}
+${result.chunks.length > MAX_CARDS ? `<p class="dim-s">${tt(`${shown.length} premiers résultats affichés sur ${result.chunks.length} - copie le rapport pour le contexte complet.`, `First ${shown.length} of ${result.chunks.length} results shown - copy the report for the full context.`)}</p>` : ''}
 ${cards || `<p class="dim-s">${tt('Aucun résultat.', 'No results.')}</p>`}
 <p class="dim-s">${tt('Même retrieval que les tools MCP et le CLI - copier le rapport pour obtenir le contexte complet assemblé.', 'Same retrieval as the MCP tools and the CLI - copy the report for the full assembled context.')}</p></section>`;
         json(res, { body, md: result.context, chunks: result.chunks.map(c => ({ file: c.relPath, startLine: c.startLine, endLine: c.endLine, kind: c.kind, name: c.name })) });
