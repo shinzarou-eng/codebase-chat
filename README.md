@@ -4,12 +4,18 @@
   </a>
 </p>
 
+<h3 align="center">Local-first codebase intelligence.</h3>
 <p align="center">
-  <a href="https://www.npmjs.com/package/codebase-chat"><img src="https://img.shields.io/npm/v/codebase-chat?logo=npm&label=plugin&color=4cc2ff&labelColor=232323" alt="npm plugin"></a>
-  <a href="https://www.npmjs.com/package/codebase-chat-mcp"><img src="https://img.shields.io/npm/v/codebase-chat-mcp?logo=npm&label=mcp&color=4cc2ff&labelColor=232323" alt="npm mcp"></a>
-  <a href="https://github.com/shinzarou-eng/codebase-chat/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shinzarou-eng/codebase-chat?color=a3a3a3&labelColor=232323" alt="license"></a>
-  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20-6ccb5f?logo=nodedotjs&labelColor=232323" alt="node >= 20"></a>
-  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-4cc2ff?labelColor=232323" alt="MCP compatible"></a>
+  Chat, search, and audit any repository — every answer cited <code>[source: file:line]</code>.<br>
+  Works inside <strong>Cursor, Claude, Windsurf, VS Code, Zed</strong> and any MCP client — or standalone in your terminal.
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/codebase-chat"><img src="https://img.shields.io/npm/v/codebase-chat?logo=npm&label=cli&color=4fc1ff&labelColor=252526" alt="npm cli"></a>
+  <a href="https://www.npmjs.com/package/codebase-chat-mcp"><img src="https://img.shields.io/npm/v/codebase-chat-mcp?logo=npm&label=mcp&color=4fc1ff&labelColor=252526" alt="npm mcp"></a>
+  <a href="https://github.com/shinzarou-eng/codebase-chat/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shinzarou-eng/codebase-chat?color=a3a3a3&labelColor=252526" alt="license"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20-89d185?logo=nodedotjs&labelColor=252526" alt="node >= 20"></a>
+  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-4fc1ff?labelColor=252526" alt="MCP compatible"></a>
 </p>
 
 <p align="center">
@@ -22,54 +28,54 @@
 
 <br>
 
-## Installation
+## Get started
 
 ```bash
 npx codebase-chat-mcp setup
 ```
 
-or as a DeepSeek Harness plugin:
-
-```bash
-dsh plugin --profile web add codebase-chat
-```
-
-The wizard detects **Claude, Cursor, Windsurf, VS Code, Zed, Gemini CLI, Kiro, Cline and Roo Code**, asks how you want answers (host model or API key), writes the MCP config, done.
-No JSON to edit — and **no API key**: in `promptOnly` mode your host model does the thinking,
-or get a **fully offline** answer with the deterministic report (`--no-llm`) — no model, no key, no cloud.
-
-Other paths — DeepSeek Harness plugin · CLI · from source · manual config: **[Reference](#reference)**.
+One command. The wizard detects **Cursor, Claude, Windsurf, VS Code, Zed, Gemini CLI, Kiro, Cline and Roo Code**, asks how you want answers (host model or API key), writes the config — done. No JSON to edit, **no API key required**.
 
 <p align="center">
   <img src="docs/assets/demo-conv.gif" alt="codebase-chat real MCP session on a 422-file codebase" width="840"><br>
-  <em>Real MCP session on a real 422-file codebase — <code>codebase_health</code> finds 324 circular deps, <code>codebase_chat</code> answers with <code>[source: file:line]</code> receipts · <a href="docs/assets/demo-power.gif">PR review (--diff + --watch)</a> · <a href="docs/assets/demo.gif">CLI tour</a> · <a href="docs/assets/demo-mcp.gif">MCP stdio</a> · <a href="docs/assets/demo-fr.gif">French mode</a> · <a href="docs/assets/dashboard.png">--ui dashboard</a></em>
+  <em>Real MCP session on a real 422-file codebase — <code>codebase_health</code> finds 324 circular deps, <code>codebase_chat</code> answers with <code>[source: file:line]</code> receipts · <a href="docs/assets/demo-power.gif">PR review (--diff + --watch)</a> · <a href="docs/assets/demo.gif">CLI tour</a> · <a href="docs/assets/demo-mcp.gif">MCP stdio</a> · <a href="docs/assets/demo-fr.gif">French mode</a></em>
 </p>
+
+## One engine, three surfaces
+
+| In your IDE | In your terminal | Fully offline |
+| --- | --- | --- |
+| 18 MCP tools inside Cursor, Claude, Windsurf & more — answers land where you code | `npx codebase-chat` — index, search, health, check. Drop `--check --strict` into CI | `--no-llm` deterministic reports + `--ui` dashboard — no model, no key, no cloud |
+
+Every claim comes with a citation. Every metric is computed from your code. Your repo is **never uploaded** — the model only sees the excerpts that matter.
+
+| Understand | Verify | Act |
+| --- | --- | --- |
+| `chat` · `search` · `explain` · `intelligence` | `health` · `impact` · `check` vs baseline · `deep_audit` (30 metrics) | `refactor` · `tasks` · `fix` · `apply` — dry-run, backups, protected paths |
 
 ## Local dashboard — `--ui`
 
 ```bash
-npx codebase-chat --ui    # → http://127.0.0.1:<port> — no LLM, nothing leaves your machine
+npx codebase-chat --ui    # → http://127.0.0.1:<port> — nothing leaves your machine
 ```
 
 <p align="center">
   <img src="docs/assets/dashboard.png" alt="IDE-style local dashboard: editor tabs, command palette, status bar — the deterministic audit as a real app" width="100%">
 </p>
 
-One command turns the audit into a real app:
+The audit as a real app — dense IDE-style UI, not a webpage:
 
-- **IDE-style UI** — editor tabs, dense panels, blue status bar: a tool, not a webpage. Bilingual FR/EN.
-- **Command palette** — `Ctrl+K` jumps between views, builds a prompt, exports, toggles zen mode.
-- **Zen mode** `z` · view shortcuts `1`–`5` · `/` filters findings by text or severity.
-- Check your diff vs baseline, ignore findings, export `.md`/`.html` — all in clicks.
+- **Command palette** `Ctrl+K` — jump between views, build a prompt, export, toggle zen mode
+- **Zen mode** `z` · view shortcuts `1`–`5` · `/` filters findings by text or severity
+- Diff vs baseline, ignore findings with a justification, export `.md` / `.html` — all in clicks
+- Bilingual **FR / EN**
 
-## Usage
+## Real output
 
-_What a real session looks like_ —
-
-Run on this repository — the exact text the tools return:
+_What a session actually returns — run on this repository:_
 
 ```console
-$ npx codebase-chat --project . --health
+$ npx codebase-chat --health
 
 == STATIC ANALYSIS — codebase-chat ==
 Health score: 52/100 (D) · 33 files analyzed · 65 local imports
@@ -80,50 +86,39 @@ Health score: 52/100 (D) · 33 files analyzed · 65 local imports
 ● Unused files (candidates) (1)
   lib/client.js
 
-● Unused exports (candidates) (45)
-  lib/cache.js:21 — cachePath
-  lib/index.js:2952 — normalizeLabels
-  lib/index.js:2952 — getProjectName
-  …
-
-● Duplicate code blocks (2)
-  12 lines × 2 files — lib/index.js, src/project.ts
-  6 lines × 2 files — src/indexer.ts, src/retriever.ts
-
 ● Complexity hotspots (13)
   lib/index.js — score 418
   src/analysis.ts — score 81
-  lib/client.js — score 55
   …
 ```
 
 ```console
-$ npx codebase-chat --project . --search "health score computation"
+$ npx codebase-chat --search "health score computation"
 
 --- src/analysis.ts :: formatHealthReportMd (FUNCTION) [source: src/analysis.ts:285-353] ---
 --- src/analysis.ts :: analyzeProject       (FUNCTION) [source: src/analysis.ts:149-232] ---
 --- src/analysis.ts :: HealthReport         (TYPE)     [source: src/analysis.ts:15-26]   ---
 
-$ npx codebase-chat --project . --ask "how is the index cached?"
+$ npx codebase-chat --ask "how is the index cached?"
 
 > codebase-chat · prompt-only mode (no API key)
 > Chunks: 81 · Tokens: 59,934 → handed to the host model
 > Cite every technical claim with [source: relative/path:line].
 ```
 
-`codebase_health` runs fully offline — deterministic, no LLM, same input → same score.
-Every answer from `codebase_chat` arrives with `[source: file:line]` receipts you can verify in seconds.
+`codebase_health` runs **fully offline** — deterministic, no LLM, same input → same score.
+Every answer from `codebase_chat` arrives with receipts you can verify in seconds.
 
 ## Verify your changes
 
 ```console
 $ npx codebase-chat --baseline        # snapshot findings + score to .codebase-chat/baseline.json (commit it)
-$ npx codebase-chat --check           # impact + findings on files changed vs HEAD, diffed vs the baseline
+$ npx codebase-chat --check           # impact + findings on files changed vs HEAD, diffed vs baseline
 $ npx codebase-chat --check --strict  # exit 1 on a red verdict — drop into CI
 $ npx codebase-chat --doctor          # diagnose the install: node, index cache, keys, MCP clients
 ```
 
-Same thing from an IDE: `/codebase check [ref]` and `/codebase doctor` (MCP tools `codebase_check` / `codebase_doctor`).
+From an IDE: `codebase_check` / `codebase_doctor` MCP tools, or `/codebase check` in DeepSeek Harness.
 
 ## Why it wins
 
@@ -133,7 +128,7 @@ Same thing from an IDE: `/codebase check [ref]` and `/codebase doctor` (MCP tool
 | `[source: file:line]` citations | ❌ | ~ | ✅ |
 | Repo never uploaded — model sees only relevant excerpts | ❌ | ❌ | ✅ |
 | Inside Claude / Cursor / Windsurf | ❌ | ~ | ✅ |
-| Fully offline analysis — `--no-llm` report & `--ui` dashboard, zero model | ❌ | ❌ | ✅ |
+| Fully offline — `--no-llm` report & `--ui` dashboard, zero model | ❌ | ❌ | ✅ |
 | Free — no API key, no account | ~ | ❌ | ✅ |
 
 ## How it works
@@ -142,21 +137,9 @@ Same thing from an IDE: `/codebase check [ref]` and `/codebase doctor` (MCP tool
   <img src="docs/assets/how-it-works.png" alt="Pipeline: source → AST index → retrieval → briefing → host model → cited answer, all local-first" width="100%">
 </p>
 
-`/codebase-apply` writes safely — **dry-run** · **`.dsh-backups/`** before overwrite · **protected paths** · never outside the project.
+Writes are safe by construction — **dry-run** · **`.dsh-backups/`** before overwrite · **protected paths** · never outside the project.
 
-## The 18 tools
-
-| Understand | Decide | Act | Explore |
-| --- | --- | --- | --- |
-| `codebase_chat` | `codebase_intelligence` | `codebase_refactor` | `codebase_player` |
-| `codebase_search` | `codebase_audit` | `codebase_tasks` | `codebase_crea` |
-| `codebase_explain` | `codebase_report` | `codebase_fix` | `codebase_doctor` |
-| `codebase_health` | `codebase_ceo` | `codebase_ignore` | |
-| `codebase_impact` | `codebase_deep_audit` | `codebase_check` | |
-
-Seven tools run **fully deterministic — no model, no key, works offline**: `codebase_health`, `codebase_impact`, `codebase_check` (changes vs a git ref, diffed vs `.codebase-chat/baseline.json`), `codebase_doctor` (install diagnostic), `codebase_ignore` (silence a finding with a justification, committed to `.codebase-chat/ignores.json`), `codebase_fix` (verified mechanical repairs — `dry: true` previews), and `codebase_deep_audit` (9 sections, ~30 metrics: git churn, bus factor, secrets, deps, per-function complexity).
-
-Same engine, three surfaces: **MCP tools** in your IDE, **slash commands** in DeepSeek Harness, **CLI flags** anywhere. Every tool takes `lang` (`fr`/`en`), `embed`, `promptOnly`, `maxTokens`.
+Seven tools run **fully deterministic** — no model, no key, works offline: `health`, `impact`, `check`, `doctor`, `ignore`, `fix`, `deep_audit` (9 sections, ~30 metrics: git churn, bus factor, secrets, deps, per-function complexity).
 
 ## Reference
 
@@ -186,7 +169,7 @@ npx codebase-chat --project C:\my-app --ask "how is auth handled?"
 npx codebase-chat --project C:\my-app --health   # offline, no LLM
 npx codebase-chat --project C:\my-app --health --diff main   # only what changed
 npx codebase-chat --project C:\my-app --watch    # index stays hot while you code
-npx codebase-chat --project C:\my-app --prompt intelligence   # same banner brief the IDE gets — pipe to any LLM
+npx codebase-chat --project C:\my-app --prompt intelligence   # same brief the IDE gets — pipe to any LLM
 npx codebase-chat --project C:\my-app --prompt intelligence --call    # DeepSeek/OpenAI answers directly (API key)
 npx codebase-chat --project C:\my-app --prompt intelligence --no-llm  # deterministic report — zero model, zero key
 npx codebase-chat --project C:\my-app --ui   # interactive HTML dashboard on localhost — no LLM
@@ -333,7 +316,7 @@ Then restart `dsh --profile web`.
 
 | | |
 | --- | --- |
-| **Shipped** | tree-sitter AST (7 languages), deterministic health score + `--no-llm` deep audit, `--ui` local dashboard (IDE-style, Ctrl+K palette, zen mode, bilingual, exports), `codebase_check`/`--fix`/`--ignore`/`--doctor` verified workflow + baseline & CI gate, `codebase_deep_audit` MCP tool + `ui://` resource, token/context stats, MCP setup wizard, `.codebase-chat.json`, `--diff` scoping, `--watch` mode |
+| **Shipped** | tree-sitter AST (7 languages), deterministic health score + `--no-llm` deep audit, `--ui` local dashboard (IDE-style, Ctrl+K palette, zen mode, bilingual, exports), `check`/`fix`/`ignore`/`doctor` verified workflow + baseline & CI gate, `deep_audit` MCP tool + `ui://` resource, token/context stats, MCP setup wizard, `.codebase-chat.json`, `--diff` scoping, `--watch` mode |
 | **Next** | GitHub Issues export from TASKS.md, prompt language packs (ES/DE/PT) |
 | **Planned** | VS Code extension, HTTP/SSE transport, PR review mode |
 | **Exploring** | multi-repo workspaces, shared team index cache, CI bot |
