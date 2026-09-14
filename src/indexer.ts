@@ -189,7 +189,7 @@ export async function getIndex(projectPath: string, progress?: (message: string)
   const absProject = await findProjectRoot(resolved);
   const existing = force ? null : await loadIndex(resolved);
   if (existing && existing.projectPath === absProject) {
-    // Fast freshness check: mtime + size only, no file reads — parallel stats.
+    // Fast freshness check: mtime + size only, no file reads - parallel stats.
     let stale = false;
     await Promise.all(Object.values(existing.files).map(async file => {
       if (stale) return;

@@ -1,6 +1,6 @@
-// Baseline — snapshot of the audit's findings so later runs can diff
+// Baseline - snapshot of the audit's findings so later runs can diff
 // "what appeared / what was fixed". Stored in the project at
-// .codebase-chat/baseline.json — meant to be committed, not ignored.
+// .codebase-chat/baseline.json - meant to be committed, not ignored.
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { execFile } from 'node:child_process';

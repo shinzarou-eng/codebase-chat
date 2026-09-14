@@ -29,7 +29,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const PAYMENTS = `import { verifyToken } from "./auth.js";
 
-// FIXME: move to env — leaked in commit
+// FIXME: move to env - leaked in commit
 const STRIPE_KEY = "sk_live_" + "EXAMPLE0NLYDEM0";
 
 export function charge(token: string, amount: number) {

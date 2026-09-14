@@ -5,11 +5,11 @@
  * pricing page before budgeting.
  *
  * `tokMult` = token-count multiplier vs cl100k for code-heavy text
- * (o200k ≈ cl100k × 0.997 — treated as 1.0).
+ * (o200k ≈ cl100k × 0.997 - treated as 1.0).
  */
 
 export interface ModelPrice {
-  /** API id — also used to match CODEBASE_MODEL values. */
+  /** API id - also used to match CODEBASE_MODEL values. */
   id: string;
   label: string;
   tokMult: number;
@@ -20,13 +20,13 @@ export interface ModelPrice {
   free?: boolean;
 }
 
-/** Default retrieval budget (o200k tokens) for one --call — see context.ts. */
+/** Default retrieval budget (o200k tokens) for one --call - see context.ts. */
 export const CALL_INPUT_TOKENS = 60_000;
 /** max_tokens sent by the --call request. */
 export const CALL_OUTPUT_TOKENS = 8_192;
 
 export const MODEL_PRICES: ModelPrice[] = [
-  // Frontier — Sept 2026 releases
+  // Frontier - Sept 2026 releases
   { id: 'gpt-6-astra',       label: 'GPT-6 Astra',         tokMult: 1.00, inPerM: 10,   outPerM: 50,   context: '1.05M — OpenAI flagship' },
   { id: 'claude-fable-5-1',  label: 'Claude Fable 5.1',    tokMult: 1.20, inPerM: 10,   outPerM: 50,   context: '1M — Anthropic flagship' },
   { id: 'claude-mythos-5-1', label: 'Claude Mythos 5.1',   tokMult: 1.20, inPerM: 10,   outPerM: 50,   context: '1M — restricted (Glasswing)' },

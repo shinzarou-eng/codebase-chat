@@ -27,7 +27,7 @@ import { matchModelPrice, callCost, fmtCost, CALL_INPUT_TOKENS, CALL_OUTPUT_TOKE
 
 // Minimal Markdown→ANSI renderer so --call/--no-llm answers read like a real
 // report in the terminal instead of raw `##`/`**`/backticks. Only used when
-// stdout is a TTY — piped output stays plain Markdown.
+// stdout is a TTY - piped output stays plain Markdown.
 const ANSI = { reset: '\x1b[0m', bold: '\x1b[1m', dim: '\x1b[2m', cyan: '\x1b[36m', yellow: '\x1b[33m', magenta: '\x1b[35m', green: '\x1b[32m' };
 
 function renderAnswerTerminal(md: string): string {
@@ -583,7 +583,7 @@ fi
       }
       const baseUrl = process.env.DEEPSEEK_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.deepseek.com/v1';
       const model = process.env.CODEBASE_MODEL || 'deepseek-chat';
-      // Cost preview on stderr — say what the call will burn before sending it.
+      // Cost preview on stderr - say what the call will burn before sending it.
       const promptTok = countTokens(prompt);
       const mp = matchModelPrice(model);
       const inTokAdj = Math.round(promptTok * (mp?.tokMult ?? 1));

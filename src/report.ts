@@ -1,8 +1,8 @@
-// Deterministic full report — a complete structured audit built purely from
+// Deterministic full report - a complete structured audit built purely from
 // static analysis: index stats, import graph, package manifest, health report.
-// Zero LLM, zero network — same project in → same report out.
+// Zero LLM, zero network - same project in → same report out.
 //
-// Public facade — implementation lives in focused modules:
+// Public facade - implementation lives in focused modules:
 //   report-scan.ts    patterns + scanCode (grep-grade smell/security hits)
 //   report-git.ts     git activity (churn, authors, commit quality)
 //   report-collect.ts collectors + collectAudit orchestrator

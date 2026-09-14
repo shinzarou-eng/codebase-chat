@@ -308,7 +308,7 @@ const TOOL_BUILDERS: Record<string, (o: Required<Pick<ToolPromptOptions, 'contex
 
 /**
  * Assemble the full LLM prompt (context + persona + mandatory sections +
- * ASCII banner + citation rules) for a codebase_* tool — the same text the
+ * ASCII banner + citation rules) for a codebase_* tool - the same text the
  * DeepSeek Harness plugin sends, so MCP clients and the CLI get identical
  * reports. Unknown tool names throw.
  */

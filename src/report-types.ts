@@ -1,4 +1,4 @@
-// Shared types for the deterministic report — leaf module so report.ts and
+// Shared types for the deterministic report - leaf module so report.ts and
 // recommendations.ts don't import each other.
 import type { CodeIndex } from './types.js';
 import type { HealthReport, ImportGraph } from './analysis.js';
@@ -17,7 +17,7 @@ export interface AuditFinding {
   message: string;
 }
 
-/** Everything the deterministic audit computes — collectAudit output, consumed
+/** Everything the deterministic audit computes - collectAudit output, consumed
  *  by renderAuditMd, auditFindings, baselines and --check. */
 export interface AuditData {
   index: CodeIndex;

@@ -1,4 +1,4 @@
-// Check history — one JSON line per --check run in
+// Check history - one JSON line per --check run in
 // .codebase-chat/history.jsonl. Local audit trail: verdict and score over
 // time, so you can see whether the project is actually getting better.
 import { appendFile, mkdir, readFile } from 'node:fs/promises';

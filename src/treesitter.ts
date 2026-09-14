@@ -159,7 +159,7 @@ async function ensureLanguage(name: string): Promise<Parser.Language | null> {
 
 /**
  * Make sure the grammar for `ext` is loaded (if the extension is supported).
- * Safe to call per file — repeated calls are cached.
+ * Safe to call per file - repeated calls are cached.
  */
 export async function ensureTreeSitterForExt(ext: string): Promise<boolean> {
   const name = GRAMMAR_BY_EXT[ext.toLowerCase()];
@@ -168,7 +168,7 @@ export async function ensureTreeSitterForExt(ext: string): Promise<boolean> {
   return (await ensureLanguage(name)) != null;
 }
 
-/** Release the WASM parser — call before process exit to avoid libuv asserts. */
+/** Release the WASM parser - call before process exit to avoid libuv asserts. */
 export function disposeTreeSitter(): void {
   try { parser?.delete(); } catch { /* best effort */ }
   parser = null;
@@ -240,7 +240,7 @@ export function extractWithTreeSitter(ext: string, relPath: string, content: str
             if (MEMBER_TYPES.has(member.type)) {
               chunks.push(toChunk(member, 'method', relPath, content, nodeName(member)));
             } else if (declTypes[member.type]) {
-              // Nested decls (e.g. enum inside class) — keep them too.
+              // Nested decls (e.g. enum inside class) - keep them too.
               handle(member);
             }
           }

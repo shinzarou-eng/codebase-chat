@@ -1,4 +1,4 @@
-// --doctor — installation & environment diagnostic. Read-only: never prints
+// --doctor - installation & environment diagnostic. Read-only: never prints
 // secret values, only presence/absence.
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
@@ -85,7 +85,7 @@ export async function runDoctor(projectPath: string, lang: 'fr' | 'en'): Promise
     add('Config', 'ok', `${en ? 'no' : 'pas de'} ${CONFIG_FILE} (${en ? 'defaults' : 'défauts'})`);
   }
 
-  // LLM — presence only, never values
+  // LLM - presence only, never values
   const model = process.env.CODEBASE_MODEL || 'deepseek-chat';
   const hasKey = !!(process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY);
   const base = process.env.OPENAI_BASE_URL || process.env.DEEPSEEK_BASE_URL;
@@ -95,7 +95,7 @@ export async function runDoctor(projectPath: string, lang: 'fr' | 'en'): Promise
       ? `${en ? 'API key set' : 'clé API présente'} · model \`${model}\`${mp ? '' : (en ? ' (unknown pricing)' : ' (prix inconnu)')}${base ? ' · custom base URL' : ''}`
       : `${en ? 'no API key — prompt-only mode (--no-llm)' : 'pas de clé API — mode prompt-only (--no-llm)'}`);
 
-  // Embeddings — probing would download the model; report opt-in only
+  // Embeddings - probing would download the model; report opt-in only
   add('Embeddings', 'ok', en ? 'optional — enable with --embed' : 'optionnel — activer avec --embed');
 
   const ts = await initTreeSitter();

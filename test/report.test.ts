@@ -1,5 +1,5 @@
 // report.ts is the riskiest file in the project (highest churn × complexity,
-// previously untested) — this suite locks collectAudit + renderAuditMd on a
+// previously untested) - this suite locks collectAudit + renderAuditMd on a
 // fixture repo with deliberate defects, plus output determinism.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
@@ -195,11 +195,11 @@ describe('known traps', () => {
         '',
       ].join('\n'));
       const d = await collectAudit(dir);
-      // `use: any` in a comment is not an `any` type — but the real one counts.
+      // `use: any` in a comment is not an `any` type - but the real one counts.
       const anyHits = (d.smells.any ?? []).filter(h => h.file === 'src/c.ts');
       expect(anyHits).toHaveLength(1);
       expect(anyHits[0].line).toBe(3);
-      // `todo` is comment-based — the marker is still detected.
+      // `todo` is comment-based - the marker is still detected.
       expect((d.smells.todo ?? []).filter(h => h.file === 'src/c.ts')).toHaveLength(1);
     } finally { cleanup(); }
   });

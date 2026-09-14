@@ -59,7 +59,7 @@ export interface ContextOptions {
   instruction?: string;
   /** Enable local semantic embeddings for retrieval */
   embed?: boolean;
-  /** Git ref (branch/tag/SHA) — scope retrieval to files changed vs this ref */
+  /** Git ref (branch/tag/SHA) - scope retrieval to files changed vs this ref */
   diff?: string;
 }
 
@@ -70,6 +70,6 @@ export interface ContextResult {
   tokenCount: number;
   /** Project-relative files in scope when `diff` was requested */
   diffFiles?: string[];
-  /** True when a searchQuery matched no code chunk — context holds the tree only */
+  /** True when a searchQuery matched no code chunk - context holds the tree only */
   noMatch?: boolean;
 }

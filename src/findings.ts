@@ -1,4 +1,4 @@
-// Structured findings — flat, id-stable list derived from AuditData so
+// Structured findings - flat, id-stable list derived from AuditData so
 // baselines and --check can diff "what appeared / what was fixed" without
 // parsing markdown. Severities are fixed per rule:
 //   Critique : sensitive file, sec:secret
@@ -13,7 +13,7 @@ function fp(sample: string): string {
   return sample.toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 60);
 }
 
-/** Flat list of every finding in the audit — ids never contain line numbers. */
+/** Flat list of every finding in the audit - ids never contain line numbers. */
 export function auditFindings(data: AuditData, lang: 'fr' | 'en'): AuditFinding[] {
   const en = lang === 'en';
   const out: AuditFinding[] = [];

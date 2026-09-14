@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Standalone MCP server for codebase-chat.</strong><br>
-  Works with Windsurf, Cursor, Claude, and any MCP-compatible IDE — without DeepSeek Harness.
+  Works with Windsurf, Cursor, Claude, and any MCP-compatible IDE - without DeepSeek Harness.
 </p>
 
 <p align="center">
@@ -21,10 +21,10 @@
 
 This package exposes the same codebase intelligence tools as the main `codebase-chat` package, but as a standalone **Model Context Protocol (MCP)** server. It scans a local project, builds a sourced prompt, and either:
 
-- returns the prompt to the **host model** (Cursor, Claude, Windsurf…) — the default when no API key is configured, or with `promptOnly: true`; or
+- returns the prompt to the **host model** (Cursor, Claude, Windsurf…) - the default when no API key is configured, or with `promptOnly: true`; or
 - calls a DeepSeek / OpenAI-compatible API itself when `DEEPSEEK_API_KEY` or `OPENAI_API_KEY` is set.
 
-Deterministic tools (`codebase_health`, `codebase_impact`, `codebase_deep_audit`, `codebase_check`, `codebase_doctor`, `codebase_ignore`, `codebase_fix`) need no model at all — same input, same output, fully offline.
+Deterministic tools (`codebase_health`, `codebase_impact`, `codebase_deep_audit`, `codebase_check`, `codebase_doctor`, `codebase_ignore`, `codebase_fix`) need no model at all - same input, same output, fully offline.
 
 In prompt mode your code never leaves your machine at all.
 
@@ -33,7 +33,7 @@ In prompt mode your code never leaves your machine at all.
 ## Prerequisites
 
 - Node.js >= 20
-- Optional: a DeepSeek / OpenAI-compatible API key (`DEEPSEEK_API_KEY` or `OPENAI_API_KEY`) — only needed if you want the server to call the LLM itself. Without a key, tools return the built prompt for the host model.
+- Optional: a DeepSeek / OpenAI-compatible API key (`DEEPSEEK_API_KEY` or `OPENAI_API_KEY`) - only needed if you want the server to call the LLM itself. Without a key, tools return the built prompt for the host model.
 
 ---
 
@@ -52,7 +52,7 @@ npx codebase-chat-mcp
 npx codebase-chat-mcp setup
 ```
 
-The wizard detects installed MCP clients (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Zed, Gemini CLI, Kiro, Cline, Roo Code), lets you pick which ones to configure, asks how you want answers (prompt-only host model or direct API key), and writes the `codebase-chat` server entry for you — preserving your existing `mcpServers` and backing up each config file (`.bak`). It always prints a manual entry at the end for any other MCP client. No API key needed for prompt-only mode.
+The wizard detects installed MCP clients (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Zed, Gemini CLI, Kiro, Cline, Roo Code), lets you pick which ones to configure, asks how you want answers (prompt-only host model or direct API key), and writes the `codebase-chat` server entry for you - preserving your existing `mcpServers` and backing up each config file (`.bak`). It always prints a manual entry at the end for any other MCP client. No API key needed for prompt-only mode.
 
 ### From source
 
@@ -143,15 +143,15 @@ On Windows with a local clone you can also use the absolute path:
 | `codebase_tasks` | Generate a `TASKS.md` plan |
 | `codebase_player` | UX / playthrough brief |
 | `codebase_crea` | Creative / marketing ideas from the code |
-| `codebase_health` | **Deterministic** static analysis — cycles, dead code, duplication, complexity, health score. No LLM needed |
-| `codebase_impact` | **Deterministic** blast-radius analysis — which files transitively depend on a target (`file`, required). No LLM needed |
-| `codebase_deep_audit` | **Deterministic** full audit — git churn & bus factor, churn × complexity risk, dependency integrity, per-function complexity, secrets, env coverage, README/config hygiene. ~30 analyses, all cited `file:line`. No LLM needed. Pass `ui: true` to also get a `ui://` HTML dashboard resource (MCP-UI clients) |
-| `codebase_check` | **Deterministic** verify your changes vs a git ref — blast radius, complexity, findings, delta vs the committed baseline. No LLM needed |
-| `codebase_doctor` | **Deterministic** installation & environment diagnostic — node version, index cache, LLM keys, tree-sitter, baseline staleness, MCP client integrations. No LLM needed |
-| `codebase_ignore` | **Deterministic** silence a finding with a justification (`.codebase-chat/ignores.json` — commit it). `id` accepts a full id or a prefix; `action` = add / remove / list |
-| `codebase_fix` | **Deterministic** mechanical repairs where the fix is unambiguous — undocumented env vars, dead deps, unused exports, console/debugger lines. Each fix re-checks itself. `dry: true` previews without writing |
-| `codebase_check` | **Deterministic** change verification — blast radius, complexity and findings on files changed vs `base` (default `HEAD`), diffed against `.codebase-chat/baseline.json`. No LLM needed |
-| `codebase_doctor` | **Deterministic** install diagnostic — node, index cache, LLM key presence, tree-sitter, baseline staleness, MCP client integrations. No LLM needed |
+| `codebase_health` | **Deterministic** static analysis - cycles, dead code, duplication, complexity, health score. No LLM needed |
+| `codebase_impact` | **Deterministic** blast-radius analysis - which files transitively depend on a target (`file`, required). No LLM needed |
+| `codebase_deep_audit` | **Deterministic** full audit - git churn & bus factor, churn × complexity risk, dependency integrity, per-function complexity, secrets, env coverage, README/config hygiene. ~30 analyses, all cited `file:line`. No LLM needed. Pass `ui: true` to also get a `ui://` HTML dashboard resource (MCP-UI clients) |
+| `codebase_check` | **Deterministic** verify your changes vs a git ref - blast radius, complexity, findings, delta vs the committed baseline. No LLM needed |
+| `codebase_doctor` | **Deterministic** installation & environment diagnostic - node version, index cache, LLM keys, tree-sitter, baseline staleness, MCP client integrations. No LLM needed |
+| `codebase_ignore` | **Deterministic** silence a finding with a justification (`.codebase-chat/ignores.json` - commit it). `id` accepts a full id or a prefix; `action` = add / remove / list |
+| `codebase_fix` | **Deterministic** mechanical repairs where the fix is unambiguous - undocumented env vars, dead deps, unused exports, console/debugger lines. Each fix re-checks itself. `dry: true` previews without writing |
+| `codebase_check` | **Deterministic** change verification - blast radius, complexity and findings on files changed vs `base` (default `HEAD`), diffed against `.codebase-chat/baseline.json`. No LLM needed |
+| `codebase_doctor` | **Deterministic** install diagnostic - node, index cache, LLM key presence, tree-sitter, baseline staleness, MCP client integrations. No LLM needed |
 
 All tools accept:
 
@@ -159,8 +159,8 @@ All tools accept:
 - `lang` (string, `fr` or `en`, default: `fr`)
 - `focus` / `query` (string, optional)
 - `embed` (boolean, local semantic embeddings for better retrieval)
-- `promptOnly` (boolean — return the built prompt for the host model instead of calling the LLM)
-- `diff` (string, git ref e.g. `main`, `HEAD~5` — scopes retrieval and `codebase_health` to files changed vs that ref, including uncommitted and untracked files)
+- `promptOnly` (boolean - return the built prompt for the host model instead of calling the LLM)
+- `diff` (string, git ref e.g. `main`, `HEAD~5` - scopes retrieval and `codebase_health` to files changed vs that ref, including uncommitted and untracked files)
 
 ---
 
@@ -182,4 +182,4 @@ By default the server uses `stdio` (MCP standard). SSE/HTTP transport can be add
 
 ## License
 
-[MIT](https://github.com/shinzarou-eng/codebase-chat/blob/main/LICENSE) — Built and maintained by [shinzarou-eng](https://github.com/shinzarou-eng).
+[MIT](https://github.com/shinzarou-eng/codebase-chat/blob/main/LICENSE) - Built and maintained by [shinzarou-eng](https://github.com/shinzarou-eng).

@@ -1,4 +1,4 @@
-// SARIF 2.1.0 export — the CheckReport's actionable findings (new or escalated
+// SARIF 2.1.0 export - the CheckReport's actionable findings (new or escalated
 // since the baseline, on changed files or file-less, never ignored) rendered in
 // the format GitHub code scanning / `codeql-action/upload-sarif` understands.
 import type { CheckReport } from './check.js';

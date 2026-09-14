@@ -5,7 +5,7 @@ export const CODE_EXTS = new Set(['.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx'])
 const ENTRY_BASENAMES = new Set(['index', 'main', 'app', 'cli', 'server', 'bin', 'mod']);
 export const SKIP_EXTS = new Set(['.d.ts', '.test.ts', '.test.js', '.spec.ts', '.spec.js', '.config.js', '.config.ts', '.config.mjs']);
 
-/** Test/fixture path detection — dir segments and filename conventions only,
+/** Test/fixture path detection - dir segments and filename conventions only,
  *  never a bare substring (`src/latest.ts` is NOT a test file). */
 export function isTestPath(rel: string): boolean {
   const f = rel.replace(/\\/g, '/');

@@ -29,7 +29,7 @@ export function findCycles(edges: ImportEdge[]): Cycle[] {
 
   for (const root of nodes) {
     if (index.has(root)) continue;
-    // Iterative DFS — no recursion limit on deep graphs.
+    // Iterative DFS - no recursion limit on deep graphs.
     const work: [string, number][] = [[root, 0]];
     while (work.length) {
       const top = work[work.length - 1];
@@ -87,7 +87,7 @@ export async function collectImportGraph(projectPath: string): Promise<ImportGra
     if (!CODE_EXTS.has(ext) || SKIP_EXTS.has(ext) || rel.includes('.min.')) continue;
     candidates.push(rel);
   }
-  // Reads are I/O-bound — run them in parallel, order preserved.
+  // Reads are I/O-bound - run them in parallel, order preserved.
   const texts = await Promise.all(candidates.map(rel => safeReadText(join(abs, rel))));
   for (let i = 0; i < candidates.length; i++) {
     const text = texts[i];
@@ -108,7 +108,7 @@ export async function collectImportGraph(projectPath: string): Promise<ImportGra
   return { abs, codeFiles, fileTexts, edges, inDegree };
 }
 
-/** Content signature of the walked file set — stats only, zero file reads.
+/** Content signature of the walked file set - stats only, zero file reads.
  *  Used to memoize analyses: same signature ⇒ same files ⇒ same result. */
 export async function projectSignature(abs: string): Promise<string> {
   const walk = await getWalkOptions(abs);

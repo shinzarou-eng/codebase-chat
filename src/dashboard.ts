@@ -1,4 +1,4 @@
-// Local dashboard app — a real UI so users never need the terminal.
+// Local dashboard app - a real UI so users never need the terminal.
 // Serves an SPA shell + JSON API that runs the same engines as the CLI.
 
 import { createServer, type Server } from 'node:http';
@@ -26,7 +26,7 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 
 const PROMPT_MODES = ['intelligence', 'audit', 'report', 'ceo', 'tasks', 'player', 'crea', 'chat', 'search', 'explain', 'refactor', 'git', 'build'];
 
-// Inline SVG icons — Lucide-style strokes, inherit currentColor.
+// Inline SVG icons - Lucide-style strokes, inherit currentColor.
 const ic = (p: string, size = 15) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 const IC = {
   audit: ic('<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>'),
@@ -297,7 +297,7 @@ async function call(url, st) {
   } catch (e) { if (my !== seq) return; out.innerHTML = '<div class="err">' + escH(e.message) + '</div>'; }
 }
 // Check view: per-finding actions (open in editor, ignore) + unignore + history.
-// Rows are zipped with the structured ids the API sends — same order as the
+// Rows are zipped with the structured ids the API sends - same order as the
 // markdown tables they were rendered from.
 function enhanceCheck(j) {
   const absUrl = 'vscode://file/' + j.projAbs + '/';
@@ -389,7 +389,7 @@ document.addEventListener('click', e => {
   const a = e.target.closest('a.fref');
   if (a && a.dataset.f) { e.preventDefault(); runImpact(a.dataset.f); }
 });
-// Turn <code>src/x.ts</code> mentions into impact links (code files only — impact needs the import graph)
+// Turn <code>src/x.ts</code> mentions into impact links (code files only - impact needs the import graph)
 const CODE_RE = /\\.(js|jsx|mjs|cjs|ts|tsx)$/i;
 const SKIP_RE = /\\.(d\\.ts|test\\.ts|test\\.js|spec\\.ts|spec\\.js|config\\.js|config\\.ts|config\\.mjs)$/i;
 function linkify() {
@@ -430,7 +430,7 @@ document.getElementById('igo').onclick = () => {
   const f = document.getElementById('ifile').value.trim();
   if (f) runImpact(f);
 };
-// Ask card — the single prompt builder (mode select lives inside it)
+// Ask card - the single prompt builder (mode select lives inside it)
 document.getElementById('askBtn').onclick = async () => {
   const q = document.getElementById('ask').value.trim();
   if (!q) return;
@@ -597,7 +597,7 @@ function spy() {
   }, { rootMargin: '-15% 0px -75% 0px' });
   document.querySelectorAll('#out section[id]').forEach(s => observer.observe(s));
 }
-// Restore view/file/project from the query string — hash stays for anchors.
+// Restore view/file/project from the query string - hash stays for anchors.
 function route() {
   const p = new URLSearchParams(location.search);
   const pr = (p.get('project') || '').trim();

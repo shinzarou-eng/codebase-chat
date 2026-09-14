@@ -45,7 +45,7 @@ function lexicalScore(index: CodeIndex, query: string): Map<string, number> {
         const contentHit = chunk.content.toLowerCase().includes(term);
         const nameHit = chunk.name ? tokenizeQuery(chunk.name).includes(term) : false;
         // File-level term counts only matter for chunks that actually mention
-        // the term — otherwise every chunk in a matched file inherits the score.
+        // the term - otherwise every chunk in a matched file inherits the score.
         if (!contentHit && !nameHit) continue;
         const bonus =
           (nameHit ? 4 : 0) +

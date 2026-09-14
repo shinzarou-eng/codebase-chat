@@ -5,7 +5,7 @@ export type ConfigLang = 'fr' | 'en';
 
 /**
  * Per-project settings read from `.codebase-chat.json` at the project root.
- * Every field is optional — unset fields fall back to built-in defaults.
+ * Every field is optional - unset fields fall back to built-in defaults.
  */
 export interface ProjectConfig {
   /** Default output language when the caller does not pass `lang` */
@@ -55,7 +55,7 @@ export async function loadProjectConfig(absProject: string): Promise<ProjectConf
   try {
     cfg = sanitize(JSON.parse(await readFile(join(absProject, CONFIG_FILE), 'utf8')));
   } catch {
-    // missing or malformed config file — keep defaults
+    // missing or malformed config file - keep defaults
   }
   configCache.set(absProject, cfg);
   return cfg;

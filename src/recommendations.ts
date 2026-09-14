@@ -1,4 +1,4 @@
-// Severity-ranked recommendations for the deterministic report — pure function,
+// Severity-ranked recommendations for the deterministic report - pure function,
 // every finding already collected by report.ts scanners. Extracted so it can be
 // unit-tested without running the whole audit.
 import type { HealthReport } from './analysis.js';
@@ -10,7 +10,7 @@ export interface RecoExtras {
   sensitive: string[]; envUndoc: string[]; deadDeps: string[]; tsStrict: boolean | null;
   untestedRisk: string[]; brokenEntries: string[]; deepRel: number; deepNest: string[];
   commitConv: number | null; missingDeps: string[]; lockDrift: string[];
-  /** True hit counts per sink kind (uncapped) — samples in `sec` are per-file capped */
+  /** True hit counts per sink kind (uncapped) - samples in `sec` are per-file capped */
   secTotals?: Record<string, number>;
 }
 
@@ -53,7 +53,7 @@ export function recommendations(r: HealthReport, hasTests: boolean, smells: Smel
       : all.length;
     const fileCount = new Set(all.map(x => x.file)).size;
     out.push({
-      // innerHTML alone is a review item, not an alarm — eval/exec can execute
+      // innerHTML alone is a review item, not an alarm - eval/exec can execute
       // injected code directly, innerHTML needs an unescaped injection surface.
       severity: onlyMarkup ? 'Moyenne' : 'Élevée',
       text: en
@@ -116,7 +116,7 @@ export function recommendations(r: HealthReport, hasTests: boolean, smells: Smel
     const solo = [...git.fileAuthors.entries()].filter(([, a]) => a.size === 1).length;
     const loneAuthor = git.authors.size <= 1;
     if (soloHubs.length || (git.churn.size && solo / git.fileAuthors.size > 0.7)) out.push({
-      // One author total: "spread knowledge" is impossible — document instead.
+      // One author total: "spread knowledge" is impossible - document instead.
       severity: loneAuthor ? 'Faible' : 'Moyenne',
       text: loneAuthor
         ? (en

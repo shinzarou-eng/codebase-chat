@@ -4,14 +4,14 @@ Need help with `codebase-chat`? Here are the best ways to get support.
 
 ## Documentation
 
-- [README](./README.md) — quick start, install, commands, FAQ
-- [GitHub Pages](https://shinzarou-eng.github.io/codebase-chat) — interactive landing page
-- [CHANGELOG](./CHANGELOG.md) — release history
+- [README](./README.md) - quick start, install, commands, FAQ
+- [GitHub Pages](https://shinzarou-eng.github.io/codebase-chat) - interactive landing page
+- [CHANGELOG](./CHANGELOG.md) - release history
 
 ## Community
 
-- [GitHub Discussions](https://github.com/shinzarou-eng/codebase-chat/discussions) — ask questions and share ideas
-- [GitHub Issues](https://github.com/shinzarou-eng/codebase-chat/issues) — report bugs or request features
+- [GitHub Discussions](https://github.com/shinzarou-eng/codebase-chat/discussions) - ask questions and share ideas
+- [GitHub Issues](https://github.com/shinzarou-eng/codebase-chat/issues) - report bugs or request features
 
 ## Commercial support
 

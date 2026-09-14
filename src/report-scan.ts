@@ -1,4 +1,4 @@
-// Deterministic smell & security scan — grep-grade evidence, no guessing.
+// Deterministic smell & security scan - grep-grade evidence, no guessing.
 // Every finding is a real file:line hit.
 import { insideString, isSkippablePath, lineStartsInString } from './analysis.js';
 import type { SmellScan } from './report-types.js';
@@ -17,7 +17,7 @@ export const SMELL_PATS: [string, RegExp][] = [
 export const SEC_PATS: [string, RegExp][] = [
   ['secret', /(?:api[_-]?key|secret|passwd|password|token|private[_-]?key)\s*[:=]\s*['"`][A-Za-z0-9_\/+\-.]{8,}['"`]/i],
   ['eval', /\beval\s*\(|new\s+Function\s*\(/],
-  // Only shell-string execution is a risky sink — exec/execSync take a shell
+  // Only shell-string execution is a risky sink - exec/execSync take a shell
   // string, and spawn*/execFile* with `shell: true` opt into a shell too.
   // spawn(cmd, args[]) and execFile are the safe array-arg APIs.
   ['exec', /(?<![.\w$])exec(?:Sync)?\s*\((?!\?)|shell\s*:\s*true/],
@@ -33,7 +33,7 @@ export function scanCode(
   for (const [file, text] of fileTexts) {
     if (isSkippablePath(file)) continue; // tests legitimately console/TODO
     // CLI entry points and helper scripts print to stdout on purpose, and sync
-    // IO is fine there too — console.*/readFileSync are their interface.
+    // IO is fine there too - console.*/readFileSync are their interface.
     const isCli = /^#!/m.test(text) || /\bprocess\.argv\b/.test(text) || /(^|\/)scripts?\//.test(file);
     const lines = text.split('\n');
     const startsInStr = opts.skipStrings ? lineStartsInString(text) : [];
@@ -45,7 +45,7 @@ export function scanCode(
         const isComment = /^\/\//.test(line) || /^\* /.test(line) || /^\/\*/.test(line);
         // Comments mentioning `shell: true` or `eval(` are not sinks.
         if (opts.skipComments && isComment) continue;
-        // Smell rules live in code — a comment saying "use: any" is not an
+        // Smell rules live in code - a comment saying "use: any" is not an
         // `any` type. Only comment-based patterns (todo, tsIgnore) match there.
         if (isComment && opts.skipCommentsExcept && !opts.skipCommentsExcept.has(key)) continue;
         // Smell patterns inside string literals are prompt text / fixtures —

@@ -26,7 +26,7 @@ export type ImpactResult =
   | { ok: true; report: ImpactReport }
   | { ok: false; query: string; candidates: string[] };
 
-/** Rank a candidate path against the query — lower is better, -1 = no match. */
+/** Rank a candidate path against the query - lower is better, -1 = no match. */
 function matchRank(rel: string, q: string): number {
   if (rel === q) return 0;
   if (rel.endsWith(`/${q}`)) return 1;
@@ -50,7 +50,7 @@ function resolveTarget(codeFiles: string[], query: string): { target?: string; c
 
 /**
  * Blast-radius analysis: which files break if `query` changes. Reverse BFS on
- * the local import graph — deterministic, no LLM.
+ * the local import graph - deterministic, no LLM.
  * `query` may be `file#symbol` or a bare exported symbol name: the radius is
  * then scoped to the files that actually reference that symbol.
  */
@@ -77,7 +77,7 @@ async function fileImpact(g: ImportGraph, query: string, target: string): Promis
     rev.get(e.to)!.push(e.from);
   }
 
-  // Reverse BFS — a path coming back to the target reveals a cycle.
+  // Reverse BFS - a path coming back to the target reveals a cycle.
   let inCycle = false;
   const queue: string[] = [target];
   let head = 0;

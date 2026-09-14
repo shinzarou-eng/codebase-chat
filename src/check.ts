@@ -1,4 +1,4 @@
-// --check — "verify my changes": blast radius + findings on the files changed
+// --check - "verify my changes": blast radius + findings on the files changed
 // vs a git ref, diffed against the committed baseline when one exists.
 import { basename } from 'node:path';
 import { execFile } from 'node:child_process';
@@ -20,7 +20,7 @@ export interface CheckFile {
   impact?: ImpactReport;
   complexity?: number;
   hasTest: boolean;
-  /** Test files worth running for this change — dedicated spec + importers. */
+  /** Test files worth running for this change - dedicated spec + importers. */
   tests: string[];
   findings: AuditFinding[];
 }
@@ -35,11 +35,11 @@ export interface CheckReport {
   baselineScore?: number;
   diff: ReturnType<typeof diffFindings>;
   hasBaseline: boolean;
-  /** Silenced findings still present — listed, never counted in the verdict. */
+  /** Silenced findings still present - listed, never counted in the verdict. */
   ignored: AuditFinding[];
   verdict: 'red' | 'yellow' | 'green';
   reasons: string[];
-  /** Set when the diff could not be computed (bad ref, not a git repo) — the
+  /** Set when the diff could not be computed (bad ref, not a git repo) - the
    *  check could not verify anything, so the verdict is never green. */
   scopeError?: string;
 }
@@ -66,7 +66,7 @@ export async function runCheck(projectPath: string, opts: { base?: string; lang:
     complexityByFile.set(h.file, Math.max(complexityByFile.get(h.file) ?? 0, h.score));
   }
 
-  // Test files that directly import a changed file — worth running.
+  // Test files that directly import a changed file - worth running.
   const testsByFile = new Map<string, Set<string>>();
   for (const e of data.graph.edges) {
     if (!isTestFile(e.from)) continue;
@@ -100,7 +100,7 @@ export async function runCheck(projectPath: string, opts: { base?: string; lang:
   const diff = diffFindings(baseline, allFindings);
   const ignoredIds = new Set(ignored.map(f => f.id));
   // Added findings only matter for the verdict when they belong to a changed
-  // file — or are file-less (deps/config findings caused by the change).
+  // file - or are file-less (deps/config findings caused by the change).
   const relevant = (baseline
     ? [...diff.added, ...diff.escalated].filter(f => !f.file || changed.includes(f.file))
     : files.flatMap(f => f.findings)
@@ -109,9 +109,9 @@ export async function runCheck(projectPath: string, opts: { base?: string; lang:
   const maxRisk = files.reduce((m, f) => Math.max(m, riskOf(f)), -1);
   const scopeError = scope.ok ? undefined : (scope.error ?? 'diff failed');
   // Fail closed: when the change set cannot be established (bad ref, not a
-  // git repo), the check verified nothing — green would be a lie.
+  // git repo), the check verified nothing - green would be a lie.
   // Impact is review information, not a defect: touching a hub file is worth
-  // a careful look (yellow), but it must not block — otherwise every commit to
+  // a careful look (yellow), but it must not block - otherwise every commit to
   // a core file is red and the gate gets bypassed with --no-verify. Red is
   // reserved for what the change *introduces* (Élevée+ findings) or fails to
   // establish (broken diff).

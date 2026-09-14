@@ -1,6 +1,6 @@
-// Ignores — findings deliberately silenced with a justification, so --check
+// Ignores - findings deliberately silenced with a justification, so --check
 // only reports what's new or still actionable. Stored in the project at
-// .codebase-chat/ignores.json — meant to be committed (decisions are shared).
+// .codebase-chat/ignores.json - meant to be committed (decisions are shared).
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type { AuditFinding } from './report-types.js';
@@ -8,7 +8,7 @@ import type { AuditFinding } from './report-types.js';
 export const IGNORES_REL = '.codebase-chat/ignores.json';
 
 export interface Ignore {
-  /** Finding id or prefix — `sec:innerHTML:src/x.ts` covers every innerHTML finding in that file. */
+  /** Finding id or prefix - `sec:innerHTML:src/x.ts` covers every innerHTML finding in that file. */
   id: string;
   reason: string;
   createdAt: string;
@@ -46,7 +46,7 @@ export async function removeIgnore(absProject: string, id: string): Promise<bool
   return true;
 }
 
-/** Exact id OR prefix key — `sec:innerHTML:src/x.ts` silences every innerHTML in that file. */
+/** Exact id OR prefix key - `sec:innerHTML:src/x.ts` silences every innerHTML in that file. */
 export function isIgnored(id: string, ignores: Ignore[]): boolean {
   return ignores.some(i => id === i.id || id.startsWith(i.id + ':'));
 }

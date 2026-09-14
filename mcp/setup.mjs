@@ -266,7 +266,7 @@ function installDevinSkill(home, t) {
 }
 
 // Minimal JSON-RPC handshake over stdio: initialize + tools/list. Proves the
-// server actually starts — catches broken installs before the IDE does.
+// server actually starts - catches broken installs before the IDE does.
 async function checkServer(timeoutMs = 20_000) {
   const { spawn } = await import("node:child_process");
   const { fileURLToPath } = await import("node:url");

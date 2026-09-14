@@ -17,7 +17,7 @@ const ANALYSIS_TTL_MS = 10_000;
 const healthCache = new Map<string, { sig: string; at: number; report: HealthReport }>();
 
 export async function analyzeProject(projectPath: string, opts: AnalyzeOptions = {}): Promise<HealthReport> {
-  // Scoped runs (--diff) are rarer and cheaper — skip the memo.
+  // Scoped runs (--diff) are rarer and cheaper - skip the memo.
   if (opts.files) {
     return analyzeGraph(await collectImportGraph(projectPath), opts);
   }
@@ -40,7 +40,7 @@ export async function analyzeGraph(graph: ImportGraph, opts: AnalyzeOptions = {}
   let pkg: Record<string, any> = {};
   try { pkg = JSON.parse(await readFile(join(abs, 'package.json'), 'utf8')); } catch {}
 
-  // Full-graph cycles — when scoped, keep only cycles touching a changed file.
+  // Full-graph cycles - when scoped, keep only cycles touching a changed file.
   const cycles = findCycles(edges)
     .filter(c => !scope || c.path.some(node => scope.has(node)));
 
@@ -50,7 +50,7 @@ export async function analyzeGraph(graph: ImportGraph, opts: AnalyzeOptions = {}
 
   // Unused exports: name not imported and not referenced elsewhere.
   // A name is "used" when referenced on any line other than its own export
-  // declaration — e.g. a type appearing in another export's signature, or a
+  // declaration - e.g. a type appearing in another export's signature, or a
   // helper consumed by the module's public functions.
   const IDENT_RE = /[A-Za-z_$][\w$]*/g;
   const identifiersByFile = new Map<string, Set<string>>();
@@ -61,7 +61,7 @@ export async function analyzeGraph(graph: ImportGraph, opts: AnalyzeOptions = {}
   }
   const unusedExports: UnusedExport[] = [];
   for (const rel of scopedFiles) {
-    if (isTestPath(rel)) continue; // test files export fixtures — executed, not imported
+    if (isTestPath(rel)) continue; // test files export fixtures - executed, not imported
     const ownLines = idsPerLineByFile.get(rel)!;
     const text = fileTexts.get(rel)!;
     const textLines = text.split('\n');

@@ -9,7 +9,7 @@ import { makeRepo } from './helpers';
 afterEach(() => vi.unstubAllEnvs());
 
 // One fixture carrying every fixable smell: undocumented env var, dead dep,
-// unused exports, standalone console/debugger lines — plus a console line with
+// unused exports, standalone console/debugger lines - plus a console line with
 // trailing code that must NOT be deleted.
 const repo = () => makeRepo({
   'src/app.ts': [

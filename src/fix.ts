@@ -1,4 +1,4 @@
-// Auto-fix — mechanical repairs for the rules where the correct change is
+// Auto-fix - mechanical repairs for the rules where the correct change is
 // unambiguous. Every fix re-checks: the finding disappears from --check, which
 // is the proof the repair worked. Nothing here rewrites logic.
 import { readFile, writeFile } from 'node:fs/promises';
@@ -73,7 +73,7 @@ export function planFixes(findings: AuditFinding[], lang: 'fr' | 'en' = 'fr'): F
           const p = join(abs, file);
           const lines = (await readFile(p, 'utf8')).split('\n');
           const decl = new RegExp(`^\\s*export\\s+(?:declare\\s+)?(?:async\\s+)?(?:const|let|var|function|class|interface|type|enum)\\s+${escRe(name)}\\b`);
-          // Fixes apply sequentially — earlier deletions shift later lines, so
+          // Fixes apply sequentially - earlier deletions shift later lines, so
           // pick the declaration closest to the recorded line, not the exact one.
           const hits = lines.map((l, j) => decl.test(l) ? j : -1).filter(j => j >= 0);
           if (!hits.length) return false;
@@ -105,7 +105,7 @@ export function planFixes(findings: AuditFinding[], lang: 'fr' | 'en' = 'fr'): F
     if (m && f.file && f.line) {
       const kind = m[1];
       const file = f.file, line = f.line;
-      // The finding message is `sample` — the exact flagged line. Only a
+      // The finding message is `sample` - the exact flagged line. Only a
       // standalone line whose text equals the sample may be deleted: never a
       // lookalike that happened to be nearby (scanCode caps samples, so
       // unflagged console lines exist).

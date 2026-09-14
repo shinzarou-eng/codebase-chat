@@ -1,4 +1,4 @@
-// Report strings — FR/EN label tables for renderAuditMd. Pure data.
+// Report strings - FR/EN label tables for renderAuditMd. Pure data.
 
 export function auditStrings(lang: 'fr' | 'en') {
   return lang === 'en'

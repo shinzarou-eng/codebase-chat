@@ -1,4 +1,4 @@
-// Git activity — local, deterministic, no network.
+// Git activity - local, deterministic, no network.
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { GitStats } from './report-types.js';

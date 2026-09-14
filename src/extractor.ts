@@ -149,7 +149,7 @@ function extractTopLevelWithBabel(relPath: string, content: string): CodeChunk[]
 }
 
 /**
- * Gap-filling between named chunks lives in merge-gaps.ts — it is shared
+ * Gap-filling between named chunks lives in merge-gaps.ts - it is shared
  * by the Babel and tree-sitter extraction paths.
  */
 

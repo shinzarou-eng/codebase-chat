@@ -1,4 +1,4 @@
-// Project statistics — shared between `--stats` (CLI) and the `--ui` dashboard.
+// Project statistics - shared between `--stats` (CLI) and the `--ui` dashboard.
 // o200k comes from the index (per-chunk counts), cl100k is re-encoded exactly;
 // other model families are estimated ratios of cl100k on code-heavy text.
 

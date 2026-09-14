@@ -84,7 +84,7 @@ export async function buildContext(options: ContextOptions): Promise<ContextResu
   const labels = getLabels(lang);
   const index = await getIndex(absProject);
 
-  // --diff <base> — restrict retrieval to files changed vs the git ref.
+  // --diff <base> - restrict retrieval to files changed vs the git ref.
   // The inverted index needs no rebuild: postings for out-of-scope files are
   // skipped by the index.files lookup during scoring.
   let scopedIndex = index;
@@ -133,7 +133,7 @@ export async function buildContext(options: ContextOptions): Promise<ContextResu
       );
       selectedChunks = chunks;
     } else {
-      // Not a file path — treat it as a symbol/term and search instead of failing.
+      // Not a file path - treat it as a symbol/term and search instead of failing.
       const scored = await scoreChunks(scopedIndex, filePath, embed);
       const { chunks } = selectChunks(scored, bodyLimit, maxChunkTokens, { minScoreRatio: 0.1 });
       if (chunks.length === 0) throw new Error(`File not found: ${filePath}`);
@@ -151,7 +151,7 @@ export async function buildContext(options: ContextOptions): Promise<ContextResu
   }
 
   const constraints = await extractProductConstraints(absProject);
-  // Constraints also live in the head — cap them so a noisy README cannot
+  // Constraints also live in the head - cap them so a noisy README cannot
   // eat the whole budget either.
   const constraintsText = truncateToTokens(
     constraints.length
@@ -160,7 +160,7 @@ export async function buildContext(options: ContextOptions): Promise<ContextResu
     Math.max(80, Math.floor(maxTokens / 6)),
   );
 
-  // The file tree lives in the head — cap it so a large project cannot blow
+  // The file tree lives in the head - cap it so a large project cannot blow
   // the whole budget before a single chunk is emitted.
   const treeBudget = Math.max(150, Math.min(4000, Math.floor(maxTokens / 3)));
   const tree = truncateToTokens(index.tree, treeBudget);

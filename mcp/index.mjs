@@ -115,14 +115,14 @@ async function buildPrompt(name, args) {
       const report = await analyzeProject(absProject);
       staticSection = `\n\n== ${lang === "en" ? "STATIC ANALYSIS (deterministic)" : "ANALYSE STATIQUE (déterministe)"} ==\n${formatHealthReport(report, lang === "en" ? "en" : "fr")}`;
     } catch {
-      // Static analysis is best-effort — never block the prompt on it.
+      // Static analysis is best-effort - never block the prompt on it.
     }
   }
 
   const projectName = basename(await findProjectRoot(resolveProjectPath(base.project)));
   const query = base.query || base.searchQuery || "";
-  // Same rich prompt the DeepSeek Harness plugin sends — ASCII banner,
-  // persona, mandatory sections, citation rules — for identical reports.
+  // Same rich prompt the DeepSeek Harness plugin sends - ASCII banner,
+  // persona, mandatory sections, citation rules - for identical reports.
   const final = buildToolPrompt(name, {
     context: `${context}${staticSection}`,
     projectName,
@@ -189,7 +189,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   };
 });
 
-// Shared ignore logic — used by both tools/call and prompts/get.
+// Shared ignore logic - used by both tools/call and prompts/get.
 // A missing id means "list" (a prompt cannot reasonably require one).
 async function handleIgnore(project, args) {
   const abs = await findProjectRoot(project).catch(() => project);
@@ -210,7 +210,7 @@ async function handleIgnore(project, args) {
   return entry ? `Ignored \`${id}\` — ${reason} (.codebase-chat/ignores.json, commit it).` : `\`${id}\` is already ignored.`;
 }
 
-// Mechanical fixes — plan, optionally apply, then re-check so the caller sees
+// Mechanical fixes - plan, optionally apply, then re-check so the caller sees
 // the findings actually disappear. Ignored findings are never "repaired".
 async function handleFix(project, args) {
   const abs = await findProjectRoot(project).catch(() => project);
@@ -241,7 +241,7 @@ async function handleFix(project, args) {
   return text;
 }
 
-// MCP prompts — surface each tool as a user-invocable slash command
+// MCP prompts - surface each tool as a user-invocable slash command
 // (Claude Code: /mcp__codebase-chat-mcp__<name>).
 const ARG_DESC = {
   file: "File to analyze (relative path or name)",

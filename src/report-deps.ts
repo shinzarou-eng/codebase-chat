@@ -1,4 +1,4 @@
-// Env / dependencies / package-config collectors — file reads only, no graph.
+// Env / dependencies / package-config collectors - file reads only, no graph.
 import { access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isTestPath } from './analysis.js';
@@ -104,7 +104,7 @@ export function pkgRoot(spec: string): string {
 }
 
 /** All external package names imported in the codebase. `skipTests` excludes
- *  test/fixture files — their contents are often code samples in other languages
+ *  test/fixture files - their contents are often code samples in other languages
  *  (a Go import of the fmt package inside a string literal) that aren't real
  *  package imports. */
 export function importedPackages(fileTexts: Map<string, string>, skipTests = false): Set<string> {
@@ -117,14 +117,14 @@ export function importedPackages(fileTexts: Map<string, string>, skipTests = fal
   return imported;
 }
 
-/** Packages imported in code but absent from any package.json in the repo — breaks installs. */
+/** Packages imported in code but absent from any package.json in the repo - breaks installs. */
 export async function missingDeps(abs: string, fileTexts: Map<string, string>, pkg: Record<string, any>, indexPaths: Set<string>): Promise<string[]> {
   const declared = new Set<string>([pkg.name].filter(Boolean) as string[]);
   const addDeps = (p: Record<string, any>) =>
     ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies']
       .forEach(k => Object.keys(p[k] ?? {}).forEach(d => declared.add(d)));
   addDeps(pkg);
-  // Sub-packages (mcp/, demo/, packages/*) have their own package.json — merge their deps.
+  // Sub-packages (mcp/, demo/, packages/*) have their own package.json - merge their deps.
   for (const p of indexPaths) {
     if (!/(^|\/)package\.json$/.test(p) || p === 'package.json') continue;
     try { addDeps(JSON.parse(await readFile(join(abs, p), 'utf8'))); } catch {}

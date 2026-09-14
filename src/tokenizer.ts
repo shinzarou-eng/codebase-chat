@@ -2,7 +2,7 @@ import { encode, decode } from 'gpt-tokenizer';
 
 /**
  * Count the exact number of tokens for a given text using the o200k base
- * tokenizer (gpt-tokenizer v4 default — used by GPT-4o / GPT-5 / o-series).
+ * tokenizer (gpt-tokenizer v4 default - used by GPT-4o / GPT-5 / o-series).
  */
 export function countTokens(text: string): number {
   return encode(text).length;

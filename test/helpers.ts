@@ -1,4 +1,4 @@
-// Shared test fixture helpers — every suite was copying the same mkdtemp +
+// Shared test fixture helpers - every suite was copying the same mkdtemp +
 // cache-dir + git-init boilerplate.
 import { vi } from 'vitest';
 import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';

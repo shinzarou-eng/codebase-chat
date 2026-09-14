@@ -1,4 +1,4 @@
-// HTML dashboard renderer — converts the deterministic Markdown report into a
+// HTML dashboard renderer - converts the deterministic Markdown report into a
 // self-contained, zero-dependency dark dashboard. Shared by the CLI `--ui`
 // flag (served on localhost) and the MCP `codebase_deep_audit` ui:// resource.
 
@@ -25,10 +25,10 @@ export interface ParsedReport {
 
 const SEV: Record<string, string> = { '🔴': 'crit', '🟠': 'high', '🟡': 'med', '🔵': 'info' };
 
-/** Strip a leading emoji — gradient-clipped titles render emoji as blank boxes. */
+/** Strip a leading emoji - gradient-clipped titles render emoji as blank boxes. */
 const stripEmoji = (s: string) => s.replace(/^\p{Extended_Pictographic}\s*/u, '');
 
-/** Remove every emoji/pictograph — Fluent-style clean text rendering. */
+/** Remove every emoji/pictograph - Fluent-style clean text rendering. */
 const EMOJI_RE = /\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*\uFE0F?/gu;
 const stripAllEmoji = (s: string) => s.replace(EMOJI_RE, '');
 
@@ -132,7 +132,7 @@ export function parseReportMd(md: string, fallbackTitle = 'Report'): ParsedRepor
   };
 }
 
-/** Shared dashboard stylesheet — dense IDE look (VS Code dark): compact metrics, blue accent, no decoration. */
+/** Shared dashboard stylesheet - dense IDE look (VS Code dark): compact metrics, blue accent, no decoration. */
 export const DASH_CSS = `
 :root{--bg:#1e1e1e;--card:#252526;--card2:#2d2d30;--line:#3c3c3c;--line2:#505054;--txt:#cccccc;--dim:#9b9b9b;--acc:#007fd4;--acc2:#4aa3f0;--ok:#4ec9b0;--warn:#d7ba7d;--bad:#f14c4c;--code:#d7ba7d}
 *{box-sizing:border-box}
@@ -199,7 +199,7 @@ ${grade ? `<text x="60" y="84" text-anchor="middle" fill="var(--dim)" font-size=
 </svg></div>`;
 }
 
-/** Full standalone page — used by `--ui` fallback and the MCP ui:// resource. */
+/** Full standalone page - used by `--ui` fallback and the MCP ui:// resource. */
 export function reportToHtml(md: string, meta: { project: string; generated: string }): string {
   const r = parseReportMd(md, meta.project);
   const nav = r.nav.map(n => `<a href="#${n.id}">${esc(n.title)}</a>`).join('');

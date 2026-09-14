@@ -1,5 +1,5 @@
 // Code-shape / graph collectors + collectAudit orchestrator.
-// All deterministic computations — no rendering, no language.
+// All deterministic computations - no rendering, no language.
 import { access, readFile } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 import { getIndex } from './indexer.js';
@@ -31,7 +31,7 @@ function functionHotspots(index: { files: Record<string, { relPath: string; chun
   return out.sort((a, b) => b.lines - a.lines).slice(0, 6);
 }
 
-/** Deep relative imports (../../.. chains) — coupling smell. */
+/** Deep relative imports (../../.. chains) - coupling smell. */
 function deepImports(fileTexts: Map<string, string>): Finding[] {
   const out: Finding[] = [];
   const re = /from\s+['"]((?:\.\.\/){3,}[^'"]*)['"]/;
@@ -54,7 +54,7 @@ function codeShape(fileTexts: Map<string, string>) {
     if (isSkippablePath(file)) continue;
     let maxDepth = 0, inBlock = false;
     // Lines inside template literals (help text, HTML, embedded SQL…) are not
-    // code — their indentation must not count toward nesting depth.
+    // code - their indentation must not count toward nesting depth.
     const startsInStr = lineStartsInString(text);
     const lines = text.split('\n');
     for (let i = 0; i < lines.length; i++) {
@@ -102,7 +102,7 @@ function duplicateNames(codeFiles: string[]): { name: string; files: string[] }[
     .slice(0, 5);
 }
 
-/** async functions containing no await — almost always a bug. */
+/** async functions containing no await - almost always a bug. */
 function asyncWithoutAwait(index: { files: Record<string, { relPath: string; chunks: { kind: string; name?: string; content: string }[] }> }) {
   const out: { file: string; name: string }[] = [];
   for (const f of Object.values(index.files)) {
@@ -124,7 +124,7 @@ function graphDepth(edges: { from: string; to: string }[], entryPoints: string[]
   const memo = new Map<string, number>();
   const dfs = (f: string, seen: Set<string>): number => {
     if (memo.has(f)) return memo.get(f)!;
-    if (seen.has(f)) return 0; // cycle — stop
+    if (seen.has(f)) return 0; // cycle - stop
     seen.add(f);
     let d = 0;
     for (const t of adj.get(f) ?? []) d = Math.max(d, dfs(t, seen) + 1);
@@ -177,12 +177,12 @@ export function hasDedicatedTest(testBases: Set<string>, file: string): boolean 
 }
 
 // Repeat calls from long-lived processes (MCP server, dashboard, DSH plugin)
-// memoize on the file-set signature — same files ⇒ same audit. The 10s TTL
+// memoize on the file-set signature - same files ⇒ same audit. The 10s TTL
 // covers what stats can't see (a new git commit, a regenerated file).
 const AUDIT_TTL_MS = 10_000;
 const auditCache = new Map<string, { sig: string; at: number; data: AuditData }>();
 
-/** All deterministic audit computations — no rendering, no language. */
+/** All deterministic audit computations - no rendering, no language. */
 export async function collectAudit(projectPath: string): Promise<AuditData> {
   const abs = await findProjectRoot(resolveProjectPath(projectPath));
   const sig = await projectSignature(abs);
@@ -264,7 +264,7 @@ export async function collectAudit(projectPath: string): Promise<AuditData> {
   }
   const docCov = docCoverage(graph.fileTexts);
   const docPct = docCov.total ? Math.round((docCov.documented / docCov.total) * 100) : 0;
-  // Risk = churn × complexity — files that change often AND are hard to read.
+  // Risk = churn × complexity - files that change often AND are hard to read.
   const complexityByFile = new Map(health.hotspots.map(h => [h.file, h.score]));
   const riskFiles = git
     ? [...git.churn.entries()]

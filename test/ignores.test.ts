@@ -53,7 +53,7 @@ describe('ignores', () => {
     try {
       const { writeBaseline } = await import('../src/baseline');
       // Baseline on the clean tree, then a NEW file with no dependents that
-      // introduces an env-undoc finding — keeps impact low so the verdict is
+      // introduces an env-undoc finding - keeps impact low so the verdict is
       // driven by the finding alone.
       let data = await collectAudit(dir);
       await writeBaseline(dir, data, auditFindings(data, 'en'));
@@ -110,7 +110,7 @@ describe('symbol impact', () => {
       if (r.ok) {
         const files = r.report.dependents.map(d => d.file);
         expect(files).toContain('src/b.ts');
-        // c.ts doesn't reference `a` — only reachable through b (depth 2 via b).
+        // c.ts doesn't reference `a` - only reachable through b (depth 2 via b).
         expect(files).toContain('src/c.ts');
         const cDep = r.report.dependents.find(d => d.file === 'src/c.ts');
         expect(cDep!.depth).toBe(2);

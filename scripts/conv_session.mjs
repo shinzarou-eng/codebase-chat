@@ -1,10 +1,10 @@
 // Real MCP conversation on a real 400+ file codebase (player-mode by default,
 // override with: node scripts/conv_session.mjs <path>). Every tool call is a
-// real stdio JSON-RPC call to mcp/index.mjs — outputs are printed verbatim.
+// real stdio JSON-RPC call to mcp/index.mjs - outputs are printed verbatim.
 // Index stats come from a real `dist/cli.js --stats` run on the same project
 // (same cache dir), and every tool call is timed. The "Assistant ›" reply is
 // the host model speaking after the tool returns cited context (promptOnly
-// mode — exactly what an IDE does).
+// mode - exactly what an IDE does).
 import { spawn, spawnSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +17,7 @@ const server = spawn('node', [join(ROOT, 'mcp', 'index.mjs')], {
   env: { ...process.env, DEEPSEEK_API_KEY: '', OPENAI_API_KEY: '' },
 });
 const send = (o) => server.stdin.write(JSON.stringify(o) + '\n');
-// emojis render as boxes in the GIF font — strip them from the transcript
+// emojis render as boxes in the GIF font - strip them from the transcript
 const out = (s) => console.log(s.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{2B00}-\u{2BFF}]/gu, ''));
 const show = (s) => s.split(PROJECT).join(DISPLAY);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -65,7 +65,7 @@ async function main() {
   out(`← ${names.length} tools: ${names.slice(0, 6).join(', ')}, …`);
   await wait(150);
 
-  // ---- turn 1 : health — deterministic, no LLM ----
+  // ---- turn 1 : health - deterministic, no LLM ----
   out('You › scan this repo for problems');
   out('→ tools/call codebase_health {"projectPath":"' + DISPLAY + '"}');
   const st = indexStats();
@@ -84,7 +84,7 @@ async function main() {
   for (const l of [...head, '', sections[0], ...cycles, '', ...sections.slice(1)]) out(show(l));
   await wait(150);
 
-  // ---- turn 2 : chat — real retrieval, host answers ----
+  // ---- turn 2 : chat - real retrieval, host answers ----
   out('You › how does the match simulation work?');
   out('→ tools/call codebase_chat {"query":"how does the match simulation work?"}');
   const { res: c, ms: cMs } = await tool('codebase_chat', { query: 'how does the match simulation work?', promptOnly: true, lang: 'en' }, 3);
@@ -102,7 +102,7 @@ async function main() {
   out('  [source: src/features/career/engine/pmCalendarEngine.ts:284] [Confidence: 85%]');
   await wait(150);
 
-  // ---- turn 3 : tasks — real prioritized plan ----
+  // ---- turn 3 : tasks - real prioritized plan ----
   out('You › give me the priorities');
   out('→ tools/call codebase_tasks {"focus":"break the dependency cycles"}');
   const { res: t, ms: tMs } = await tool('codebase_tasks', { focus: 'break the dependency cycles', promptOnly: true, lang: 'en' }, 4);

@@ -1,4 +1,4 @@
-// Deterministic Markdown rendering — same AuditData in → same report out.
+// Deterministic Markdown rendering - same AuditData in → same report out.
 import { formatHealthReportMd } from './analysis.js';
 import { recommendations } from './recommendations.js';
 import type { Reco } from './recommendations.js';

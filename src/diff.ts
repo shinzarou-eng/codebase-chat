@@ -27,13 +27,13 @@ function toRelList(output: string): string[] {
 }
 
 /**
- * Files changed vs a git ref — committed diffs, staged/unstaged edits and
+ * Files changed vs a git ref - committed diffs, staged/unstaged edits and
  * untracked files. Used to scope retrieval and audits to "what changed".
  */
 export async function getChangedFiles(absProject: string, base: string): Promise<DiffScope> {
   try {
     const [tracked, untracked] = await Promise.all([
-      // Working tree vs base — covers committed, staged and unstaged edits.
+      // Working tree vs base - covers committed, staged and unstaged edits.
       git(absProject, ['diff', '--name-only', base, '--']),
       git(absProject, ['ls-files', '--others', '--exclude-standard']),
     ]);
